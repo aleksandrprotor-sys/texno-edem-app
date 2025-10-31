@@ -13,7 +13,7 @@ const CONFIG = {
             CLIENT_ID: '',
             CLIENT_SECRET: '',
             ENABLED: true,
-            SYNC_INTERVAL: 300000, // 5 минут
+            SYNC_INTERVAL: 600000, // ⭐ УВЕЛИЧЕНО до 10 минут
             TIMEOUT: 30000
         },
         
@@ -21,7 +21,7 @@ const CONFIG = {
             URL: 'https://api.megamarket.ru/v1',
             API_KEY: '',
             ENABLED: true,
-            SYNC_INTERVAL: 300000,
+            SYNC_INTERVAL: 600000, // ⭐ УВЕЛИЧЕНО до 10 минут
             TIMEOUT: 30000
         },
         
@@ -44,8 +44,9 @@ const CONFIG = {
         DEFAULT_PLATFORM: 'all',
         ITEMS_PER_PAGE: 20,
         NOTIFICATION_SOUND: true,
-        AUTO_SYNC: true,
-        THEME: 'auto'
+        AUTO_SYNC: true, // ⭐ ДОБАВЛЕНА НАСТРОЙКА авто-синхронизации
+        THEME: 'auto',
+        SYNC_INTERVAL: 600000 // 10 минут
     },
     
     STATUSES: {
@@ -102,7 +103,7 @@ const CONFIG = {
         ORDERS_KEY: 'texno_edem_orders',
         ANALYTICS_KEY: 'texno_edem_analytics',
         SETTINGS_KEY: 'texno_edem_settings',
-        CACHE_DURATION: 300000 // 5 минут
+        CACHE_DURATION: 600000 // 10 минут
     }
 };
 
