@@ -1,1 +1,125 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TEXNO EDEM - Business Intelligence Platform</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chart.js">
+    
+    <!-- Main CSS -->
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/components/header.css">
+    <link rel="stylesheet" href="css/components/dashboard.css">
+    <link rel="stylesheet" href="css/components/orders.css">
+    <link rel="stylesheet" href="css/components/modal.css">
+    <link rel="stylesheet" href="css/analytics/charts.css">
+    <link rel="stylesheet" href="css/analytics/metrics.css">
+</head>
+<body>
+    <div class="app">
+        <!-- Header -->
+        <header class="header" id="header">
+            <!-- Header content will be loaded by JavaScript -->
+        </header>
 
+        <!-- Navigation -->
+        <nav class="main-nav" id="main-nav">
+            <!-- Navigation will be loaded by JavaScript -->
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Dashboard Section -->
+            <section class="section active" id="dashboard-section">
+                <div class="container">
+                    <!-- Analytics Overview -->
+                    <div class="analytics-overview" id="analytics-overview">
+                        <!-- Loaded by JavaScript -->
+                    </div>
+
+                    <!-- Platform Comparison -->
+                    <div class="platform-comparison" id="platform-comparison">
+                        <!-- Loaded by JavaScript -->
+                    </div>
+
+                    <!-- Recent Activity -->
+                    <div class="recent-activity" id="recent-activity">
+                        <!-- Loaded by JavaScript -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Orders Section -->
+            <section class="section" id="orders-section">
+                <div class="container">
+                    <div class="section-header">
+                        <h2 class="section-title">Управление заказами</h2>
+                        <div class="section-actions" id="orders-actions">
+                            <!-- Actions loaded by JavaScript -->
+                        </div>
+                    </div>
+                    <div class="orders-container" id="orders-container">
+                        <!-- Orders loaded by JavaScript -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Analytics Section -->
+            <section class="section" id="analytics-section">
+                <div class="container">
+                    <div class="section-header">
+                        <h2 class="section-title">Аналитика и отчеты</h2>
+                        <div class="section-actions" id="analytics-actions">
+                            <!-- Actions loaded by JavaScript -->
+                        </div>
+                    </div>
+                    <div class="analytics-container" id="analytics-container">
+                        <!-- Analytics loaded by JavaScript -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Settings Section -->
+            <section class="section" id="settings-section">
+                <div class="container">
+                    <div class="section-header">
+                        <h2 class="section-title">Настройки интеграций</h2>
+                    </div>
+                    <div class="settings-container" id="settings-container">
+                        <!-- Settings loaded by JavaScript -->
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Modals -->
+        <div class="modals-container" id="modals-container">
+            <!-- Modals loaded by JavaScript -->
+        </div>
+
+        <!-- Notifications -->
+        <div class="notifications-container" id="notifications-container"></div>
+
+        <!-- Loading Overlay -->
+        <div class="loading-overlay" id="loading-overlay">
+            <div class="loading-spinner"></div>
+            <p>Загрузка данных...</p>
+        </div>
+    </div>
+
+    <!-- JavaScript Files -->
+    <script src="js/config.js"></script>
+    <script src="js/utils/formatters.js"></script>
+    <script src="js/utils/validators.js"></script>
+    <script src="js/utils/notifications.js"></script>
+    <script src="js/services/api.js"></script>
+    <script src="js/services/cdek-service.js"></script>
+    <script src="js/services/megamarket-service.js"></script>
+    <script src="js/components/analytics.js"></script>
+    <script src="js/components/orders.js"></script>
+    <script src="js/components/modal.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
