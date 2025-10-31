@@ -475,8 +475,8 @@ class OrdersComponent {
             return;
         }
         
-        await this.app.syncData();
-        this.app.showNotification('Список заказов обновлен', 'success');
+        // Используем ручную синхронизацию для показа уведомления
+        await this.app.manualSync();
     }
 
     // Экспорт заказов
