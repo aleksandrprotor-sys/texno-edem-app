@@ -281,3 +281,45 @@
         display: none;
     }
 }
+
+/* Стили для индикатора синхронизации */
+.sync-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--gray-500);
+    padding: 6px 12px;
+    background: var(--gray-100);
+    border-radius: 16px;
+}
+
+.sync-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--success);
+    transition: all 0.3s ease;
+}
+
+.sync-indicator.syncing {
+    background: var(--warning);
+    animation: pulse 1.5s infinite;
+}
+
+.sync-indicator.error {
+    background: var(--danger);
+}
+
+@keyframes pulse {
+    0% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(1.1); }
+    100% { opacity: 1; transform: scale(1); }
+}
+
+/* Адаптивность для sync-status */
+@media (max-width: 768px) {
+    .sync-status {
+        display: none;
+    }
+}
