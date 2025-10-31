@@ -158,18 +158,23 @@ class TexnoEdemApp {
     }
 
     setupAutoSync() {
-        // Автоматическая синхронизация каждые 5 минут
+    // Автоматическая синхронизация только если включено в настройках
+    if (this.config.SETTINGS.AUTO_SYNC) {
         setInterval(() => {
             this.syncData();
         }, this.config.SYNC_INTERVAL);
-        
-        // Синхронизация при возвращении на вкладку
-        document.addEventListener('visibilitychange', () => {
-            if (!document.hidden) {
-                this.syncData();
-            }
-        });
     }
+    
+    // Синхронизация при возвращении на вкладку (с задержкой)
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) {
+            // Добавляем задержку чтобы избежать множественных вызовов
+            setTimeout(() => {
+                this.syncData();
+            }, 1000);
+        }
+    });
+}
 
     async syncData() {
         try {
