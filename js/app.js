@@ -12,6 +12,8 @@ class TexnoEdemApp {
         this.isSyncing = false;
         this.lastSyncTime = null;
         this.lastRenderTime = null;
+        this.notificationCount = 0;
+        this.maxNotifications = 3;
         
         this.init();
     }
@@ -122,7 +124,12 @@ class TexnoEdemApp {
             ]);
             
             this.updateDashboard();
-            this.showNotification('Данные успешно загружены', 'success');
+            
+            // Показываем уведомление только при первой загрузке
+            if (this.notificationCount === 0) {
+                this.showNotification('Данные успешно загружены', 'success');
+                this.notificationCount++;
+            }
         } catch (error) {
             console.error('Error loading initial data:', error);
             this.showError('Ошибка загрузки данных');
@@ -193,7 +200,7 @@ class TexnoEdemApp {
         if (this.config.SETTINGS.AUTO_SYNC) {
             console.log('Auto-sync enabled, interval:', this.config.SYNC_INTERVAL);
             this.syncInterval = setInterval(() => {
-                this.syncData();
+                this.syncData(false); // false = авто-синхронизация
             }, this.config.SYNC_INTERVAL);
         }
         
@@ -202,13 +209,13 @@ class TexnoEdemApp {
             if (!document.hidden && !this.isSyncing) {
                 // Добавляем задержку чтобы избежать множественных вызовов
                 setTimeout(() => {
-                    this.syncData();
+                    this.syncData(false); // false = авто-синхронизация
                 }, 2000);
             }
         });
     }
 
-    async syncData() {
+    async syncData(isManual = false) {
         // Защита от множественных одновременных синхронизаций
         if (this.isSyncing) {
             console.log('Sync already in progress, skipping...');
@@ -216,20 +223,28 @@ class TexnoEdemApp {
         }
         
         this.isSyncing = true;
-        console.log('Starting sync...');
+        console.log('Starting sync...', isManual ? 'manual' : 'auto');
         
         try {
             await this.loadOrders();
             await this.loadAnalytics();
             this.lastSyncTime = new Date();
             
-            // Показываем уведомление только если пользователь активно использует приложение
-            if (document.visibilityState === 'visible') {
-                this.showNotification(`Данные обновлены ${formatDateTime(this.lastSyncTime)}`, 'info');
+            // Показываем уведомление только при ручной синхронизации или если не превышен лимит
+            if (isManual) {
+                this.showNotification(`Данные обновлены ${formatDateTime(this.lastSyncTime)}`, 'success');
+            } else if (this.notificationCount < this.maxNotifications) {
+                // Для авто-синхронизации показываем только первые несколько уведомлений
+                this.showNotification(`Данные автоматически обновлены`, 'info');
+                this.notificationCount++;
             }
+            
         } catch (error) {
             console.error('Sync failed:', error);
-            // Не показываем ошибку пользователю для авто-синхронизации
+            // Показываем ошибку только при ручной синхронизации
+            if (isManual) {
+                this.showError('Ошибка синхронизации данных');
+            }
         } finally {
             this.isSyncing = false;
             console.log('Sync completed');
@@ -329,11 +344,27 @@ class TexnoEdemApp {
     }
 
     showNotification(message, type = 'info') {
+        // Лимит уведомлений для предотвращения спама
+        if (this.notificationCount >= this.maxNotifications && type === 'info') {
+            console.log('Notification limit reached, skipping:', message);
+            return;
+        }
+        
         this.notifications.show(message, type);
+        
+        // Увеличиваем счетчик только для информационных уведомлений
+        if (type === 'info') {
+            this.notificationCount++;
+        }
     }
 
     showError(message) {
         this.showNotification(message, 'error');
+    }
+
+    // Ручная синхронизация (с уведомлением)
+    manualSync() {
+        this.syncData(true); // true = ручная синхронизация
     }
 
     // Сохранение настроек
@@ -388,7 +419,7 @@ class HeaderComponent {
                         </div>
                     </div>
                     
-                    <button class="btn btn-outline btn-sm" onclick="app.syncData()" ${this.app.isSyncing ? 'disabled' : ''}>
+                    <button class="btn btn-outline btn-sm" onclick="app.manualSync()" ${this.app.isSyncing ? 'disabled' : ''}>
                         <i class="fas fa-sync-alt ${this.app.isSyncing ? 'fa-spin' : ''}"></i>
                     </button>
                 </div>
