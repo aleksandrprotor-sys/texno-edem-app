@@ -1,14 +1,19 @@
 // Основной файл приложения TEXNO EDEM
 class TexnoEdemApp {
     constructor() {
-        this.currentSection = 'dashboard';
-        this.currentPlatform = 'all';
-        this.orders = [];
-        this.analytics = {};
-        this.settings = {};
-        
-        this.init();
-    }
+    this.currentSection = 'dashboard';
+    this.currentPlatform = 'all';
+    this.orders = [];
+    this.analytics = {};
+    this.settings = {};
+    
+    // ⭐ ДОБАВЬТЕ ЭТИ СТРОКИ:
+    this.isLoading = false;
+    this.isSyncing = false;
+    this.lastSyncTime = null;
+    
+    this.init();
+}
 
     async init() {
         try {
@@ -99,20 +104,26 @@ class TexnoEdemApp {
     }
 
     async loadInitialData() {
-        try {
-            await Promise.all([
-                this.loadOrders(),
-                this.loadAnalytics(),
-                this.loadSettings()
-            ]);
-            
-            this.updateDashboard();
-            this.showNotification('Данные успешно загружены', 'success');
-        } catch (error) {
-            console.error('Error loading initial data:', error);
-            this.showError('Ошибка загрузки данных');
-        }
+    // Защита от повторных вызовов
+    if (this.isLoading) return;
+    this.isLoading = true;
+    
+    try {
+        await Promise.all([
+            this.loadOrders(),
+            this.loadAnalytics(),
+            this.loadSettings()
+        ]);
+        
+        this.updateDashboard();
+        this.showNotification('Данные успешно загружены', 'success');
+    } catch (error) {
+        console.error('Error loading initial data:', error);
+        this.showError('Ошибка загрузки данных');
+    } finally {
+        this.isLoading = false;
     }
+}
 
     async loadOrders() {
         this.showLoading();
@@ -177,14 +188,22 @@ class TexnoEdemApp {
 }
 
     async syncData() {
-        try {
-            await this.loadOrders();
-            await this.loadAnalytics();
-            this.showNotification('Данные синхронизированы', 'info');
-        } catch (error) {
-            console.error('Sync failed:', error);
-        }
+    // Защита от множественных одновременных синхронизаций
+    if (this.isSyncing) return;
+    this.isSyncing = true;
+    
+    try {
+        await this.loadOrders();
+        await this.loadAnalytics();
+        this.lastSyncTime = new Date();
+        this.showNotification(`Данные обновлены ${formatDateTime(this.lastSyncTime)}`, 'info');
+    } catch (error) {
+        console.error('Sync failed:', error);
+        // Не показываем ошибку пользователю для авто-синхронизации
+    } finally {
+        this.isSyncing = false;
     }
+}
 
     // Навигация
     showSection(sectionId) {
