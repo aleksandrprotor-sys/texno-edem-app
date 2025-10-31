@@ -1,787 +1,645 @@
+// Компонент управления заказами для TEXNO EDEM
 class OrdersComponent {
-    constructor(megamarketService) {
-        this.megamarketService = megamarketService;
-        this.orders = [];
-        this.filteredOrders = [];
+    constructor(app) {
+        this.app = app;
         this.currentPage = 1;
-        this.ordersPerPage = 10;
-        this.currentFilters = {};
-        this.isLoading = false;
+        this.itemsPerPage = 20;
+        this.sortField = 'createdDate';
+        this.sortDirection = 'desc';
+        this.filters = {
+            status: 'all',
+            search: ''
+        };
+        
+        this.isRendering = false;
+        this.lastRenderTime = 0;
+        this.searchTimeout = null;
+        
+        this.init();
     }
 
-    async init() {
-        await this.loadOrders();
-        this.renderOrdersTable();
-        this.setupEventListeners();
-        this.setupFilters();
+    init() {
+        this.debouncedSearch = this.debounce((searchTerm) => {
+            this.setSearchFilter(searchTerm);
+        }, 500);
     }
 
-    async loadOrders() {
-        this.setLoading(true);
+    render(platform = null) {
+        if (this.isRendering) return;
+        
+        const now = Date.now();
+        if (now - this.lastRenderTime < 300) return;
+        
+        this.isRendering = true;
+        this.lastRenderTime = now;
+        
         try {
-            const today = new Date().toISOString().split('T')[0];
-            const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+            const targetPlatform = platform || this.app.currentPlatform;
+            if (!targetPlatform) return;
             
-            this.orders = await this.megamarketService.getNewOrders(weekAgo, today);
-            this.filteredOrders = [...this.orders];
-            this.renderOrdersTable();
-            this.updateOrdersCounter();
+            this.renderOrdersContainer(targetPlatform);
+            this.renderOrdersList(targetPlatform);
+            
         } catch (error) {
-            console.error('Error loading orders:', error);
-            this.showNotification('Ошибка загрузки заказов', 'error');
+            console.error('Error rendering orders:', error);
         } finally {
-            this.setLoading(false);
+            setTimeout(() => {
+                this.isRendering = false;
+            }, 100);
         }
     }
 
-    setLoading(loading) {
-        this.isLoading = loading;
-        const container = document.getElementById('ordersContainer');
-        if (container) {
-            if (loading) {
-                container.classList.add('orders-loading');
-            } else {
-                container.classList.remove('orders-loading');
-            }
-        }
-    }
-
-    renderOrdersTable() {
-        const container = document.getElementById('ordersContainer');
+    renderOrdersContainer(platform) {
+        const container = document.getElementById('orders-container');
         if (!container) return;
 
-        if (this.filteredOrders.length === 0) {
-            container.innerHTML = this.renderEmptyState();
-            return;
-        }
-
-        const startIndex = (this.currentPage - 1) * this.ordersPerPage;
-        const paginatedOrders = this.filteredOrders.slice(startIndex, startIndex + this.ordersPerPage);
-
+        const platformConfig = this.getPlatformConfig(platform);
+        const orders = this.app.getPlatformOrders(platform);
+        const filteredOrders = this.getFilteredOrders(orders);
+        const paginatedOrders = this.getPaginatedOrders(filteredOrders);
+        
         container.innerHTML = `
             <div class="orders-header">
-                <div class="orders-title">
-                    <h3>Заказы Megamarket</h3>
-                    <span class="orders-counter">${this.filteredOrders.length} заказов</span>
+                <div class="platform-header">
+                    <div class="platform-info">
+                        <div class="platform-icon ${platform}">
+                            <i class="fas fa-${platformConfig.icon}"></i>
+                        </div>
+                        <div class="platform-details">
+                            <h2>${platformConfig.name}</h2>
+                            <p>${platformConfig.description}</p>
+                        </div>
+                    </div>
+                    <div class="orders-summary">
+                        <div class="summary-item">
+                            <span class="summary-value">${filteredOrders.length}</span>
+                            <span class="summary-label">Всего</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-value">${filteredOrders.filter(o => o.status === 'new').length}</span>
+                            <span class="summary-label">Новых</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-value">${filteredOrders.filter(o => o.status === 'problem').length}</span>
+                            <span class="summary-label">Проблемы</span>
+                        </div>
+                    </div>
                 </div>
-                <div class="orders-controls">
-                    <button class="btn btn-primary" onclick="ordersComponent.refreshOrders()" ${this.isLoading ? 'disabled' : ''}>
-                        <span class="btn-icon">🔄</span>
-                        Обновить
-                    </button>
-                    <button class="btn btn-secondary" onclick="ordersComponent.showSearchModal()" ${this.isLoading ? 'disabled' : ''}>
-                        <span class="btn-icon">🔍</span>
-                        Поиск
-                    </button>
-                    <button class="btn btn-outline" onclick="ordersComponent.toggleFilters()">
-                        <span class="btn-icon">⚙️</span>
-                        Фильтры
-                    </button>
-                </div>
-            </div>
-
-            <div class="orders-filters" id="ordersFilters" style="display: none;">
-                <div class="filters-grid">
-                    <div class="filter-group">
-                        <label for="filterStatus">Статус:</label>
-                        <select id="filterStatus" class="form-control" onchange="ordersComponent.applyFilters()">
-                            <option value="">Все статусы</option>
-                            <option value="new">Новые</option>
-                            <option value="confirmed">Подтвержденные</option>
-                            <option value="packed">Упакованные</option>
-                            <option value="shipped">Отгруженные</option>
-                            <option value="delivered">Доставленные</option>
-                            <option value="cancelled">Отмененные</option>
-                        </select>
+                
+                <div class="orders-toolbar">
+                    <div class="toolbar-left">
+                        <div class="search-box">
+                            <i class="fas fa-search"></i>
+                            <input 
+                                type="text" 
+                                id="orders-search" 
+                                placeholder="Поиск по заказам..." 
+                                value="${this.filters.search}"
+                                oninput="app.ordersComponent.debouncedSearch(this.value)"
+                            >
+                        </div>
+                        
+                        <div class="filter-group">
+                            <select id="status-filter" onchange="app.ordersComponent.setStatusFilter(this.value)">
+                                <option value="all">Все статусы</option>
+                                ${this.getStatusOptions(platform).join('')}
+                            </select>
+                        </div>
                     </div>
-                    <div class="filter-group">
-                        <label for="filterDateFrom">Дата с:</label>
-                        <input type="date" id="filterDateFrom" class="form-control" onchange="ordersComponent.applyFilters()">
-                    </div>
-                    <div class="filter-group">
-                        <label for="filterDateTo">Дата по:</label>
-                        <input type="date" id="filterDateTo" class="form-control" onchange="ordersComponent.applyFilters()">
-                    </div>
-                    <div class="filter-actions">
-                        <button class="btn btn-outline" onclick="ordersComponent.clearFilters()">
-                            Сбросить
+                    
+                    <div class="toolbar-right">
+                        <div class="sort-group">
+                            <select onchange="app.ordersComponent.setSortField(this.value)">
+                                <option value="createdDate" ${this.sortField === 'createdDate' ? 'selected' : ''}>По дате</option>
+                                <option value="totalAmount" ${this.sortField === 'totalAmount' ? 'selected' : ''}>По сумме</option>
+                                <option value="status" ${this.sortField === 'status' ? 'selected' : ''}>По статусу</option>
+                            </select>
+                            
+                            <button class="btn btn-outline btn-sm" onclick="app.ordersComponent.toggleSortDirection()">
+                                <i class="fas fa-${this.sortDirection === 'asc' ? 'arrow-up' : 'arrow-down'}"></i>
+                            </button>
+                        </div>
+                        
+                        <button class="btn btn-primary btn-sm" onclick="app.ordersComponent.exportOrders('${platform}')">
+                            <i class="fas fa-download"></i> Экспорт
+                        </button>
+                        
+                        <button class="btn btn-secondary btn-sm" onclick="app.manualSync()" ${this.app.isSyncing ? 'disabled' : ''}>
+                            <i class="fas fa-sync ${this.app.isSyncing ? 'fa-spin' : ''}"></i>
                         </button>
                     </div>
                 </div>
             </div>
-
-            <div class="table-responsive">
-                <table class="orders-table">
-                    <thead>
-                        <tr>
-                            <th data-sort="id" onclick="ordersComponent.sortOrders('id')">
-                                ID заказа
-                                <span class="sort-indicator"></span>
-                            </th>
-                            <th data-sort="date" onclick="ordersComponent.sortOrders('date')">
-                                Дата
-                                <span class="sort-indicator"></span>
-                            </th>
-                            <th data-sort="status" onclick="ordersComponent.sortOrders('status')">
-                                Статус
-                                <span class="sort-indicator"></span>
-                            </th>
-                            <th data-sort="amount" onclick="ordersComponent.sortOrders('amount')">
-                                Сумма
-                                <span class="sort-indicator"></span>
-                            </th>
-                            <th>Товары</th>
-                            <th>Действия</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${paginatedOrders.map(order => this.renderOrderRow(order)).join('')}
-                    </tbody>
-                </table>
+            
+            <div class="orders-list" id="orders-list">
+                ${this.renderOrdersListContent(paginatedOrders, platform)}
             </div>
-            ${this.renderPagination()}
+            
+            ${this.renderPagination(filteredOrders.length)}
         `;
 
-        this.updateSortIndicators();
+        // Обновляем заголовок секции
+        this.updateSectionTitle(platform);
     }
 
-    renderOrderRow(order) {
-        const orderDate = new Date(order.created_date);
-        const formattedDate = orderDate.toLocaleDateString('ru-RU');
-        const formattedTime = orderDate.toLocaleTimeString('ru-RU', { 
-            hour: '2-digit', 
-            minute: '2-digit' 
-        });
-
-        return `
-            <tr data-order-id="${order.id}" class="order-row">
-                <td>
-                    <div class="order-id">#${order.id}</div>
-                    <small class="order-subtext">Megamarket</small>
-                </td>
-                <td>
-                    <div class="order-date">${formattedDate}</div>
-                    <small class="order-subtext">${formattedTime}</small>
-                </td>
-                <td>
-                    <span class="status-badge status-${order.status}">
-                        ${this.getStatusText(order.status)}
-                    </span>
-                </td>
-                <td>
-                    <div class="order-amount">${order.total_amount ? `${order.total_amount.toLocaleString()} ₽` : '—'}</div>
-                    ${order.items ? `<small class="order-subtext">${order.items.length} товар(ов)</small>` : ''}
-                </td>
-                <td>
-                    ${order.items ? this.renderOrderItemsPreview(order.items) : '—'}
-                </td>
-                <td class="actions">
-                    <button class="btn btn-sm btn-info" onclick="ordersComponent.viewOrderDetails('${order.id}')" title="Просмотр деталей">
-                        <span class="btn-icon">👁️</span>
-                        Просмотр
-                    </button>
-                    ${this.renderOrderActions(order)}
-                </td>
-            </tr>
-        `;
+    getPlatformConfig(platform) {
+        const configs = {
+            cdek: {
+                name: 'CDEK Logistics',
+                description: 'Управление отправлениями и доставкой',
+                icon: 'shipping-fast',
+                statuses: ['new', 'active', 'delivered', 'problem', 'cancelled']
+            },
+            megamarket: {
+                name: 'Мегамаркет',
+                description: 'Обработка заказов и управление продажами',
+                icon: 'store',
+                statuses: ['new', 'processing', 'shipped', 'delivered', 'cancelled']
+            }
+        };
+        return configs[platform] || configs.cdek;
     }
 
-    renderOrderItemsPreview(items) {
-        if (!items || items.length === 0) return '—';
-        
-        const previewItems = items.slice(0, 2);
-        const remaining = items.length - 2;
-        
-        return `
-            <div class="items-preview">
-                ${previewItems.map(item => `
-                    <div class="item-preview" title="${item.name}">
-                        ${item.name.substring(0, 20)}${item.name.length > 20 ? '...' : ''}
-                    </div>
-                `).join('')}
-                ${remaining > 0 ? `<div class="items-more">+${remaining} еще</div>` : ''}
-            </div>
-        `;
+    getStatusOptions(platform) {
+        const statusMap = {
+            cdek: {
+                'all': 'Все статусы',
+                'new': 'Новые',
+                'active': 'В пути',
+                'delivered': 'Доставленные',
+                'problem': 'Проблемные',
+                'cancelled': 'Отмененные'
+            },
+            megamarket: {
+                'all': 'Все статусы',
+                'new': 'Новые',
+                'processing': 'В обработке',
+                'shipped': 'Отправленные',
+                'delivered': 'Доставленные',
+                'cancelled': 'Отмененные'
+            }
+        };
+
+        const platformStatuses = statusMap[platform] || statusMap.cdek;
+        return Object.entries(platformStatuses).map(([value, label]) => 
+            `<option value="${value}" ${this.filters.status === value ? 'selected' : ''}>${label}</option>`
+        );
     }
 
-    renderOrderActions(order) {
-        const actions = [];
+    updateSectionTitle(platform) {
+        const title = document.getElementById('orders-title');
+        const subtitle = document.getElementById('orders-subtitle');
         
-        switch (order.status) {
-            case 'new':
-                actions.push(`
-                    <button class="btn btn-sm btn-success" onclick="ordersComponent.confirmOrder('${order.id}')" title="Подтвердить заказ">
-                        <span class="btn-icon">✅</span>
-                        Подтвердить
-                    </button>
-                    <button class="btn btn-sm btn-warning" onclick="ordersComponent.showCancelModal('${order.id}')" title="Отменить заказ">
-                        <span class="btn-icon">❌</span>
-                        Отменить
-                    </button>
-                `);
-                break;
-                
-            case 'confirmed':
-                actions.push(`
-                    <button class="btn btn-sm btn-primary" onclick="ordersComponent.packOrder('${order.id}')" title="Упаковать заказ">
-                        <span class="btn-icon">📦</span>
-                        Упаковать
-                    </button>
-                    <button class="btn btn-sm btn-warning" onclick="ordersComponent.showCancelModal('${order.id}')" title="Отменить заказ">
-                        <span class="btn-icon">❌</span>
-                        Отменить
-                    </button>
-                `);
-                break;
-                
-            case 'packed':
-                actions.push(`
-                    <button class="btn btn-sm btn-success" onclick="ordersComponent.shipOrder('${order.id}')" title="Отгрузить заказ">
-                        <span class="btn-icon">🚚</span>
-                        Отгрузить
-                    </button>
-                `);
-                break;
-                
-            case 'shipped':
-                actions.push(`
-                    <span class="action-info">Ожидает доставки</span>
-                `);
-                break;
-                
-            case 'delivered':
-                actions.push(`
-                    <span class="action-success">Доставлен</span>
-                `);
-                break;
-                
-            case 'cancelled':
-                actions.push(`
-                    <span class="action-cancelled">Отменен</span>
-                `);
-                break;
+        if (title && subtitle) {
+            const config = this.getPlatformConfig(platform);
+            title.textContent = config.name;
+            subtitle.textContent = config.description;
+        }
+    }
+
+    renderOrdersListContent(orders, platform) {
+        if (orders.length === 0) {
+            return this.renderEmptyState(platform);
         }
 
-        return actions.join('');
+        return orders.map(order => this.renderOrderCard(order, platform)).join('');
     }
 
-    renderEmptyState() {
+    renderEmptyState(platform) {
+        const config = this.getPlatformConfig(platform);
         return `
-            <div class="orders-empty">
-                <div class="orders-empty-icon">📦</div>
-                <h4>Заказы не найдены</h4>
-                <p>Нет заказов, соответствующих выбранным фильтрам</p>
-                <button class="btn btn-primary" onclick="ordersComponent.clearFilters()">
-                    Сбросить фильтры
+            <div class="empty-state">
+                <div class="empty-icon">
+                    <i class="fas fa-${config.icon}"></i>
+                </div>
+                <h3>Заказы не найдены</h3>
+                <p>Попробуйте изменить параметры фильтрации или обновить данные</p>
+                <button class="btn btn-primary" onclick="app.manualSync()">
+                    <i class="fas fa-sync"></i> Обновить данные
                 </button>
             </div>
         `;
     }
 
-    renderPagination() {
-        const totalPages = Math.ceil(this.filteredOrders.length / this.ordersPerPage);
-        if (totalPages <= 1) return '';
-
-        const startOrder = (this.currentPage - 1) * this.ordersPerPage + 1;
-        const endOrder = Math.min(this.currentPage * this.ordersPerPage, this.filteredOrders.length);
-
+    renderOrderCard(order, platform) {
+        const statusConfig = CONFIG.STATUSES[platform.toUpperCase()]?.[order.statusCode] || 
+                           this.getFallbackStatusConfig(order.status);
+        
         return `
-            <div class="pagination">
-                <div class="pagination-info">
-                    Показано ${startOrder}-${endOrder} из ${this.filteredOrders.length}
-                </div>
-                <div class="pagination-controls">
-                    <button class="btn btn-sm ${this.currentPage === 1 ? 'btn-disabled' : 'btn-secondary'}" 
-                            ${this.currentPage === 1 ? 'disabled' : ''} 
-                            onclick="ordersComponent.previousPage()">
-                        <span class="btn-icon">←</span>
-                        Назад
-                    </button>
-                    
-                    <div class="page-numbers">
-                        ${this.renderPageNumbers(totalPages)}
+            <div class="order-card" onclick="app.ordersComponent.showOrderDetails('${platform}', '${order.id}')">
+                <div class="order-header">
+                    <div class="order-main-info">
+                        <div class="order-id">
+                            <i class="fas fa-${platform === 'cdek' ? 'barcode' : 'hashtag'}"></i>
+                            ${platform === 'cdek' ? order.trackingNumber : `Заказ #${order.orderNumber}`}
+                        </div>
+                        <div class="order-meta">
+                            <span class="order-date">${formatDate(order.createdDate)}</span>
+                            ${order.estimatedDelivery ? `
+                                <span class="order-eta">• Доставка: ${formatDate(order.estimatedDelivery)}</span>
+                            ` : ''}
+                        </div>
                     </div>
-                    
-                    <button class="btn btn-sm ${this.currentPage === totalPages ? 'btn-disabled' : 'btn-secondary'}" 
-                            ${this.currentPage === totalPages ? 'disabled' : ''} 
-                            onclick="ordersComponent.nextPage()">
-                        Вперед
-                        <span class="btn-icon">→</span>
-                    </button>
+                    <div class="order-status status-${order.status}" style="--status-color: ${statusConfig.color}">
+                        ${statusConfig.text}
+                    </div>
+                </div>
+                
+                <div class="order-content">
+                    ${this.renderOrderDetails(order, platform)}
+                    ${platform === 'megamarket' ? this.renderOrderItems(order.items) : ''}
+                </div>
+                
+                <div class="order-footer">
+                    <div class="order-actions">
+                        <button class="btn btn-outline btn-sm" onclick="event.stopPropagation(); app.ordersComponent.quickAction('${platform}', '${order.id}')">
+                            <i class="fas fa-bolt"></i> Действие
+                        </button>
+                        <button class="btn btn-outline btn-sm" onclick="event.stopPropagation(); app.ordersComponent.showOrderDetails('${platform}', '${order.id}')">
+                            <i class="fas fa-eye"></i> Подробнее
+                        </button>
+                    </div>
                 </div>
             </div>
         `;
     }
 
-    renderPageNumbers(totalPages) {
-        const pages = [];
-        const maxVisiblePages = 5;
-        
-        let startPage = Math.max(1, this.currentPage - Math.floor(maxVisiblePages / 2));
-        let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
-        
-        if (endPage - startPage + 1 < maxVisiblePages) {
-            startPage = Math.max(1, endPage - maxVisiblePages + 1);
-        }
-        
-        // Первая страница
-        if (startPage > 1) {
-            pages.push(`<button class="btn btn-sm btn-secondary" onclick="ordersComponent.goToPage(1)">1</button>`);
-            if (startPage > 2) {
-                pages.push('<span class="page-ellipsis">...</span>');
-            }
-        }
-        
-        // Основные страницы
-        for (let i = startPage; i <= endPage; i++) {
-            if (i === this.currentPage) {
-                pages.push(`<button class="btn btn-sm btn-primary" disabled>${i}</button>`);
-            } else {
-                pages.push(`<button class="btn btn-sm btn-secondary" onclick="ordersComponent.goToPage(${i})">${i}</button>`);
-            }
-        }
-        
-        // Последняя страница
-        if (endPage < totalPages) {
-            if (endPage < totalPages - 1) {
-                pages.push('<span class="page-ellipsis">...</span>');
-            }
-            pages.push(`<button class="btn btn-sm btn-secondary" onclick="ordersComponent.goToPage(${totalPages})">${totalPages}</button>`);
-        }
-        
-        return pages.join('');
-    }
-
-    // Методы работы с заказами
-    async confirmOrder(orderId) {
-        try {
-            const newDeliveryDate = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-            await this.megamarketService.confirmOrderWithNewDate(orderId, newDeliveryDate);
-            this.showNotification('Заказ подтвержден', 'success');
-            await this.loadOrders();
-        } catch (error) {
-            console.error('Error confirming order:', error);
-            this.showNotification('Ошибка подтверждения заказа', 'error');
-        }
-    }
-
-    async packOrder(orderId) {
-        try {
-            const orderInfo = await this.megamarketService.getOrderInfo(orderId);
-            const packages = orderInfo.items.map(item => ({
-                item_id: item.id,
-                quantity: item.quantity
-            }));
-            
-            await this.megamarketService.packOrder(orderId, packages);
-            this.showNotification('Заказ упакован', 'success');
-            await this.loadOrders();
-        } catch (error) {
-            console.error('Error packing order:', error);
-            this.showNotification('Ошибка упаковки заказа', 'error');
-        }
-    }
-
-    async shipOrder(orderId) {
-        try {
-            await this.megamarketService.closeOrder(orderId, new Date().toISOString().split('T')[0]);
-            this.showNotification('Заказ отгружен', 'success');
-            await this.loadOrders();
-        } catch (error) {
-            console.error('Error shipping order:', error);
-            this.showNotification('Ошибка отгрузки заказа', 'error');
-        }
-    }
-
-    showCancelModal(orderId) {
-        ModalComponent.show({
-            title: 'Отмена заказа',
-            content: `
-                <div class="cancel-form">
-                    <p>Вы уверены, что хотите отменить заказ <strong>#${orderId}</strong>?</p>
-                    <div class="form-group">
-                        <label for="cancelReason">Причина отмены:</label>
-                        <select id="cancelReason" class="form-control">
-                            <option value="out_of_stock">Нет в наличии</option>
-                            <option value="customer_request">По просьбе покупателя</option>
-                            <option value="price_error">Ошибка в цене</option>
-                            <option value="delivery_issues">Проблемы с доставкой</option>
-                            <option value="other">Другая причина</option>
-                        </select>
-                    </div>
-                    <div id="otherReasonContainer" style="display: none; margin-top: 10px;">
-                        <label for="otherReason">Укажите причину:</label>
-                        <input type="text" id="otherReason" class="form-control" placeholder="Введите причину отмены">
+    renderOrderDetails(order, platform) {
+        if (platform === 'cdek') {
+            return `
+                <div class="order-details">
+                    <div class="detail-grid">
+                        <div class="detail-item">
+                            <span class="detail-label">Маршрут</span>
+                            <span class="detail-value">${order.fromCity} → ${order.toCity}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Вес</span>
+                            <span class="detail-value">${order.weight} кг</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Стоимость</span>
+                            <span class="detail-value">${formatCurrency(order.cost)}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Получатель</span>
+                            <span class="detail-value">${order.recipient}</span>
+                        </div>
                     </div>
                 </div>
-            `,
-            onConfirm: () => this.cancelOrder(orderId),
-            confirmText: 'Отменить заказ',
-            confirmClass: 'btn-danger',
-            showCancel: true,
-            cancelText: 'Назад'
-        });
-
-        document.getElementById('cancelReason').addEventListener('change', (e) => {
-            const otherContainer = document.getElementById('otherReasonContainer');
-            otherContainer.style.display = e.target.value === 'other' ? 'block' : 'none';
-        });
-    }
-
-    async cancelOrder(orderId) {
-        try {
-            const reason = document.getElementById('cancelReason').value;
-            let cancelReason = reason;
-            
-            if (reason === 'other') {
-                cancelReason = document.getElementById('otherReason').value;
-                if (!cancelReason.trim()) {
-                    this.showNotification('Укажите причину отмены', 'warning');
-                    return;
-                }
-            }
-
-            await this.megamarketService.cancelOrder(orderId, cancelReason);
-            this.showNotification('Заказ отменен', 'success');
-            ModalComponent.hide();
-            await this.loadOrders();
-        } catch (error) {
-            console.error('Error canceling order:', error);
-            this.showNotification('Ошибка отмены заказа', 'error');
-        }
-    }
-
-    async viewOrderDetails(orderId) {
-        try {
-            const orderInfo = await this.megamarketService.getOrderInfo(orderId);
-            this.showOrderDetailsModal(orderInfo);
-        } catch (error) {
-            console.error('Error fetching order details:', error);
-            this.showNotification('Ошибка загрузки деталей заказа', 'error');
-        }
-    }
-
-    showOrderDetailsModal(order) {
-        ModalComponent.show({
-            title: `Детали заказа #${order.id}`,
-            content: `
+            `;
+        } else {
+            return `
                 <div class="order-details">
-                    <div class="detail-section">
-                        <h4>Основная информация</h4>
-                        <div class="detail-row">
-                            <strong>Статус:</strong>
-                            <span class="status-badge status-${order.status}">${this.getStatusText(order.status)}</span>
+                    <div class="detail-grid">
+                        <div class="detail-item">
+                            <span class="detail-label">Клиент</span>
+                            <span class="detail-value">${order.customerName}</span>
                         </div>
-                        <div class="detail-row">
-                            <strong>Дата создания:</strong>
-                            <span>${new Date(order.created_date).toLocaleString('ru-RU')}</span>
+                        <div class="detail-item">
+                            <span class="detail-label">Телефон</span>
+                            <span class="detail-value">${order.customerPhone || 'Не указан'}</span>
                         </div>
-                        <div class="detail-row">
-                            <strong>Сумма заказа:</strong>
-                            <span class="order-amount-large">${order.total_amount ? `${order.total_amount.toLocaleString()} ₽` : '—'}</span>
+                        <div class="detail-item">
+                            <span class="detail-label">Сумма</span>
+                            <span class="detail-value">${formatCurrency(order.totalAmount)}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Адрес</span>
+                            <span class="detail-value">${order.deliveryAddress}</span>
                         </div>
                     </div>
+                </div>
+            `;
+        }
+    }
 
-                    <div class="detail-section">
-                        <h4>Товары в заказе</h4>
-                        <div class="order-items">
-                            ${order.items ? order.items.map(item => `
-                                <div class="order-item">
-                                    <div class="item-info">
-                                        <div class="item-name">${item.name}</div>
-                                        <div class="item-sku">Артикул: ${item.sku || '—'}</div>
-                                    </div>
-                                    <div class="item-details">
-                                        <div class="item-quantity">${item.quantity} шт.</div>
-                                        <div class="item-price">${item.price ? `${item.price.toLocaleString()} ₽` : '—'}</div>
-                                    </div>
-                                </div>
-                            `).join('') : '<p>Нет информации о товарах</p>'}
+    renderOrderItems(items) {
+        if (!items || items.length === 0) return '';
+        
+        const displayItems = items.slice(0, 3);
+        const hiddenCount = items.length - 3;
+        
+        return `
+            <div class="order-items">
+                <div class="items-header">
+                    <span class="items-title">Товары</span>
+                    <span class="items-count">${items.length} шт.</span>
+                </div>
+                <div class="items-list">
+                    ${displayItems.map(item => `
+                        <div class="order-item">
+                            <span class="item-name">${item.name}</span>
+                            <span class="item-quantity">${item.quantity} × ${formatCurrency(item.price)}</span>
                         </div>
-                    </div>
-
-                    ${order.delivery_info ? `
-                    <div class="detail-section">
-                        <h4>Информация о доставке</h4>
-                        <div class="detail-row">
-                            <strong>Адрес:</strong>
-                            <span>${order.delivery_info.address || '—'}</span>
+                    `).join('')}
+                    ${hiddenCount > 0 ? `
+                        <div class="order-item-more">
+                            +${hiddenCount} товар(ов)
                         </div>
-                        <div class="detail-row">
-                            <strong>Получатель:</strong>
-                            <span>${order.delivery_info.recipient || '—'}</span>
-                        </div>
-                    </div>
                     ` : ''}
                 </div>
-            `,
-            showConfirm: false,
-            cancelText: 'Закрыть',
-            size: 'large'
-        });
+            </div>
+        `;
     }
 
-    // Поиск и фильтрация
-    showSearchModal() {
-        ModalComponent.show({
-            title: 'Расширенный поиск заказов',
-            content: `
-                <div class="search-form">
-                    <div class="form-group">
-                        <label for="searchOrderId">ID заказа:</label>
-                        <input type="text" id="searchOrderId" class="form-control" placeholder="Введите ID заказа">
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="searchDateFrom">Дата с:</label>
-                            <input type="date" id="searchDateFrom" class="form-control">
-                        </div>
-                        <div class="form-group">
-                            <label for="searchDateTo">Дата по:</label>
-                            <input type="date" id="searchDateTo" class="form-control">
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label for="searchStatus">Статус:</label>
-                        <select id="searchStatus" class="form-control">
-                            <option value="">Все статусы</option>
-                            <option value="new">Новые</option>
-                            <option value="confirmed">Подтвержденные</option>
-                            <option value="packed">Упакованные</option>
-                            <option value="shipped">Отгруженные</option>
-                            <option value="delivered">Доставленные</option>
-                            <option value="cancelled">Отмененные</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="searchMinAmount">Минимальная сумма:</label>
-                        <input type="number" id="searchMinAmount" class="form-control" placeholder="0">
-                    </div>
-                    <div class="form-group">
-                        <label for="searchMaxAmount">Максимальная сумма:</label>
-                        <input type="number" id="searchMaxAmount" class="form-control" placeholder="100000">
-                    </div>
-                </div>
-            `,
-            onConfirm: () => this.performSearch(),
-            confirmText: 'Найти',
-            showCancel: true,
-            cancelText: 'Отмена'
-        });
-    }
-
-    async performSearch() {
-        try {
-            const orderId = document.getElementById('searchOrderId').value;
-            const dateFrom = document.getElementById('searchDateFrom').value;
-            const dateTo = document.getElementById('searchDateTo').value;
-            const status = document.getElementById('searchStatus').value;
-            const minAmount = document.getElementById('searchMinAmount').value;
-            const maxAmount = document.getElementById('searchMaxAmount').value;
-
-            const criteria = {};
-            if (orderId) criteria.order_id = orderId;
-            if (dateFrom) criteria.date_from = dateFrom;
-            if (dateTo) criteria.date_to = dateTo;
-            if (status) criteria.status = status;
-            if (minAmount) criteria.min_amount = parseFloat(minAmount);
-            if (maxAmount) criteria.max_amount = parseFloat(maxAmount);
-
-            this.orders = await this.megamarketService.searchOrders(criteria);
-            this.filteredOrders = [...this.orders];
-            this.currentPage = 1;
-            this.renderOrdersTable();
-            ModalComponent.hide();
-            this.showNotification(`Найдено ${this.orders.length} заказов`, 'success');
-        } catch (error) {
-            console.error('Error searching orders:', error);
-            this.showNotification('Ошибка поиска заказов', 'error');
-        }
-    }
-
-    applyFilters() {
-        const statusFilter = document.getElementById('filterStatus').value;
-        const dateFrom = document.getElementById('filterDateFrom').value;
-        const dateTo = document.getElementById('filterDateTo').value;
-
-        this.currentFilters = {
-            status: statusFilter,
-            dateFrom: dateFrom,
-            dateTo: dateTo
-        };
-
-        this.filteredOrders = this.orders.filter(order => {
-            let matches = true;
-
-            // Фильтр по статусу
-            if (statusFilter && order.status !== statusFilter) {
-                matches = false;
-            }
-
-            // Фильтр по дате
-            if (dateFrom) {
-                const orderDate = new Date(order.created_date).toISOString().split('T')[0];
-                if (orderDate < dateFrom) matches = false;
-            }
-
-            if (dateTo) {
-                const orderDate = new Date(order.created_date).toISOString().split('T')[0];
-                if (orderDate > dateTo) matches = false;
-            }
-
-            return matches;
-        });
-
-        this.currentPage = 1;
-        this.renderOrdersTable();
-    }
-
-    clearFilters() {
-        document.getElementById('filterStatus').value = '';
-        document.getElementById('filterDateFrom').value = '';
-        document.getElementById('filterDateTo').value = '';
+    // Фильтрация и сортировка
+    getFilteredOrders(orders) {
+        let filtered = [...orders];
         
-        this.currentFilters = {};
-        this.filteredOrders = [...this.orders];
-        this.currentPage = 1;
-        this.renderOrdersTable();
-        this.showNotification('Фильтры сброшены', 'success');
-    }
-
-    toggleFilters() {
-        const filtersElement = document.getElementById('ordersFilters');
-        if (filtersElement) {
-            const isVisible = filtersElement.style.display !== 'none';
-            filtersElement.style.display = isVisible ? 'none' : 'block';
+        if (this.filters.status !== 'all') {
+            filtered = filtered.filter(order => order.status === this.filters.status);
         }
-    }
-
-    // Сортировка
-    sortOrders(field) {
-        this.filteredOrders.sort((a, b) => {
-            switch (field) {
-                case 'id':
-                    return a.id.localeCompare(b.id);
-                case 'date':
-                    return new Date(a.created_date) - new Date(b.created_date);
-                case 'status':
-                    return a.status.localeCompare(b.status);
-                case 'amount':
-                    return (a.total_amount || 0) - (b.total_amount || 0);
-                default:
-                    return 0;
-            }
-        });
-
-        this.currentSortField = field;
-        this.currentSortDirection = this.currentSortDirection === 'asc' ? 'desc' : 'asc';
         
-        if (this.currentSortDirection === 'desc') {
-            this.filteredOrders.reverse();
+        if (this.filters.search) {
+            const searchTerm = this.filters.search.toLowerCase();
+            filtered = filtered.filter(order => 
+                (order.trackingNumber && order.trackingNumber.toLowerCase().includes(searchTerm)) ||
+                (order.orderNumber && order.orderNumber.toLowerCase().includes(searchTerm)) ||
+                (order.customerName && order.customerName.toLowerCase().includes(searchTerm)) ||
+                (order.recipient && order.recipient.toLowerCase().includes(searchTerm)) ||
+                (order.fromCity && order.fromCity.toLowerCase().includes(searchTerm)) ||
+                (order.toCity && order.toCity.toLowerCase().includes(searchTerm))
+            );
         }
-
-        this.renderOrdersTable();
+        
+        // Сортировка
+        filtered.sort((a, b) => {
+            let aValue = a[this.sortField];
+            let bValue = b[this.sortField];
+            
+            if (this.sortField === 'createdDate') {
+                aValue = new Date(aValue);
+                bValue = new Date(bValue);
+            }
+            
+            if (aValue < bValue) return this.sortDirection === 'asc' ? -1 : 1;
+            if (aValue > bValue) return this.sortDirection === 'asc' ? 1 : -1;
+            return 0;
+        });
+        
+        return filtered;
     }
 
-    updateSortIndicators() {
-        if (!this.currentSortField) return;
+    getPaginatedOrders(orders) {
+        const startIndex = (this.currentPage - 1) * this.itemsPerPage;
+        return orders.slice(startIndex, startIndex + this.itemsPerPage);
+    }
 
-        const headers = document.querySelectorAll('.orders-table th[data-sort]');
-        headers.forEach(header => {
-            const indicator = header.querySelector('.sort-indicator');
-            if (header.dataset.sort === this.currentSortField) {
-                indicator.textContent = this.currentSortDirection === 'asc' ? ' ↑' : ' ↓';
-            } else {
-                indicator.textContent = '';
-            }
-        });
+    // Управление фильтрами
+    setStatusFilter(status) {
+        this.filters.status = status;
+        this.currentPage = 1;
+        this.render();
+    }
+
+    setSearchFilter(searchTerm) {
+        this.filters.search = searchTerm;
+        this.currentPage = 1;
+        this.render();
+    }
+
+    setSortField(field) {
+        this.sortField = field;
+        this.render();
+    }
+
+    toggleSortDirection() {
+        this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+        this.render();
     }
 
     // Пагинация
+    renderPagination(totalItems) {
+        const totalPages = Math.ceil(totalItems / this.itemsPerPage);
+        if (totalPages <= 1) return '';
+
+        return `
+            <div class="pagination">
+                <button class="pagination-btn ${this.currentPage === 1 ? 'disabled' : ''}" 
+                        onclick="app.ordersComponent.previousPage()" ${this.currentPage === 1 ? 'disabled' : ''}>
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                
+                <div class="pagination-info">
+                    Страница ${this.currentPage} из ${totalPages}
+                </div>
+                
+                <button class="pagination-btn ${this.currentPage === totalPages ? 'disabled' : ''}" 
+                        onclick="app.ordersComponent.nextPage()" ${this.currentPage === totalPages ? 'disabled' : ''}>
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+        `;
+    }
+
+    goToPage(page) {
+        this.currentPage = page;
+        this.renderOrdersList();
+    }
+
     previousPage() {
         if (this.currentPage > 1) {
             this.currentPage--;
-            this.renderOrdersTable();
+            this.renderOrdersList();
         }
     }
 
     nextPage() {
-        const totalPages = Math.ceil(this.filteredOrders.length / this.ordersPerPage);
+        const totalItems = this.getFilteredOrders(this.app.getPlatformOrders(this.app.currentPlatform)).length;
+        const totalPages = Math.ceil(totalItems / this.itemsPerPage);
+        
         if (this.currentPage < totalPages) {
             this.currentPage++;
-            this.renderOrdersTable();
+            this.renderOrdersList();
         }
     }
 
-    goToPage(page) {
-        const totalPages = Math.ceil(this.filteredOrders.length / this.ordersPerPage);
-        if (page >= 1 && page <= totalPages) {
-            this.currentPage = page;
-            this.renderOrdersTable();
+    renderOrdersList() {
+        const container = document.getElementById('orders-list');
+        if (!container) return;
+
+        const orders = this.app.getPlatformOrders(this.app.currentPlatform);
+        const filteredOrders = this.getFilteredOrders(orders);
+        const paginatedOrders = this.getPaginatedOrders(filteredOrders);
+        
+        container.innerHTML = this.renderOrdersListContent(paginatedOrders, this.app.currentPlatform);
+        
+        const paginationContainer = container.parentElement.querySelector('.pagination');
+        if (paginationContainer) {
+            paginationContainer.outerHTML = this.renderPagination(filteredOrders.length);
         }
+    }
+
+    // Детали заказа
+    async showOrderDetails(platform, orderId) {
+        try {
+            this.app.showLoading('Загрузка деталей заказа...');
+            
+            let orderDetails;
+            if (platform === 'cdek') {
+                orderDetails = await CDEKService.getOrderDetails(orderId);
+            } else {
+                orderDetails = await MegamarketService.getOrderDetails(orderId);
+            }
+            
+            this.app.modal.showOrderDetails(orderDetails, platform);
+        } catch (error) {
+            console.error('Error loading order details:', error);
+            this.app.showError('Ошибка загрузки деталей заказа');
+        } finally {
+            this.app.hideLoading();
+        }
+    }
+
+    // Быстрые действия
+    quickAction(platform, orderId) {
+        const order = this.app.getOrderById(platform, orderId);
+        if (!order) return;
+
+        const actions = {
+            cdek: {
+                'new': 'Принять в обработку',
+                'active': 'Отследить отправление',
+                'problem': 'Решить проблему'
+            },
+            megamarket: {
+                'new': 'Подтвердить заказ',
+                'processing': 'Упаковать заказ',
+                'shipped': 'Отметить доставленным'
+            }
+        };
+
+        const action = actions[platform]?.[order.status];
+        if (action) {
+            this.app.showNotification(`${action}: ${orderId}`, 'info');
+        }
+    }
+
+    // Экспорт заказов
+    exportOrders(platform) {
+        const orders = this.app.getPlatformOrders(platform);
+        const filteredOrders = this.getFilteredOrders(orders);
+        
+        const exportData = {
+            platform: platform,
+            exportedAt: new Date().toISOString(),
+            filters: this.filters,
+            totalOrders: filteredOrders.length,
+            orders: filteredOrders
+        };
+        
+        this.downloadJSON(exportData, `texno-edem-${platform}-${new Date().toISOString().split('T')[0]}.json`);
+        this.app.showNotification(`Экспортировано ${filteredOrders.length} заказов`, 'success');
+    }
+
+    downloadJSON(data, filename) {
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
     }
 
     // Вспомогательные методы
-    async refreshOrders() {
-        await this.loadOrders();
-        this.showNotification('Заказы обновлены', 'success');
-    }
-
-    updateOrdersCounter() {
-        const counter = document.querySelector('.orders-counter');
-        if (counter) {
-            counter.textContent = `${this.filteredOrders.length} заказов`;
-        }
-    }
-
-    getStatusText(status) {
-        const statusMap = {
-            'new': 'Новый',
-            'confirmed': 'Подтвержден',
-            'packed': 'Упакован',
-            'shipped': 'Отгружен',
-            'delivered': 'Доставлен',
-            'cancelled': 'Отменен'
+    getFallbackStatusConfig(status) {
+        const fallbackConfigs = {
+            'new': { text: 'Новый', color: '#3b82f6' },
+            'processing': { text: 'В обработке', color: '#f59e0b' },
+            'active': { text: 'Активный', color: '#8b5cf6' },
+            'shipped': { text: 'Отправлен', color: '#6366f1' },
+            'delivered': { text: 'Доставлен', color: '#10b981' },
+            'problem': { text: 'Проблема', color: '#ef4444' },
+            'cancelled': { text: 'Отменен', color: '#6b7280' }
         };
-        return statusMap[status] || status;
-    }
-
-    showNotification(message, type = 'info') {
-        // Используем существующую систему уведомлений
-        if (window.Notifications) {
-            Notifications.show(message, type);
-        } else {
-            // Fallback уведомление
-            console.log(`${type}: ${message}`);
-        }
-    }
-
-    setupEventListeners() {
-        // Глобальные обработчики событий
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                const filtersElement = document.getElementById('ordersFilters');
-                if (filtersElement && filtersElement.style.display !== 'none') {
-                    this.toggleFilters();
-                }
-            }
-        });
-    }
-
-    setupFilters() {
-        // Устанавливаем даты по умолчанию для фильтров
-        const today = new Date().toISOString().split('T')[0];
-        const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
         
-        setTimeout(() => {
-            const dateFrom = document.getElementById('filterDateFrom');
-            const dateTo = document.getElementById('filterDateTo');
-            
-            if (dateFrom && !dateFrom.value) dateFrom.value = weekAgo;
-            if (dateTo && !dateTo.value) dateTo.value = today;
-        }, 100);
+        return fallbackConfigs[status] || { text: status, color: '#6b7280' };
+    }
+
+    // Недавняя активность для дашборда
+    renderRecentActivity() {
+        const container = document.getElementById('recent-activity');
+        if (!container) return;
+
+        const recentOrders = this.app.orders.all
+            .slice(0, 6)
+            .sort((a, b) => new Date(b.createdDate) - new Date(a.createdDate));
+        
+        container.innerHTML = `
+            <div class="recent-activity-card">
+                <div class="card-header">
+                    <h3>Недавняя активность</h3>
+                    <div class="card-actions">
+                        <button class="btn btn-outline btn-sm" onclick="app.showSection('orders', 'cdek')">
+                            CDEK
+                        </button>
+                        <button class="btn btn-outline btn-sm" onclick="app.showSection('orders', 'megamarket')">
+                            Мегамаркет
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="activity-list">
+                    ${recentOrders.map(order => this.renderActivityItem(order)).join('')}
+                    
+                    ${recentOrders.length === 0 ? `
+                        <div class="empty-activity">
+                            <i class="fas fa-clock"></i>
+                            <p>Нет недавней активности</p>
+                        </div>
+                    ` : ''}
+                </div>
+            </div>
+        `;
+    }
+
+    renderActivityItem(order) {
+        const platformConfig = this.getPlatformConfig(order.platform);
+        const statusConfig = CONFIG.STATUSES[order.platform.toUpperCase()]?.[order.statusCode] || 
+                           this.getFallbackStatusConfig(order.status);
+        
+        return `
+            <div class="activity-item" onclick="app.ordersComponent.showOrderDetails('${order.platform}', '${order.id}')">
+                <div class="activity-icon platform-${order.platform}" style="background: ${statusConfig.color}">
+                    <i class="fas fa-${platformConfig.icon}"></i>
+                </div>
+                
+                <div class="activity-content">
+                    <div class="activity-title">
+                        ${order.platform === 'cdek' ? order.trackingNumber : `Заказ #${order.orderNumber}`}
+                    </div>
+                    <div class="activity-description">
+                        ${order.platform === 'cdek' ? 
+                            `${order.fromCity} → ${order.toCity}` : 
+                            order.customerName
+                        }
+                    </div>
+                    <div class="activity-meta">
+                        <span class="activity-time">${formatRelativeTime(order.createdDate)}</span>
+                        <span class="activity-platform">${platformConfig.name}</span>
+                    </div>
+                </div>
+                
+                <div class="activity-status" style="color: ${statusConfig.color}">
+                    ${statusConfig.text}
+                </div>
+            </div>
+        `;
+    }
+
+    debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
     }
 }
-
-// Глобальный экземпляр для обработчиков событий
-window.ordersComponent = null;
