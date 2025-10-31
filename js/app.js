@@ -1,4 +1,3 @@
-
 // Основной файл приложения TEXNO EDEM
 class TexnoEdemApp {
     constructor() {
