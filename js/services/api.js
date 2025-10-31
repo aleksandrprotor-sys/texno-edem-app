@@ -9,6 +9,7 @@ class ApiService {
             ...config
         };
         this.authToken = null;
+        this.requestQueue = new Map();
     }
 
     setAuthToken(token) {
@@ -16,6 +17,13 @@ class ApiService {
     }
 
     async request(endpoint, options = {}) {
+        const requestKey = `${endpoint}-${JSON.stringify(options)}`;
+        
+        // Проверяем есть ли уже такой запрос в процессе
+        if (this.requestQueue.has(requestKey)) {
+            return this.requestQueue.get(requestKey);
+        }
+
         const url = `${this.baseURL}${endpoint}`;
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), this.config.timeout);
@@ -36,18 +44,38 @@ class ApiService {
             signal: controller.signal
         };
 
+        if (config.body && typeof config.body === 'object') {
+            config.body = JSON.stringify(config.body);
+        }
+
+        const requestPromise = this.makeRequest(url, config, timeoutId, requestKey);
+        this.requestQueue.set(requestKey, requestPromise);
+
         try {
+            return await requestPromise;
+        } finally {
+            this.requestQueue.delete(requestKey);
+        }
+    }
+
+    async makeRequest(url, config, timeoutId, requestKey) {
+        try {
+            const startTime = Date.now();
             const response = await fetch(url, config);
             clearTimeout(timeoutId);
+
+            const duration = Date.now() - startTime;
+            console.log(`🌐 API ${config.method} ${url} - ${response.status} (${duration}ms)`);
 
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
 
-            return await response.json();
+            const data = await response.json();
+            return data;
         } catch (error) {
             clearTimeout(timeoutId);
-            throw this.handleError(error);
+            throw this.handleError(error, url);
         }
     }
 
@@ -56,6 +84,7 @@ class ApiService {
             return await this.request(endpoint, options);
         } catch (error) {
             if (retries > 0 && this.shouldRetry(error)) {
+                console.log(`🔄 Retrying request (${retries} attempts left)...`);
                 await this.delay(this.config.retryDelay);
                 return this.requestWithRetry(endpoint, options, retries - 1);
             }
@@ -64,7 +93,6 @@ class ApiService {
     }
 
     shouldRetry(error) {
-        // Повторяем запрос при сетевых ошибках и 5xx статусах
         return error.name === 'AbortError' || 
                error.message.includes('Network') ||
                (error.status >= 500 && error.status < 600);
@@ -98,14 +126,14 @@ class ApiService {
     async post(endpoint, data = {}) {
         return this.requestWithRetry(endpoint, {
             method: 'POST',
-            body: JSON.stringify(data)
+            body: data
         });
     }
 
     async put(endpoint, data = {}) {
         return this.requestWithRetry(endpoint, {
             method: 'PUT',
-            body: JSON.stringify(data)
+            body: data
         });
     }
 
@@ -114,17 +142,29 @@ class ApiService {
             method: 'DELETE'
         });
     }
+
+    // Отмена всех запросов
+    cancelAllRequests() {
+        this.requestQueue.forEach((promise, key) => {
+            // Можно добавить логику отмены если нужно
+            this.requestQueue.delete(key);
+        });
+    }
 }
 
 // Менеджер кэширования
 class CacheManager {
     constructor() {
         this.cache = new Map();
+        this.defaultTTL = 300000; // 5 минут
     }
 
-    set(key, data, ttl = 300000) { // 5 минут по умолчанию
+    set(key, data, ttl = this.defaultTTL) {
         const expiry = Date.now() + ttl;
         this.cache.set(key, { data, expiry });
+        
+        // Автоматическая очистка просроченных записей
+        this.cleanup();
     }
 
     get(key) {
@@ -147,6 +187,19 @@ class CacheManager {
     clear() {
         this.cache.clear();
     }
+
+    cleanup() {
+        const now = Date.now();
+        for (const [key, item] of this.cache.entries()) {
+            if (now > item.expiry) {
+                this.cache.delete(key);
+            }
+        }
+    }
+
+    getSize() {
+        return this.cache.size;
+    }
 }
 
 // Глобальный менеджер API
@@ -155,7 +208,6 @@ class ApiManager {
         this.services = new Map();
         this.cache = new CacheManager();
         this.isOnline = navigator.onLine;
-        
         this.setupOnlineHandler();
     }
 
@@ -170,10 +222,13 @@ class ApiManager {
     async makeRequest(serviceName, endpoint, options = {}) {
         const cacheKey = `${serviceName}:${endpoint}:${JSON.stringify(options)}`;
         
-        // Пробуем получить из кэша
-        if (options.method === 'GET') {
+        // Пробуем получить из кэша для GET запросов
+        if (options.method === 'GET' || !options.method) {
             const cached = this.cache.get(cacheKey);
-            if (cached) return cached;
+            if (cached) {
+                console.log('📦 Returning cached data for:', cacheKey);
+                return cached;
+            }
         }
 
         const service = this.getService(serviceName);
@@ -185,17 +240,17 @@ class ApiManager {
             const data = await service.requestWithRetry(endpoint, options);
             
             // Кэшируем успешные GET запросы
-            if (options.method === 'GET') {
+            if (options.method === 'GET' || !options.method) {
                 this.cache.set(cacheKey, data);
             }
             
             return data;
         } catch (error) {
             // Пробуем вернуть закэшированные данные при ошибке
-            if (options.method === 'GET') {
+            if (options.method === 'GET' || !options.method) {
                 const cached = this.cache.get(cacheKey);
                 if (cached) {
-                    console.warn('Returning cached data due to API error');
+                    console.warn('⚠️ Returning cached data due to API error');
                     return cached;
                 }
             }
@@ -207,16 +262,26 @@ class ApiManager {
         window.addEventListener('online', () => {
             this.isOnline = true;
             this.dispatchEvent(new CustomEvent('apiOnline'));
+            console.log('🌐 Online - API available');
         });
 
         window.addEventListener('offline', () => {
             this.isOnline = false;
             this.dispatchEvent(new CustomEvent('apiOffline'));
+            console.warn('📵 Offline - API unavailable');
         });
     }
 
     clearCache() {
         this.cache.clear();
+        console.log('🧹 API cache cleared');
+    }
+
+    getCacheStats() {
+        return {
+            size: this.cache.getSize(),
+            isOnline: this.isOnline
+        };
     }
 }
 
