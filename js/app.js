@@ -2,25 +2,34 @@
 class TexnoEdemApp {
     constructor() {
         this.currentSection = 'dashboard';
-        this.currentPlatform = 'all';
-        this.orders = [];
+        this.currentPlatform = null;
+        this.orders = {
+            cdek: [],
+            megamarket: [],
+            all: []
+        };
         this.analytics = {};
         this.settings = {};
+        this.user = null;
         
-        // Флаги для предотвращения бесконечных циклов
+        // Флаги для управления состоянием
         this.isLoading = false;
         this.isSyncing = false;
+        this.isInitialized = false;
         this.lastSyncTime = null;
-        this.lastRenderTime = null;
         this.notificationCount = 0;
-        this.maxNotifications = 3;
+        this.maxNotifications = 2;
+        
+        // Кэш для оптимизации
+        this.cache = new Map();
+        this.cacheTimeout = 300000; // 5 минут
         
         this.init();
     }
 
     async init() {
         try {
-            this.showLoading();
+            this.showLoading('Инициализация приложения...');
             
             // Инициализация Telegram Web App
             await this.initTelegram();
@@ -37,11 +46,14 @@ class TexnoEdemApp {
             // Настройка периодической синхронизации
             this.setupAutoSync();
             
+            this.isInitialized = true;
             this.hideLoading();
             
-            console.log('TEXNO EDEM App initialized successfully');
+            console.log('🎯 TEXNO EDEM App initialized successfully');
+            this.showNotification('Приложение готово к работе', 'success');
+            
         } catch (error) {
-            console.error('App initialization failed:', error);
+            console.error('❌ App initialization failed:', error);
             this.showError('Ошибка инициализации приложения');
             this.hideLoading();
         }
@@ -52,6 +64,12 @@ class TexnoEdemApp {
             this.tg = Telegram.WebApp;
             this.tg.expand();
             this.tg.enableClosingConfirmation();
+            this.tg.BackButton.show();
+            
+            // Обработка кнопки назад
+            this.tg.BackButton.onClick(() => {
+                this.handleBackButton();
+            });
             
             // Настройка темы
             this.setupTelegramTheme();
@@ -67,6 +85,15 @@ class TexnoEdemApp {
                     language: user.language_code
                 };
             }
+        } else {
+            // Режим разработки - mock пользователь
+            this.user = {
+                id: 1,
+                firstName: 'Демо',
+                lastName: 'Пользователь',
+                username: 'demo_user',
+                language: 'ru'
+            };
         }
     }
 
@@ -76,20 +103,36 @@ class TexnoEdemApp {
         const theme = this.tg.colorScheme;
         document.documentElement.setAttribute('data-theme', theme);
         
-        // Слушатель изменения темы
         this.tg.onEvent('themeChanged', () => {
             document.documentElement.setAttribute('data-theme', this.tg.colorScheme);
         });
     }
 
-    async loadConfig() {
-        // Загрузка конфигурации из localStorage или сервера
-        const savedConfig = localStorage.getItem('texno_edem_config');
-        if (savedConfig) {
-            this.config = { ...CONFIG, ...JSON.parse(savedConfig) };
+    handleBackButton() {
+        if (this.currentSection !== 'dashboard') {
+            this.showSection('dashboard');
         } else {
+            this.tg.close();
+        }
+    }
+
+    async loadConfig() {
+        try {
+            const savedConfig = localStorage.getItem('texno_edem_config');
+            if (savedConfig) {
+                this.config = { ...CONFIG, ...JSON.parse(savedConfig) };
+            } else {
+                this.config = CONFIG;
+                this.saveConfig();
+            }
+        } catch (error) {
+            console.error('Error loading config:', error);
             this.config = CONFIG;
         }
+    }
+
+    saveConfig() {
+        localStorage.setItem('texno_edem_config', JSON.stringify(this.config));
     }
 
     async initComponents() {
@@ -98,6 +141,7 @@ class TexnoEdemApp {
         this.navigation = new NavigationComponent(this);
         this.analyticsComponent = new AnalyticsComponent(this);
         this.ordersComponent = new OrdersComponent(this);
+        this.settingsComponent = new SettingsComponent(this);
         this.modal = new ModalComponent(this);
         this.notifications = new NotificationComponent();
         
@@ -107,32 +151,25 @@ class TexnoEdemApp {
     }
 
     async loadInitialData() {
-        // Защита от повторных вызовов
-        if (this.isLoading) {
-            console.log('Load already in progress, skipping...');
-            return;
-        }
+        if (this.isLoading) return;
         
         this.isLoading = true;
-        this.showLoading();
+        this.showLoading('Загрузка данных...');
         
         try {
+            // Параллельная загрузка данных
             await Promise.all([
                 this.loadOrders(),
                 this.loadAnalytics(),
-                this.loadSettings()
+                this.loadUserSettings()
             ]);
             
             this.updateDashboard();
+            console.log('✅ Initial data loaded successfully');
             
-            // Показываем уведомление только при первой загрузке
-            if (this.notificationCount === 0) {
-                this.showNotification('Данные успешно загружены', 'success');
-                this.notificationCount++;
-            }
         } catch (error) {
             console.error('Error loading initial data:', error);
-            this.showError('Ошибка загрузки данных');
+            throw error;
         } finally {
             this.isLoading = false;
             this.hideLoading();
@@ -140,219 +177,310 @@ class TexnoEdemApp {
     }
 
     async loadOrders() {
-        // Защита от множественных вызовов
-        if (this.isLoadingOrders) {
-            console.log('Orders load already in progress');
+        const cacheKey = 'orders_data';
+        const cached = this.getCachedData(cacheKey);
+        
+        if (cached && !this.config.SETTINGS.FORCE_REFRESH) {
+            this.orders = cached;
+            console.log('📦 Orders loaded from cache');
             return;
         }
-        
-        this.isLoadingOrders = true;
+
+        this.showLoading('Загрузка заказов...', 30);
         
         try {
-            const [cdekOrders, megamarketOrders] = await Promise.all([
-                CDEKService.getOrders(),
-                MegamarketService.getOrders()
+            const [cdekOrders, megamarketOrders] = await Promise.allSettled([
+                this.loadCDEKOrders(),
+                this.loadMegamarketOrders()
             ]);
+
+            this.orders.cdek = cdekOrders.status === 'fulfilled' ? cdekOrders.value : [];
+            this.orders.megamarket = megamarketOrders.status === 'fulfilled' ? megamarketOrders.value : [];
+            this.orders.all = [...this.orders.cdek, ...this.orders.megamarket]
+                .sort((a, b) => new Date(b.createdDate) - new Date(a.createdDate));
+
+            // Кэшируем данные
+            this.setCachedData(cacheKey, this.orders);
             
-            this.orders = {
-                cdek: cdekOrders,
-                megamarket: megamarketOrders,
-                all: [...cdekOrders, ...megamarketOrders].sort((a, b) => 
-                    new Date(b.createdDate) - new Date(a.createdDate)
-                )
-            };
-            
-            // Обновляем компонент заказов только если он активен
-            if (this.currentSection === 'orders' || this.currentSection === 'dashboard') {
-                this.ordersComponent.render();
-            }
+            this.updateLoadingProgress(60);
+            console.log(`✅ Orders loaded: CDEK ${this.orders.cdek.length}, Megamarket ${this.orders.megamarket.length}`);
+
         } catch (error) {
             console.error('Error loading orders:', error);
-            throw error;
-        } finally {
-            this.isLoadingOrders = false;
+            // Используем mock данные в случае ошибки
+            this.orders.cdek = mockDataGenerator.generateCDEKOrders(8);
+            this.orders.megamarket = mockDataGenerator.generateMegamarketOrders(12);
+            this.orders.all = [...this.orders.cdek, ...this.orders.megamarket];
+            this.showNotification('Используются демо-данные', 'warning');
+        }
+    }
+
+    async loadCDEKOrders() {
+        if (!this.config.API.CDEK.ENABLED) {
+            return mockDataGenerator.generateCDEKOrders(8);
+        }
+        
+        try {
+            const orders = await CDEKService.getOrders();
+            return Array.isArray(orders) ? orders : [];
+        } catch (error) {
+            console.error('CDEK API error:', error);
+            return mockDataGenerator.generateCDEKOrders(8);
+        }
+    }
+
+    async loadMegamarketOrders() {
+        if (!this.config.API.MEGAMARKET.ENABLED) {
+            return mockDataGenerator.generateMegamarketOrders(12);
+        }
+        
+        try {
+            const orders = await MegamarketService.getOrders();
+            return Array.isArray(orders) ? orders : [];
+        } catch (error) {
+            console.error('Megamarket API error:', error);
+            return mockDataGenerator.generateMegamarketOrders(12);
         }
     }
 
     async loadAnalytics() {
+        this.updateLoadingProgress(80);
+        
         try {
             const analyticsData = await AnalyticsComponent.calculateAnalytics(this.orders);
             this.analytics = analyticsData;
-            
-            // Обновляем компонент аналитики только если он активен
-            if (this.currentSection === 'analytics' || this.currentSection === 'dashboard') {
-                this.analyticsComponent.render();
-            }
+            console.log('📊 Analytics calculated');
         } catch (error) {
             console.error('Error loading analytics:', error);
-            throw error;
+            this.analytics = mockDataGenerator.generateAnalyticsData();
         }
     }
 
-    async loadSettings() {
-        // Загрузка настроек из localStorage
-        const savedSettings = localStorage.getItem('texno_edem_settings');
-        this.settings = savedSettings ? JSON.parse(savedSettings) : {};
+    async loadUserSettings() {
+        try {
+            const savedSettings = localStorage.getItem('texno_edem_settings');
+            this.settings = savedSettings ? JSON.parse(savedSettings) : this.getDefaultSettings();
+        } catch (error) {
+            console.error('Error loading settings:', error);
+            this.settings = this.getDefaultSettings();
+        }
+    }
+
+    getDefaultSettings() {
+        return {
+            notifications: {
+                newOrders: true,
+                problemOrders: true,
+                syncComplete: false
+            },
+            appearance: {
+                theme: 'auto',
+                compactMode: false
+            },
+            sync: {
+                autoSync: true,
+                syncInterval: 10
+            }
+        };
     }
 
     setupAutoSync() {
-        // Автоматическая синхронизация только если включено в настройках
-        if (this.config.SETTINGS.AUTO_SYNC) {
-            console.log('Auto-sync enabled, interval:', this.config.SYNC_INTERVAL);
+        if (this.settings.sync?.autoSync) {
+            const interval = (this.settings.sync.syncInterval || 10) * 60 * 1000;
+            
             this.syncInterval = setInterval(() => {
-                this.syncData(false); // false = авто-синхронизация
-            }, this.config.SYNC_INTERVAL);
+                this.syncData(false);
+            }, interval);
+            
+            console.log(`🔄 Auto-sync enabled: ${interval}ms`);
         }
         
-        // Синхронизация при возвращении на вкладку (с задержкой)
+        // Синхронизация при возвращении на вкладку
         document.addEventListener('visibilitychange', () => {
-            if (!document.hidden && !this.isSyncing) {
-                // Добавляем задержку чтобы избежать множественных вызовов
-                setTimeout(() => {
-                    this.syncData(false); // false = авто-синхронизация
-                }, 2000);
+            if (!document.hidden && !this.isSyncing && this.isInitialized) {
+                setTimeout(() => this.syncData(false), 1000);
             }
         });
     }
 
     async syncData(isManual = false) {
-        // Защита от множественных одновременных синхронизаций
         if (this.isSyncing) {
-            console.log('Sync already in progress, skipping...');
+            if (isManual) {
+                this.showNotification('Синхронизация уже выполняется', 'info');
+            }
             return;
         }
         
         this.isSyncing = true;
-        console.log('Starting sync...', isManual ? 'manual' : 'auto');
+        const startTime = Date.now();
         
         try {
             await this.loadOrders();
             await this.loadAnalytics();
             this.lastSyncTime = new Date();
             
-            // Показываем уведомление только при ручной синхронизации или если не превышен лимит
+            const syncDuration = Date.now() - startTime;
+            
             if (isManual) {
-                this.showNotification(`Данные обновлены ${formatDateTime(this.lastSyncTime)}`, 'success');
+                this.showNotification(`Данные обновлены за ${syncDuration}ms`, 'success');
             } else if (this.notificationCount < this.maxNotifications) {
-                // Для авто-синхронизации показываем только первые несколько уведомлений
-                this.showNotification(`Данные автоматически обновлены`, 'info');
+                this.showNotification('Данные автоматически обновлены', 'info');
                 this.notificationCount++;
             }
             
+            this.header.updateSyncStatus();
+            console.log(`✅ Sync completed in ${syncDuration}ms`);
+            
         } catch (error) {
             console.error('Sync failed:', error);
-            // Показываем ошибку только при ручной синхронизации
             if (isManual) {
-                this.showError('Ошибка синхронизации данных');
+                this.showError('Ошибка синхронизации');
             }
         } finally {
             this.isSyncing = false;
-            console.log('Sync completed');
         }
     }
 
     // Навигация
-    showSection(sectionId) {
-        // Защита от повторных кликов
-        if (this.currentSection === sectionId && Date.now() - (this.lastSectionChange || 0) < 500) {
+    showSection(sectionId, platform = null) {
+        // Оптимизация: предотвращение лишних рендеров
+        if (this.currentSection === sectionId && this.currentPlatform === platform) {
             return;
         }
         
-        this.lastSectionChange = Date.now();
+        const previousSection = this.currentSection;
+        this.currentSection = sectionId;
+        this.currentPlatform = platform;
         
-        // Скрыть все секции
+        // Обновление навигации
+        this.navigation.updateActiveNav(sectionId, platform);
+        
+        // Обновление кнопки "Назад" в Telegram
+        if (this.tg) {
+            if (sectionId === 'dashboard') {
+                this.tg.BackButton.hide();
+            } else {
+                this.tg.BackButton.show();
+            }
+        }
+        
+        // Скрытие всех секций
         document.querySelectorAll('.section').forEach(section => {
             section.classList.remove('active');
         });
         
-        // Показать выбранную секцию
+        // Показ активной секции
         const targetSection = document.getElementById(`${sectionId}-section`);
         if (targetSection) {
             targetSection.classList.add('active');
-            this.currentSection = sectionId;
-            
-            // Обновить навигацию
-            this.navigation.updateActiveNav(sectionId);
-            
-            // Загрузить данные секции если нужно
-            this.loadSectionData(sectionId);
+            this.loadSectionData(sectionId, platform, previousSection);
         }
     }
 
-    loadSectionData(sectionId) {
-        // Задержка для предотвращения множественных рендеров
-        if (this.sectionLoadTimeout) {
-            clearTimeout(this.sectionLoadTimeout);
-        }
-        
-        this.sectionLoadTimeout = setTimeout(() => {
+    loadSectionData(sectionId, platform, previousSection) {
+        // Задержка для анимации перехода
+        setTimeout(() => {
             switch (sectionId) {
                 case 'dashboard':
                     this.updateDashboard();
                     break;
                 case 'orders':
-                    this.ordersComponent.render();
+                    this.ordersComponent.render(platform);
                     break;
                 case 'analytics':
                     this.analyticsComponent.render();
                     break;
                 case 'settings':
-                    this.renderSettings();
+                    this.settingsComponent.render();
                     break;
             }
-        }, 100);
-    }
-
-    updateDashboard() {
-        // Защита от множественных обновлений
-        if (this.dashboardUpdateTimeout) {
-            clearTimeout(this.dashboardUpdateTimeout);
-        }
-        
-        this.dashboardUpdateTimeout = setTimeout(() => {
-            this.analyticsComponent.renderOverview();
-            this.analyticsComponent.renderPlatformComparison();
-            this.ordersComponent.renderRecentActivity();
-        }, 150);
-    }
-
-    // Платформы
-    setPlatform(platform) {
-        // Защита от повторных кликов
-        if (this.currentPlatform === platform && Date.now() - (this.lastPlatformChange || 0) < 300) {
-            return;
-        }
-        
-        this.lastPlatformChange = Date.now();
-        this.currentPlatform = platform;
-        
-        // Задержка для предотвращения мерцания
-        setTimeout(() => {
-            this.ordersComponent.render();
         }, 50);
     }
 
-    // Утилиты
-    showLoading() {
+    updateDashboard() {
+        if (!this.analyticsComponent) return;
+        
+        this.analyticsComponent.renderOverview();
+        this.analyticsComponent.renderPlatformComparison();
+        this.ordersComponent.renderRecentActivity();
+        this.updateQuickStats();
+    }
+
+    updateQuickStats() {
+        const stats = {
+            totalOrders: this.orders.all.length,
+            cdekActive: this.orders.cdek.filter(o => o.status === 'active').length,
+            megamarketNew: this.orders.megamarket.filter(o => o.status === 'new').length,
+            problemOrders: this.orders.all.filter(o => o.status === 'problem').length
+        };
+        
+        // Обновляем виджеты на дашборде
+        document.getElementById('cdek-active').textContent = stats.cdekActive;
+        document.getElementById('megamarket-new').textContent = stats.megamarketNew;
+    }
+
+    // Кэширование данных
+    getCachedData(key) {
+        const cached = this.cache.get(key);
+        if (cached && Date.now() - cached.timestamp < this.cacheTimeout) {
+            return cached.data;
+        }
+        return null;
+    }
+
+    setCachedData(key, data) {
+        this.cache.set(key, {
+            data: data,
+            timestamp: Date.now()
+        });
+    }
+
+    clearCache() {
+        this.cache.clear();
+        console.log('🧹 Cache cleared');
+    }
+
+    // Управление состоянием
+    showLoading(message = 'Загрузка...', progress = 0) {
         const overlay = document.getElementById('loading-overlay');
-        if (overlay) overlay.classList.add('active');
+        const progressEl = document.getElementById('loading-progress');
+        
+        if (overlay) {
+            overlay.querySelector('p').textContent = message;
+            if (progressEl && progress > 0) {
+                progressEl.style.width = `${progress}%`;
+                progressEl.style.display = 'block';
+            }
+            overlay.classList.add('active');
+        }
     }
 
     hideLoading() {
         const overlay = document.getElementById('loading-overlay');
-        if (overlay) overlay.classList.remove('active');
+        const progressEl = document.getElementById('loading-progress');
+        
+        if (overlay) {
+            overlay.classList.remove('active');
+            if (progressEl) {
+                progressEl.style.display = 'none';
+            }
+        }
+    }
+
+    updateLoadingProgress(percent) {
+        const progressEl = document.getElementById('loading-progress');
+        if (progressEl) {
+            progressEl.style.width = `${percent}%`;
+        }
     }
 
     showNotification(message, type = 'info') {
-        // Лимит уведомлений для предотвращения спама
         if (this.notificationCount >= this.maxNotifications && type === 'info') {
-            console.log('Notification limit reached, skipping:', message);
             return;
         }
         
         this.notifications.show(message, type);
         
-        // Увеличиваем счетчик только для информационных уведомлений
         if (type === 'info') {
             this.notificationCount++;
         }
@@ -362,22 +490,39 @@ class TexnoEdemApp {
         this.showNotification(message, 'error');
     }
 
-    // Ручная синхронизация (с уведомлением)
+    // Публичные методы
     manualSync() {
-        this.syncData(true); // true = ручная синхронизация
+        this.syncData(true);
     }
 
-    // Сохранение настроек
+    refreshData() {
+        this.clearCache();
+        this.config.SETTINGS.FORCE_REFRESH = true;
+        this.loadInitialData().finally(() => {
+            this.config.SETTINGS.FORCE_REFRESH = false;
+        });
+    }
+
     saveSettings(newSettings) {
         this.settings = { ...this.settings, ...newSettings };
         localStorage.setItem('texno_edem_settings', JSON.stringify(this.settings));
+        
+        // Перезапускаем авто-синхронизацию если настройки изменились
+        if (this.syncInterval) {
+            clearInterval(this.syncInterval);
+        }
+        this.setupAutoSync();
+        
         this.showNotification('Настройки сохранены', 'success');
     }
 
-    // Обновление конфигурации
-    updateConfig(newConfig) {
-        this.config = { ...this.config, ...newConfig };
-        localStorage.setItem('texno_edem_config', JSON.stringify(this.config));
+    getPlatformOrders(platform) {
+        return this.orders[platform] || [];
+    }
+
+    getOrderById(platform, orderId) {
+        const orders = this.getPlatformOrders(platform);
+        return orders.find(order => order.id === orderId) || null;
     }
 }
 
@@ -393,7 +538,7 @@ class HeaderComponent {
 
         header.innerHTML = `
             <div class="header-content">
-                <div class="logo">
+                <div class="logo" onclick="app.showSection('dashboard')">
                     <div class="logo-icon">
                         <i class="fas fa-rocket"></i>
                     </div>
@@ -406,7 +551,7 @@ class HeaderComponent {
                 <div class="header-actions">
                     <div class="sync-status">
                         <div class="sync-indicator ${this.app.isSyncing ? 'syncing' : ''}"></div>
-                        <span>${this.app.lastSyncTime ? formatRelativeTime(this.app.lastSyncTime) : 'Не синхронизировано'}</span>
+                        <span class="sync-text">${this.getSyncText()}</span>
                     </div>
                     
                     <div class="user-info">
@@ -415,16 +560,37 @@ class HeaderComponent {
                         </div>
                         <div class="user-details">
                             <div class="user-name">${this.getUserName()}</div>
-                            <div class="user-role">Менеджер</div>
+                            <div class="user-role">${this.getUserRole()}</div>
                         </div>
                     </div>
                     
-                    <button class="btn btn-outline btn-sm" onclick="app.manualSync()" ${this.app.isSyncing ? 'disabled' : ''}>
+                    <button class="btn btn-icon" onclick="app.manualSync()" 
+                            ${this.app.isSyncing ? 'disabled' : ''} 
+                            title="Обновить данные">
                         <i class="fas fa-sync-alt ${this.app.isSyncing ? 'fa-spin' : ''}"></i>
                     </button>
                 </div>
             </div>
         `;
+    }
+
+    updateSyncStatus() {
+        const syncIndicator = document.querySelector('.sync-indicator');
+        const syncText = document.querySelector('.sync-text');
+        
+        if (syncIndicator && syncText) {
+            syncIndicator.className = 'sync-indicator';
+            if (this.app.isSyncing) {
+                syncIndicator.classList.add('syncing');
+            }
+            syncText.textContent = this.getSyncText();
+        }
+    }
+
+    getSyncText() {
+        if (this.app.isSyncing) return 'Синхронизация...';
+        if (this.app.lastSyncTime) return `Обновлено ${formatRelativeTime(this.app.lastSyncTime)}`;
+        return 'Не синхронизировано';
     }
 
     getUserAvatar() {
@@ -439,6 +605,10 @@ class HeaderComponent {
             return `${this.app.user.firstName || ''} ${this.app.user.lastName || ''}`.trim() || 'Пользователь';
         }
         return 'Гость';
+    }
+
+    getUserRole() {
+        return 'Менеджер';
     }
 }
 
@@ -459,10 +629,16 @@ class NavigationComponent {
                         <span>Дашборд</span>
                     </button>
                     
-                    <button class="nav-item" onclick="app.showSection('orders')">
-                        <i class="fas fa-shopping-cart"></i>
-                        <span>Заказы</span>
-                        <span class="nav-badge" id="orders-badge">0</span>
+                    <button class="nav-item" onclick="app.showSection('orders', 'cdek')">
+                        <i class="fas fa-shipping-fast"></i>
+                        <span>CDEK</span>
+                        <span class="nav-badge" id="cdek-badge">0</span>
+                    </button>
+                    
+                    <button class="nav-item" onclick="app.showSection('orders', 'megamarket')">
+                        <i class="fas fa-store"></i>
+                        <span>Мегамаркет</span>
+                        <span class="nav-badge" id="megamarket-badge">0</span>
                     </button>
                     
                     <button class="nav-item" onclick="app.showSection('analytics')">
@@ -475,40 +651,36 @@ class NavigationComponent {
                         <span>Настройки</span>
                     </button>
                 </div>
-                
-                <div class="nav-platforms">
-                    <div class="platform-filter">
-                        <button class="platform-btn ${this.app.currentPlatform === 'all' ? 'active' : ''}" 
-                                onclick="app.setPlatform('all')">
-                            Все площадки
-                        </button>
-                        <button class="platform-btn ${this.app.currentPlatform === 'cdek' ? 'active' : ''}" 
-                                onclick="app.setPlatform('cdek')">
-                            <i class="fas fa-shipping-fast"></i> CDEK
-                        </button>
-                        <button class="platform-btn ${this.app.currentPlatform === 'megamarket' ? 'active' : ''}" 
-                                onclick="app.setPlatform('megamarket')">
-                            <i class="fas fa-store"></i> Мегамаркет
-                        </button>
-                    </div>
-                </div>
             </div>
         `;
+
+        this.updateBadges();
     }
 
-    updateActiveNav(sectionId) {
+    updateActiveNav(sectionId, platform = null) {
         document.querySelectorAll('.nav-item').forEach(item => {
             item.classList.remove('active');
         });
         
-        const activeNav = document.querySelector(`[onclick="app.showSection('${sectionId}')"]`);
+        let activeNav;
+        if (sectionId === 'orders' && platform) {
+            activeNav = document.querySelector(`[onclick="app.showSection('orders', '${platform}')"]`);
+        } else {
+            activeNav = document.querySelector(`[onclick="app.showSection('${sectionId}')"]`);
+        }
+        
         if (activeNav) {
             activeNav.classList.add('active');
         }
     }
 
-    updateOrdersBadge(count) {
-        const badge = document.getElementById('orders-badge');
+    updateBadges() {
+        this.updateOrdersBadge('cdek', this.app.orders.cdek.filter(o => o.status === 'active').length);
+        this.updateOrdersBadge('megamarket', this.app.orders.megamarket.filter(o => o.status === 'new').length);
+    }
+
+    updateOrdersBadge(platform, count) {
+        const badge = document.getElementById(`${platform}-badge`);
         if (badge) {
             badge.textContent = count;
             badge.style.display = count > 0 ? 'flex' : 'none';
@@ -523,7 +695,7 @@ document.addEventListener('DOMContentLoaded', () => {
     app = new TexnoEdemApp();
 });
 
-// Глобальные функции для использования в HTML
+// Глобальные функции
 window.showOrderDetails = (platform, orderId) => {
     app.ordersComponent.showOrderDetails(platform, orderId);
 };
