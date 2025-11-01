@@ -1,4 +1,4 @@
-// js/app.js - Основной файл приложения TEXNO EDEM (улучшенная версия)
+// js/app.js - Основной файл приложения TEXNO EDEM (полностью обновленный)
 class TexnoEdemApp {
     constructor() {
         this.currentSection = 'dashboard';
@@ -20,69 +20,11 @@ class TexnoEdemApp {
         
         // Инициализация компонентов
         this.ordersComponent = new OrdersComponent(this);
-        this.modal = new ModalComponent(this);
-        
-        this.init();
-        
-      async initComponents() {
-        // Инициализация компонентов
-        this.ordersComponent = new OrdersComponent(this);
         this.analyticsComponent = new AnalyticsComponent(this);
         this.settingsComponent = new SettingsComponent(this);
         this.modal = new ModalComponent(this);
         
-        // Рендерим статические компоненты
-        this.renderHeader();
-        this.renderNavigation();
-    }
-
-    updateDashboard() {
-        this.updateQuickStats();
-        this.updateRecentActivity();
-        this.updatePlatformWidgets();
-        this.updateAnalyticsPreview();
-    }
-
-    updateAnalyticsPreview() {
-        const container = document.getElementById('analytics-preview');
-        if (!container) return;
-
-        const metrics = [
-            { icon: 'trending-up', label: 'Рост заказов', value: '+15%', change: 'positive' },
-            { icon: 'clock', label: 'Среднее время', value: '2.3 ч', change: 'negative' },
-            { icon: 'users', label: 'Новые клиенты', value: '24', change: 'positive' },
-            { icon: 'repeat', label: 'Повторные заказы', value: '68%', change: 'positive' }
-        ];
-
-        container.innerHTML = metrics.map(metric => `
-            <div class="preview-card">
-                <div class="preview-icon">
-                    <i class="fas fa-${metric.icon}"></i>
-                </div>
-                <div class="preview-content">
-                    <div class="preview-value ${metric.change}">${metric.value}</div>
-                    <div class="preview-label">${metric.label}</div>
-                </div>
-            </div>
-        `).join('');
-    }
-
-    // В методе loadSectionData добавьте:
-    loadSectionData(sectionId, platform) {
-        switch (sectionId) {
-            case 'dashboard':
-                this.updateDashboard();
-                break;
-            case 'orders':
-                this.ordersComponent.render(platform);
-                break;
-            case 'analytics':
-                this.analyticsComponent.render();
-                break;
-            case 'settings':
-                this.settingsComponent.render();
-                break;
-        }
+        this.init();
     }
 
     async init() {
@@ -126,6 +68,9 @@ class TexnoEdemApp {
                 this.handleBackButton();
             });
             
+            // Настройка темы
+            this.setupTelegramTheme();
+            
             // Получение данных пользователя
             const user = this.tg.initDataUnsafe?.user;
             if (user) {
@@ -147,6 +92,17 @@ class TexnoEdemApp {
                 language: 'ru'
             };
         }
+    }
+
+    setupTelegramTheme() {
+        if (!this.tg) return;
+        
+        const theme = this.tg.colorScheme;
+        document.documentElement.setAttribute('data-theme', theme);
+        
+        this.tg.onEvent('themeChanged', () => {
+            document.documentElement.setAttribute('data-theme', this.tg.colorScheme);
+        });
     }
 
     handleBackButton() {
@@ -311,6 +267,7 @@ class TexnoEdemApp {
         this.updateQuickStats();
         this.updateRecentActivity();
         this.updatePlatformWidgets();
+        this.updateAnalyticsPreview();
     }
 
     updateQuickStats() {
@@ -325,6 +282,30 @@ class TexnoEdemApp {
         document.getElementById('problem-orders').textContent = problemOrders;
     }
 
+    updateAnalyticsPreview() {
+        const container = document.getElementById('analytics-preview');
+        if (!container) return;
+
+        const metrics = [
+            { icon: 'trending-up', label: 'Рост заказов', value: '+15%', change: 'positive' },
+            { icon: 'clock', label: 'Среднее время', value: '2.3 ч', change: 'negative' },
+            { icon: 'users', label: 'Новые клиенты', value: '24', change: 'positive' },
+            { icon: 'repeat', label: 'Повторные заказы', value: '68%', change: 'positive' }
+        ];
+
+        container.innerHTML = metrics.map(metric => `
+            <div class="preview-card">
+                <div class="preview-icon">
+                    <i class="fas fa-${metric.icon}"></i>
+                </div>
+                <div class="preview-content">
+                    <div class="preview-value ${metric.change}">${metric.value}</div>
+                    <div class="preview-label">${metric.label}</div>
+                </div>
+            </div>
+        `).join('');
+    }
+
     updateRecentActivity() {
         const container = document.getElementById('recent-orders-list');
         if (!container) return;
@@ -335,7 +316,7 @@ class TexnoEdemApp {
             container.innerHTML = `
                 <div class="empty-activity">
                     <i class="fas fa-inbox"></i>
-                    <p>Нет recent заказов</p>
+                    <p>Нет недавних заказов</p>
                 </div>
             `;
             return;
@@ -503,10 +484,10 @@ class TexnoEdemApp {
                 this.ordersComponent.render(platform);
                 break;
             case 'analytics':
-                // Аналитика в разработке
+                this.analyticsComponent.render();
                 break;
             case 'settings':
-                // Настройки в разработке
+                this.settingsComponent.render();
                 break;
         }
     }
@@ -566,6 +547,7 @@ class TexnoEdemApp {
         this.showLoading('Обновление данных...');
         this.loadInitialData().finally(() => {
             this.hideLoading();
+            this.lastSyncTime = new Date();
             this.showNotification('Данные обновлены', 'success');
         });
     }
