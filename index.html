@@ -3,10 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TEXNO EDEM - Business Intelligence</title>
+    <title>TEXNO EDEM - Business Intelligence Platform</title>
+    
+    <!-- Telegram Web App -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    
+    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chart.js">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- CryptoJS for Megamarket API signatures -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚀</text></svg>">
     
     <!-- Main CSS -->
     <link rel="stylesheet" href="css/style.css">
@@ -17,9 +29,6 @@
     <link rel="stylesheet" href="css/components/settings.css">
     <link rel="stylesheet" href="css/analytics/charts.css">
     <link rel="stylesheet" href="css/analytics/metrics.css">
-    
-    <!-- Favicon -->
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚀</text></svg>">
 </head>
 <body>
     <div class="app">
@@ -38,56 +47,14 @@
             <!-- Dashboard Section -->
             <section class="section active" id="dashboard-section">
                 <div class="container">
-                    <div class="dashboard-header">
-                        <h1 class="dashboard-title">Business Intelligence Dashboard</h1>
-                        <div class="dashboard-subtitle">Реальная аналитика вашего бизнеса</div>
-                    </div>
-
-                    <!-- Quick Stats -->
-                    <div class="quick-stats" id="quick-stats">
-                        <!-- Loaded by JavaScript -->
-                    </div>
-
                     <!-- Analytics Overview -->
                     <div class="analytics-overview" id="analytics-overview">
                         <!-- Loaded by JavaScript -->
                     </div>
 
-                    <!-- Platform Widgets -->
-                    <div class="platform-widgets">
-                        <div class="widget cdek-widget" onclick="app.showSection('orders', 'cdek')">
-                            <div class="widget-icon">
-                                <i class="fas fa-shipping-fast"></i>
-                            </div>
-                            <div class="widget-content">
-                                <h3>CDEK Logistics</h3>
-                                <div class="widget-stats">
-                                    <span class="stat-value" id="cdek-active">0</span>
-                                    <span class="stat-label">активных отправлений</span>
-                                </div>
-                                <div class="widget-action">
-                                    <span>Управлять отправлениями</span>
-                                    <i class="fas fa-arrow-right"></i>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="widget megamarket-widget" onclick="app.showSection('orders', 'megamarket')">
-                            <div class="widget-icon">
-                                <i class="fas fa-store"></i>
-                            </div>
-                            <div class="widget-content">
-                                <h3>Мегамаркет</h3>
-                                <div class="widget-stats">
-                                    <span class="stat-value" id="megamarket-new">0</span>
-                                    <span class="stat-label">новых заказов</span>
-                                </div>
-                                <div class="widget-action">
-                                    <span>Обработать заказы</span>
-                                    <i class="fas fa-arrow-right"></i>
-                                </div>
-                            </div>
-                        </div>
+                    <!-- Platform Comparison -->
+                    <div class="platform-comparison" id="platform-comparison">
+                        <!-- Loaded by JavaScript -->
                     </div>
 
                     <!-- Recent Activity -->
@@ -101,10 +68,7 @@
             <section class="section" id="orders-section">
                 <div class="container">
                     <div class="section-header">
-                        <div class="section-title-container">
-                            <h2 class="section-title" id="orders-title">Заказы</h2>
-                            <div class="section-subtitle" id="orders-subtitle">Управление заказами и отправлениями</div>
-                        </div>
+                        <h2 class="section-title">Управление заказами</h2>
                         <div class="section-actions" id="orders-actions">
                             <!-- Actions loaded by JavaScript -->
                         </div>
@@ -119,22 +83,9 @@
             <section class="section" id="analytics-section">
                 <div class="container">
                     <div class="section-header">
-                        <div class="section-title-container">
-                            <h2 class="section-title">Аналитика и отчеты</h2>
-                            <div class="section-subtitle">Детальная аналитика по платформам</div>
-                        </div>
+                        <h2 class="section-title">Аналитика и отчеты</h2>
                         <div class="section-actions" id="analytics-actions">
-                            <div class="time-filter">
-                                <select id="analytics-time-range" onchange="app.analyticsComponent.setTimeRange(this.value)">
-                                    <option value="week">Неделя</option>
-                                    <option value="month" selected>Месяц</option>
-                                    <option value="quarter">Квартал</option>
-                                    <option value="year">Год</option>
-                                </select>
-                            </div>
-                            <button class="btn btn-primary" onclick="app.analyticsComponent.exportReport()">
-                                <i class="fas fa-download"></i> Экспорт отчета
-                            </button>
+                            <!-- Actions loaded by JavaScript -->
                         </div>
                     </div>
                     <div class="analytics-container" id="analytics-container">
@@ -147,10 +98,7 @@
             <section class="section" id="settings-section">
                 <div class="container">
                     <div class="section-header">
-                        <div class="section-title-container">
-                            <h2 class="section-title">Настройки интеграций</h2>
-                            <div class="section-subtitle">Настройка подключения к платформам</div>
-                        </div>
+                        <h2 class="section-title">Настройки интеграций</h2>
                     </div>
                     <div class="settings-container" id="settings-container">
                         <!-- Settings loaded by JavaScript -->
@@ -161,7 +109,66 @@
 
         <!-- Modals -->
         <div class="modals-container" id="modals-container">
-            <!-- Modals loaded by JavaScript -->
+            <!-- Order Details Modal -->
+            <div class="modal" id="order-details-modal">
+                <div class="modal-backdrop" onclick="closeModal()"></div>
+                <div class="modal-dialog">
+                    <div class="modal-header">
+                        <h3 class="modal-title" id="order-modal-title">Детали заказа</h3>
+                        <button class="modal-close" onclick="closeModal()">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="modal-body" id="order-modal-body">
+                        <!-- Order details loaded by JavaScript -->
+                    </div>
+                    <div class="modal-footer" id="order-modal-footer">
+                        <!-- Modal actions loaded by JavaScript -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Confirmation Modal -->
+            <div class="modal" id="confirmation-modal">
+                <div class="modal-backdrop" onclick="closeModal()"></div>
+                <div class="modal-dialog">
+                    <div class="modal-header">
+                        <h3 class="modal-title" id="confirmation-title">Подтверждение действия</h3>
+                        <button class="modal-close" onclick="closeModal()">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <p id="confirmation-message">Вы уверены, что хотите выполнить это действие?</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" onclick="closeModal()">Отмена</button>
+                        <button class="btn btn-primary" id="confirmation-confirm">Подтвердить</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Error Modal -->
+            <div class="modal" id="error-modal">
+                <div class="modal-backdrop" onclick="closeModal()"></div>
+                <div class="modal-dialog">
+                    <div class="modal-header">
+                        <h3 class="modal-title">Ошибка</h3>
+                        <button class="modal-close" onclick="closeModal()">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="error-content">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <p id="error-message">Произошла ошибка при выполнении операции</p>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-primary" onclick="closeModal()">Закрыть</button>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Notifications -->
@@ -169,11 +176,8 @@
 
         <!-- Loading Overlay -->
         <div class="loading-overlay" id="loading-overlay">
-            <div class="loading-content">
-                <div class="loading-spinner"></div>
-                <p>Загрузка данных...</p>
-                <div class="loading-progress" id="loading-progress"></div>
-            </div>
+            <div class="loading-spinner"></div>
+            <p>Загрузка данных...</p>
         </div>
     </div>
 
@@ -189,7 +193,6 @@
     <script src="js/components/orders.js"></script>
     <script src="js/components/modal.js"></script>
     <script src="js/components/settings.js"></script>
-    <script src="data/mock-data.js"></script>
     <script src="js/app.js"></script>
 </body>
 </html>
