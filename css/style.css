@@ -1,15 +1,15 @@
 /* Основные стили и переменные TEXNO EDEM - УЛУЧШЕННЫЙ ВИЗУАЛ */
 :root {
-    /* Цветовая палитра TEXNO EDEM - УЛУЧШЕННАЯ */
-    --primary: #2563eb;
-    --primary-dark: #1d4ed8;
-    --primary-light: #3b82f6;
-    --secondary: #8b5cf6;
-    --accent: #f59e0b;
-    --success: #10b981;
-    --warning: #f59e0b;
-    --danger: #ef4444;
-    --info: #06b6d4;
+    /* Цветовая палитра TEXNO EDEM - ОСНОВНЫЕ ЦВЕТА КАК БЫЛИ */
+    --primary: #2c3e50;
+    --primary-dark: #1a252f;
+    --primary-light: #34495e;
+    --secondary: #3498db;
+    --accent: #e74c3c;
+    --success: #27ae60;
+    --warning: #f39c12;
+    --danger: #e74c3c;
+    --info: #3498db;
 
     /* Платформенные цвета - УЛУЧШЕННЫЕ */
     --cdek-primary: #059669;
@@ -22,7 +22,13 @@
     --megamarket-light: #ede9fe;
     --megamarket-dark: #6d28d9;
 
-    /* Оттенки серого - УЛУЧШЕННЫЕ */
+    /* Градиенты - ОБНОВЛЕННЫЕ С ОСНОВНЫМИ ЦВЕТАМИ */
+    --gradient-primary: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    --gradient-cdek: linear-gradient(135deg, var(--cdek-primary) 0%, var(--cdek-dark) 100%);
+    --gradient-megamarket: linear-gradient(135deg, var(--megamarket-primary) 0%, var(--megamarket-dark) 100%);
+    --gradient-success: linear-gradient(135deg, var(--success) 0%, #1e7b4c 100%);
+
+    /* Остальные переменные остаются без изменений... */
     --white: #ffffff;
     --gray-50: #fafafa;
     --gray-100: #f4f4f5;
@@ -34,12 +40,6 @@
     --gray-700: #3f3f46;
     --gray-800: #27272a;
     --gray-900: #18181b;
-
-    /* Градиенты */
-    --gradient-primary: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-    --gradient-cdek: linear-gradient(135deg, var(--cdek-primary) 0%, var(--cdek-dark) 100%);
-    --gradient-megamarket: linear-gradient(135deg, var(--megamarket-primary) 0%, var(--megamarket-dark) 100%);
-    --gradient-success: linear-gradient(135deg, var(--success) 0%, #059669 100%);
 
     /* Тени - УЛУЧШЕННЫЕ */
     --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
@@ -73,12 +73,6 @@
     /* Эффекты */
     --backdrop-blur: blur(12px);
     --glass-effect: rgba(255, 255, 255, 0.1);
-}
-
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
 }
 
 body {
@@ -598,9 +592,9 @@ body {
 }
 
 .stat-card.orders::before { background: var(--gradient-primary); }
-.stat-card.revenue::before { background: var(--gradient-success); }
+.stat-card.revenue::before { background: linear-gradient(135deg, var(--success) 0%, #1e7b4c 100%); }
 .stat-card.success::before { background: var(--gradient-cdek); }
-.stat-card.problems::before { background: linear-gradient(135deg, var(--danger) 0%, #dc2626 100%); }
+.stat-card.problems::before { background: linear-gradient(135deg, var(--danger) 0%, #c0392b 100%); }
 
 .stat-icon {
     width: 64px;
