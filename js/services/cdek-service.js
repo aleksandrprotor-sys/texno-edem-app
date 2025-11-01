@@ -46,7 +46,7 @@ class CDEKService extends ApiService {
     }
 
     isTokenValid() {
-        return this.authToken && this.tokenExpiry && Date.now() < this.tokenExpiry;
+        return this.authToken && this.tokenExpiry && Date.now() < this.tokenExpiry - 60000; // 1 minute buffer
     }
 
     async makeAuthenticatedRequest(endpoint, options = {}) {
@@ -54,9 +54,13 @@ class CDEKService extends ApiService {
         return this.requestWithRetry(endpoint, options);
     }
 
-    // Основные методы API
+    // Основные методы API CDEK
     async getOrders(params = {}) {
         try {
+            if (!CONFIG.API.CDEK.ENABLED) {
+                return this.getMockOrders();
+            }
+
             const orders = await this.makeAuthenticatedRequest('/orders', {
                 method: 'GET'
             });
@@ -64,18 +68,16 @@ class CDEKService extends ApiService {
             return this.transformOrders(orders);
         } catch (error) {
             console.error('Error fetching CDEK orders:', error);
-            
-            // Возвращаем mock данные в случае ошибки
-            if (CONFIG.API.CDEK.ENABLED) {
-                return this.getMockOrders();
-            }
-            
-            throw error;
+            return this.getMockOrders();
         }
     }
 
     async getOrderDetails(orderUuid) {
         try {
+            if (!CONFIG.API.CDEK.ENABLED) {
+                return this.getMockOrderDetails(orderUuid);
+            }
+
             const order = await this.makeAuthenticatedRequest(`/orders/${orderUuid}`);
             return this.transformOrderDetails(order);
         } catch (error) {
@@ -85,42 +87,93 @@ class CDEKService extends ApiService {
     }
 
     async createOrder(orderData) {
-        return this.makeAuthenticatedRequest('/orders', {
-            method: 'POST',
-            body: JSON.stringify(orderData)
-        });
+        try {
+            const result = await this.makeAuthenticatedRequest('/orders', {
+                method: 'POST',
+                body: JSON.stringify(orderData)
+            });
+            return result;
+        } catch (error) {
+            console.error('Error creating CDEK order:', error);
+            throw error;
+        }
     }
 
-    async updateOrder(orderUuid, updateData) {
-        return this.makeAuthenticatedRequest(`/orders/${orderUuid}`, {
-            method: 'PATCH',
-            body: JSON.stringify(updateData)
-        });
+    async updateOrderStatus(orderUuid, status, reason = '') {
+        try {
+            const result = await this.makeAuthenticatedRequest(`/orders/${orderUuid}`, {
+                method: 'PATCH',
+                body: JSON.stringify({ status, reason })
+            });
+            return result;
+        } catch (error) {
+            console.error('Error updating CDEK order status:', error);
+            throw error;
+        }
     }
 
     async deleteOrder(orderUuid) {
-        return this.makeAuthenticatedRequest(`/orders/${orderUuid}`, {
-            method: 'DELETE'
-        });
+        try {
+            const result = await this.makeAuthenticatedRequest(`/orders/${orderUuid}`, {
+                method: 'DELETE'
+            });
+            return result;
+        } catch (error) {
+            console.error('Error deleting CDEK order:', error);
+            throw error;
+        }
     }
 
     async getDeliveryPoints(params = {}) {
-        return this.makeAuthenticatedRequest('/deliverypoints', {
-            method: 'GET'
-        });
+        try {
+            const points = await this.makeAuthenticatedRequest('/deliverypoints', {
+                method: 'GET'
+            });
+            return points;
+        } catch (error) {
+            console.error('Error fetching CDEK delivery points:', error);
+            throw error;
+        }
     }
 
     async calculateTariff(calculationData) {
-        return this.makeAuthenticatedRequest('/calculator/tariff', {
-            method: 'POST',
-            body: JSON.stringify(calculationData)
-        });
+        try {
+            const result = await this.makeAuthenticatedRequest('/calculator/tariff', {
+                method: 'POST',
+                body: JSON.stringify(calculationData)
+            });
+            return result;
+        } catch (error) {
+            console.error('Error calculating CDEK tariff:', error);
+            throw error;
+        }
+    }
+
+    // Действия с заказами
+    async acceptOrder(orderUuid) {
+        return this.updateOrderStatus(orderUuid, 'ACCEPTED', 'Заказ принят в обработку');
+    }
+
+    async processOrder(orderUuid) {
+        return this.updateOrderStatus(orderUuid, 'IN_PROGRESS', 'Заказ передан в доставку');
+    }
+
+    async deliverOrder(orderUuid) {
+        return this.updateOrderStatus(orderUuid, 'DELIVERED', 'Заказ доставлен');
+    }
+
+    async cancelOrder(orderUuid, reason = 'Отменен клиентом') {
+        return this.updateOrderStatus(orderUuid, 'CANCELLED', reason);
+    }
+
+    async resolveIssue(orderUuid) {
+        return this.updateOrderStatus(orderUuid, 'IN_PROGRESS', 'Проблема решена');
     }
 
     // Трансформация данных
     transformOrders(apiOrders) {
         if (!apiOrders || !Array.isArray(apiOrders)) {
-            return [];
+            return this.getMockOrders();
         }
 
         return apiOrders.map(order => this.transformOrder(order));
@@ -135,7 +188,7 @@ class CDEKService extends ApiService {
             statusCode: apiOrder.status,
             fromCity: apiOrder.sender_location?.city || 'Не указан',
             toCity: apiOrder.recipient_location?.city || 'Не указан',
-            weight: apiOrder.weight ? apiOrder.weight / 1000 : 0, // граммы в кг
+            weight: apiOrder.weight ? apiOrder.weight / 1000 : 0,
             cost: apiOrder.total_sum || 0,
             sender: apiOrder.sender_company || 'Не указан',
             recipient: apiOrder.recipient_name || 'Не указан',
@@ -234,24 +287,6 @@ class CDEKService extends ApiService {
                 ],
                 services: ['INSURANCE'],
                 insurance: 10000
-            },
-            {
-                id: 'cdek-mock-3',
-                platform: 'cdek',
-                trackingNumber: 'CDEK001234569',
-                status: 'problem',
-                statusCode: 'PROBLEM',
-                fromCity: 'Казань',
-                toCity: 'Ростов-на-Дону',
-                weight: 1.8,
-                cost: 650,
-                sender: 'ООО "Товары"',
-                recipient: 'Алексей Козлов',
-                createdDate: '2024-01-12T09:15:00',
-                estimatedDelivery: '2024-01-16',
-                packages: [
-                    { number: 'PKG003', weight: 1800, length: 25, width: 15, height: 10 }
-                ]
             }
         ];
     }
@@ -292,12 +327,16 @@ class CDEKService extends ApiService {
         const service = new CDEKService();
         return service.getOrderDetails(orderUuid);
     }
+
+    static async performAction(orderUuid, action) {
+        const service = new CDEKService();
+        return service[action](orderUuid);
+    }
 }
 
 // Регистрируем сервис в API менеджере
-apiManager.registerService('cdek', new CDEKService());
-
-// Экспорт для использования в других модулях
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = CDEKService;
+try {
+    apiManager.registerService('cdek', new CDEKService());
+} catch (error) {
+    console.log('API Manager not available, skipping service registration');
 }
