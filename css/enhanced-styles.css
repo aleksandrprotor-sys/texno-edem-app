@@ -1,0 +1,253 @@
+/* enhanced-styles.css - Дополнительные стили для улучшенного функционала */
+
+/* Уведомления */
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: var(--white);
+    padding: 16px;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-lg);
+    border-left: 4px solid var(--success);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    z-index: 10000;
+    animation: slideInRight 0.3s ease-out;
+    max-width: 400px;
+    min-width: 300px;
+}
+
+.notification-error {
+    border-left-color: var(--danger);
+}
+
+.notification-warning {
+    border-left-color: var(--warning);
+}
+
+.notification-info {
+    border-left-color: var(--info);
+}
+
+.notification-content {
+    flex: 1;
+}
+
+.notification-message {
+    font-weight: 500;
+    color: var(--gray-800);
+}
+
+.notification-close {
+    background: none;
+    border: none;
+    color: var(--gray-500);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: var(--transition);
+}
+
+.notification-close:hover {
+    background: var(--gray-100);
+    color: var(--gray-700);
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Кнопки */
+.btn-sm {
+    padding: 6px 12px;
+    font-size: 12px;
+    height: auto;
+}
+
+.btn-outline {
+    background: transparent;
+    border: 1px solid currentColor;
+    color: inherit;
+}
+
+.btn-outline:hover {
+    background: rgba(0,0,0,0.05);
+}
+
+/* Состояния загрузки */
+.loading-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.9);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+}
+
+.loading-overlay.active {
+    display: flex;
+}
+
+.loading-content {
+    text-align: center;
+    background: var(--white);
+    padding: 40px;
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow-lg);
+}
+
+.loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid var(--gray-200);
+    border-top: 4px solid var(--primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 16px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Плейсхолдеры для разделов */
+.analytics-placeholder,
+.settings-placeholder {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--gray-500);
+}
+
+.analytics-placeholder i,
+.settings-placeholder i {
+    font-size: 64px;
+    margin-bottom: 20px;
+    opacity: 0.5;
+}
+
+.analytics-placeholder h3,
+.settings-placeholder h3 {
+    font-size: 1.5rem;
+    margin-bottom: 12px;
+    color: var(--gray-600);
+}
+
+/* Адаптивные улучшения */
+@media (max-width: 768px) {
+    .notification {
+        left: 20px;
+        right: 20px;
+        max-width: none;
+    }
+    
+    .loading-content {
+        margin: 20px;
+        padding: 30px 20px;
+    }
+}
+
+/* Улучшения для карточек заказов */
+.order-card {
+    transition: all 0.3s ease;
+}
+
+.order-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+/* Статусы заказов */
+.status-badge {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.status-new {
+    background: color-mix(in srgb, var(--info) 10%, transparent);
+    color: var(--info);
+    border: 1px solid color-mix(in srgb, var(--info) 20%, transparent);
+}
+
+.status-active {
+    background: color-mix(in srgb, var(--warning) 10%, transparent);
+    color: var(--warning);
+    border: 1px solid color-mix(in srgb, var(--warning) 20%, transparent);
+}
+
+.status-delivered {
+    background: color-mix(in srgb, var(--success) 10%, transparent);
+    color: var(--success);
+    border: 1px solid color-mix(in srgb, var(--success) 20%, transparent);
+}
+
+.status-problem {
+    background: color-mix(in srgb, var(--danger) 10%, transparent);
+    color: var(--danger);
+    border: 1px solid color-mix(in srgb, var(--danger) 20%, transparent);
+}
+
+/* Улучшения для таблиц и списков */
+.detail-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+}
+
+.detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.detail-label {
+    font-size: 12px;
+    color: var(--gray-500);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.detail-value {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--gray-800);
+}
+
+/* Анимации */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.fade-in {
+    animation: fadeIn 0.3s ease-in;
+}
+
+/* Утилитарные классы */
+.text-success { color: var(--success); }
+.text-warning { color: var(--warning); }
+.text-danger { color: var(--danger); }
+.text-info { color: var(--info); }
+
+.bg-success { background-color: var(--success); }
+.bg-warning { background-color: var(--warning); }
+.bg-danger { background-color: var(--danger); }
+.bg-info { background-color: var(--info); }
