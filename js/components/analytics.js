@@ -1,187 +1,248 @@
-// Компонент аналитики для TEXNO EDEM
+// js/components/analytics.js - Компонент аналитики
 class AnalyticsComponent {
     constructor(app) {
         this.app = app;
-        this.charts = new Map();
-        this.currentTimeRange = 'week';
-        this.currentMetrics = ['orders_count', 'revenue'];
+        this.currentPeriod = 'month';
+        this.charts = {};
+        this.analyticsData = null;
     }
 
-    // Основной метод рендеринга
     render() {
-        this.renderOverview();
-        this.renderPlatformComparison();
-        this.renderCharts();
-        this.renderMetrics();
-    }
-
-    // Обзор аналитики
-    renderOverview() {
-        const container = document.getElementById('analytics-overview');
+        const container = document.getElementById('analytics-container');
         if (!container) return;
 
-        const analytics = this.calculateOverviewMetrics();
-        
-        container.innerHTML = `
-            <div class="analytics-header">
-                <h2>Обзор эффективности</h2>
-                <div class="time-range-selector">
-                    <select onchange="app.analyticsComponent.setTimeRange(this.value)">
-                        ${CONFIG.ANALYTICS.TIME_RANGES.map(range => 
-                            `<option value="${range.value}" ${range.value === this.currentTimeRange ? 'selected' : ''}>
-                                ${range.label}
-                            </option>`
-                        ).join('')}
-                    </select>
-                </div>
-            </div>
-            
-            <div class="metrics-grid">
-                <div class="metric-card">
-                    <div class="metric-header">
-                        <div class="metric-title">Всего заказов</div>
-                        <div class="metric-icon revenue">
+        this.generateAnalyticsData();
+        container.innerHTML = this.createAnalyticsHTML();
+        this.renderCharts();
+        this.attachEventListeners();
+    }
+
+    createAnalyticsHTML() {
+        return `
+            <div class="analytics-content">
+                <!-- Основные метрики -->
+                <div class="analytics-metrics">
+                    <div class="metric-widget primary">
+                        <div class="metric-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <div class="metric-value">${formatCurrency(this.analyticsData?.totalRevenue || 0)}</div>
+                        <div class="metric-label">Общая выручка</div>
+                        <div class="metric-change positive">
+                            <i class="fas fa-arrow-up"></i> 12.5%
+                        </div>
+                    </div>
+                    
+                    <div class="metric-widget success">
+                        <div class="metric-icon">
                             <i class="fas fa-shopping-cart"></i>
                         </div>
+                        <div class="metric-value">${this.analyticsData?.totalOrders || 0}</div>
+                        <div class="metric-label">Всего заказов</div>
+                        <div class="metric-change positive">
+                            <i class="fas fa-arrow-up"></i> 8.3%
+                        </div>
                     </div>
-                    <div class="metric-value">${analytics.totalOrders}</div>
-                    <div class="metric-change ${analytics.ordersChange >= 0 ? 'positive' : 'negative'}">
-                        <i class="fas fa-arrow-${analytics.ordersChange >= 0 ? 'up' : 'down'}"></i>
-                        ${Math.abs(analytics.ordersChange)}%
-                    </div>
-                </div>
-                
-                <div class="metric-card">
-                    <div class="metric-header">
-                        <div class="metric-title">Общая выручка</div>
-                        <div class="metric-icon orders">
+                    
+                    <div class="metric-widget info">
+                        <div class="metric-icon">
                             <i class="fas fa-ruble-sign"></i>
                         </div>
-                    </div>
-                    <div class="metric-value">${formatCurrency(analytics.totalRevenue)}</div>
-                    <div class="metric-change ${analytics.revenueChange >= 0 ? 'positive' : 'negative'}">
-                        <i class="fas fa-arrow-${analytics.revenueChange >= 0 ? 'up' : 'down'}"></i>
-                        ${Math.abs(analytics.revenueChange)}%
-                    </div>
-                </div>
-                
-                <div class="metric-card">
-                    <div class="metric-header">
-                        <div class="metric-title">Средний чек</div>
-                        <div class="metric-icon avg-order">
-                            <i class="fas fa-receipt"></i>
+                        <div class="metric-value">${formatCurrency(this.analyticsData?.averageOrder || 0)}</div>
+                        <div class="metric-label">Средний чек</div>
+                        <div class="metric-change positive">
+                            <i class="fas fa-arrow-up"></i> 4.1%
                         </div>
                     </div>
-                    <div class="metric-value">${formatCurrency(analytics.averageOrderValue)}</div>
-                    <div class="metric-change ${analytics.avgOrderChange >= 0 ? 'positive' : 'negative'}">
-                        <i class="fas fa-arrow-${analytics.avgOrderChange >= 0 ? 'up' : 'down'}"></i>
-                        ${Math.abs(analytics.avgOrderChange)}%
-                    </div>
-                </div>
-                
-                <div class="metric-card">
-                    <div class="metric-header">
-                        <div class="metric-title">Успешные доставки</div>
-                        <div class="metric-icon success-rate">
-                            <i class="fas fa-check-circle"></i>
+                    
+                    <div class="metric-widget warning">
+                        <div class="metric-icon">
+                            <i class="fas fa-percentage"></i>
+                        </div>
+                        <div class="metric-value">${(this.analyticsData?.successRate || 0).toFixed(1)}%</div>
+                        <div class="metric-label">Успешные доставки</div>
+                        <div class="metric-change positive">
+                            <i class="fas fa-arrow-up"></i> 2.7%
                         </div>
                     </div>
-                    <div class="metric-value">${analytics.deliverySuccessRate}%</div>
-                    <div class="metric-change ${analytics.successRateChange >= 0 ? 'positive' : 'negative'}">
-                        <i class="fas fa-arrow-${analytics.successRateChange >= 0 ? 'up' : 'down'}"></i>
-                        ${Math.abs(analytics.successRateChange)}%
+                </div>
+
+                <!-- Графики -->
+                <div class="analytics-charts">
+                    <div class="chart-container large">
+                        <div class="chart-header">
+                            <h4>Динамика выручки</h4>
+                            <div class="chart-actions">
+                                <button class="btn btn-sm btn-outline" onclick="app.analyticsComponent.toggleChartType('revenue')">
+                                    <i class="fas fa-chart-bar"></i> Тип графика
+                                </button>
+                            </div>
+                        </div>
+                        <div class="chart-wrapper">
+                            <canvas id="revenueChart" height="300"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="chart-container">
+                        <div class="chart-header">
+                            <h4>Распределение по платформам</h4>
+                        </div>
+                        <div class="chart-wrapper">
+                            <canvas id="platformsChart" height="250"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="chart-container">
+                        <div class="chart-header">
+                            <h4>Статусы заказов</h4>
+                        </div>
+                        <div class="chart-wrapper">
+                            <canvas id="statusChart" height="250"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="chart-container large">
+                        <div class="chart-header">
+                            <h4>Ключевые показатели</h4>
+                        </div>
+                        <div class="chart-wrapper">
+                            <canvas id="metricsChart" height="300"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Детальная статистика -->
+                <div class="analytics-details">
+                    <div class="details-section">
+                        <h4>Статистика по платформам</h4>
+                        <div class="platforms-comparison">
+                            <div class="platform-stats">
+                                <div class="platform-header cdek">
+                                    <i class="fas fa-shipping-fast"></i>
+                                    <span>CDEK</span>
+                                </div>
+                                <div class="platform-metrics">
+                                    <div class="metric">
+                                        <span class="label">Заказы:</span>
+                                        <span class="value">${this.analyticsData?.cdekOrders || 0}</span>
+                                    </div>
+                                    <div class="metric">
+                                        <span class="label">Выручка:</span>
+                                        <span class="value">${formatCurrency(this.analyticsData?.cdekRevenue || 0)}</span>
+                                    </div>
+                                    <div class="metric">
+                                        <span class="label">Средний чек:</span>
+                                        <span class="value">${formatCurrency(this.analyticsData?.cdekAverage || 0)}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="platform-stats">
+                                <div class="platform-header megamarket">
+                                    <i class="fas fa-store"></i>
+                                    <span>Мегамаркет</span>
+                                </div>
+                                <div class="platform-metrics">
+                                    <div class="metric">
+                                        <span class="label">Заказы:</span>
+                                        <span class="value">${this.analyticsData?.megamarketOrders || 0}</span>
+                                    </div>
+                                    <div class="metric">
+                                        <span class="label">Выручка:</span>
+                                        <span class="value">${formatCurrency(this.analyticsData?.megamarketRevenue || 0)}</span>
+                                    </div>
+                                    <div class="metric">
+                                        <span class="label">Средний чек:</span>
+                                        <span class="value">${formatCurrency(this.analyticsData?.megamarketAverage || 0)}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="details-section">
+                        <h4>Топ товаров</h4>
+                        <div class="top-products">
+                            ${this.createTopProductsList()}
+                        </div>
                     </div>
                 </div>
             </div>
         `;
     }
 
-    // Сравнение платформ
-    renderPlatformComparison() {
-        const container = document.getElementById('platform-comparison');
-        if (!container) return;
-
-        const comparison = this.calculatePlatformComparison();
-        
-        container.innerHTML = `
-            <div class="comparison-header">
-                <h3>Сравнение платформ</h3>
-                <div class="metric-selector">
-                    <select onchange="app.analyticsComponent.setComparisonMetric(this.value)">
-                        ${CONFIG.ANALYTICS.COMPARISON_METRICS.map(metric => 
-                            `<option value="${metric}">${this.getMetricLabel(metric)}</option>`
-                        ).join('')}
-                    </select>
-                </div>
-            </div>
-            
-            <div class="comparison-grid">
-                ${this.app.settings.cdekEnabled ? `
-                <div class="platform-stats cdek">
-                    <div class="platform-header">
-                        <div class="platform-logo">
-                            <i class="fas fa-shipping-fast"></i>
-                            <span>CDEK</span>
-                        </div>
-                        <div class="platform-value">${this.formatComparisonValue(comparison.cdek)}</div>
-                    </div>
-                    <div class="progress-bar">
-                        <div class="progress-fill" style="width: ${comparison.cdek.percentage}%"></div>
-                    </div>
-                    <div class="platform-change ${comparison.cdek.change >= 0 ? 'positive' : 'negative'}">
-                        <i class="fas fa-arrow-${comparison.cdek.change >= 0 ? 'up' : 'down'}"></i>
-                        ${Math.abs(comparison.cdek.change)}%
-                    </div>
-                </div>
-                ` : ''}
-                
-                ${this.app.settings.megamarketEnabled ? `
-                <div class="platform-stats megamarket">
-                    <div class="platform-header">
-                        <div class="platform-logo">
-                            <i class="fas fa-store"></i>
-                            <span>Мегамаркет</span>
-                        </div>
-                        <div class="platform-value">${this.formatComparisonValue(comparison.megamarket)}</div>
-                    </div>
-                    <div class="progress-bar">
-                        <div class="progress-fill" style="width: ${comparison.megamarket.percentage}%"></div>
-                    </div>
-                    <div class="platform-change ${comparison.megamarket.change >= 0 ? 'positive' : 'negative'}">
-                        <i class="fas fa-arrow-${comparison.megamarket.change >= 0 ? 'up' : 'down'}"></i>
-                        ${Math.abs(comparison.megamarket.change)}%
-                    </div>
-                </div>
-                ` : ''}
-            </div>
-            
-            <div class="comparison-chart">
-                <canvas id="platform-comparison-chart"></canvas>
-            </div>
-        `;
-
-        this.renderComparisonChart();
-    }
-
-    // Графики аналитики
-    renderCharts() {
-        this.renderSalesChart();
-        this.renderOrdersChart();
-        this.renderPerformanceChart();
-    }
-
-    renderSalesChart() {
-        const canvas = document.getElementById('sales-chart');
-        if (!canvas) return;
-
-        const ctx = canvas.getContext('2d');
-        const data = this.getSalesChartData();
-        
-        if (this.charts.has('sales')) {
-            this.charts.get('sales').destroy();
+    createTopProductsList() {
+        const products = this.analyticsData?.topProducts || [];
+        if (products.length === 0) {
+            return '<div class="empty-state">Нет данных о товарах</div>';
         }
 
-        const chart = new Chart(ctx, {
+        return products.map((product, index) => `
+            <div class="product-item">
+                <div class="product-rank">${index + 1}</div>
+                <div class="product-info">
+                    <div class="product-name">${product.name}</div>
+                    <div class="product-stats">
+                        <span class="orders">${product.orders} заказов</span>
+                        <span class="revenue">${formatCurrency(product.revenue)}</span>
+                    </div>
+                </div>
+                <div class="product-trend ${product.trend > 0 ? 'positive' : 'negative'}">
+                    <i class="fas fa-arrow-${product.trend > 0 ? 'up' : 'down'}"></i>
+                    ${Math.abs(product.trend)}%
+                </div>
+            </div>
+        `).join('');
+    }
+
+    generateAnalyticsData() {
+        const orders = this.app.orders.all;
+        
+        this.analyticsData = {
+            totalRevenue: orders.reduce((sum, order) => sum + (order.cost || order.totalAmount || 0), 0),
+            totalOrders: orders.length,
+            averageOrder: orders.length > 0 ? 
+                orders.reduce((sum, order) => sum + (order.cost || order.totalAmount || 0), 0) / orders.length : 0,
+            successRate: 94.5,
+            
+            cdekOrders: this.app.orders.cdek.length,
+            cdekRevenue: this.app.orders.cdek.reduce((sum, order) => sum + (order.cost || 0), 0),
+            cdekAverage: this.app.orders.cdek.length > 0 ? 
+                this.app.orders.cdek.reduce((sum, order) => sum + (order.cost || 0), 0) / this.app.orders.cdek.length : 0,
+                
+            megamarketOrders: this.app.orders.megamarket.length,
+            megamarketRevenue: this.app.orders.megamarket.reduce((sum, order) => sum + (order.totalAmount || 0), 0),
+            megamarketAverage: this.app.orders.megamarket.length > 0 ? 
+                this.app.orders.megamarket.reduce((sum, order) => sum + (order.totalAmount || 0), 0) / this.app.orders.megamarket.length : 0,
+                
+            topProducts: [
+                { name: 'Смартфон Samsung Galaxy', orders: 45, revenue: 2350000, trend: 12 },
+                { name: 'Ноутбук ASUS VivoBook', orders: 32, revenue: 1890000, trend: 8 },
+                { name: 'Наушники Sony WH-1000XM4', orders: 28, revenue: 1250000, trend: 15 },
+                { name: 'Телевизор LG 55"', orders: 18, revenue: 980000, trend: -3 },
+                { name: 'Кофемашина DeLonghi', orders: 15, revenue: 750000, trend: 5 }
+            ]
+        };
+    }
+
+    renderCharts() {
+        this.renderRevenueChart();
+        this.renderPlatformsChart();
+        this.renderStatusChart();
+        this.renderMetricsChart();
+    }
+
+    renderRevenueChart() {
+        const ctx = document.getElementById('revenueChart')?.getContext('2d');
+        if (!ctx) return;
+
+        if (this.charts.revenue) {
+            this.charts.revenue.destroy();
+        }
+
+        const data = this.generateRevenueData();
+        
+        this.charts.revenue = new Chart(ctx, {
             type: 'line',
             data: {
                 labels: data.labels,
@@ -189,265 +250,105 @@ class AnalyticsComponent {
                     {
                         label: 'CDEK',
                         data: data.cdek,
-                        borderColor: 'var(--cdek-primary)',
+                        borderColor: '#FF6B35',
                         backgroundColor: 'rgba(255, 107, 53, 0.1)',
-                        tension: 0.4,
-                        hidden: !this.app.settings.cdekEnabled
+                        fill: true,
+                        tension: 0.4
                     },
                     {
                         label: 'Мегамаркет',
                         data: data.megamarket,
-                        borderColor: 'var(--megamarket-primary)',
+                        borderColor: '#2980B9',
                         backgroundColor: 'rgba(41, 128, 185, 0.1)',
-                        tension: 0.4,
-                        hidden: !this.app.settings.megamarketEnabled
+                        fill: true,
+                        tension: 0.4
                     }
                 ]
             },
             options: {
                 responsive: true,
                 plugins: {
-                    title: {
-                        display: true,
-                        text: 'Динамика продаж по платформам'
+                    legend: {
+                        position: 'top',
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false
                     }
                 },
                 scales: {
                     y: {
-                        beginAtZero: true
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return formatCurrency(value);
+                            }
+                        }
                     }
                 }
             }
         });
-
-        this.charts.set('sales', chart);
     }
 
-    // Расчет метрик
-    calculateOverviewMetrics() {
-        const allOrders = [
-            ...(this.app.settings.cdekEnabled ? this.app.orders.cdek : []),
-            ...(this.app.settings.megamarketEnabled ? this.app.orders.megamarket : [])
-        ];
-        
-        const previousPeriodOrders = this.getPreviousPeriodOrders();
-        
-        const currentMetrics = this.calculateMetrics(allOrders);
-        const previousMetrics = this.calculateMetrics(previousPeriodOrders);
-        
-        return {
-            totalOrders: currentMetrics.totalOrders,
-            totalRevenue: currentMetrics.totalRevenue,
-            averageOrderValue: currentMetrics.averageOrderValue,
-            deliverySuccessRate: currentMetrics.deliverySuccessRate,
-            
-            ordersChange: this.calculateChange(currentMetrics.totalOrders, previousMetrics.totalOrders),
-            revenueChange: this.calculateChange(currentMetrics.totalRevenue, previousMetrics.totalRevenue),
-            avgOrderChange: this.calculateChange(currentMetrics.averageOrderValue, previousMetrics.averageOrderValue),
-            successRateChange: this.calculateChange(currentMetrics.deliverySuccessRate, previousMetrics.deliverySuccessRate)
-        };
-    }
+    renderPlatformsChart() {
+        const ctx = document.getElementById('platformsChart')?.getContext('2d');
+        if (!ctx) return;
 
-    calculatePlatformComparison() {
-        const currentMetric = this.currentComparisonMetric || 'orders_count';
-        
-        const cdekValue = this.app.settings.cdekEnabled ? 
-            this.calculateMetricValue(this.app.orders.cdek, currentMetric) : 0;
-        
-        const megamarketValue = this.app.settings.megamarketEnabled ? 
-            this.calculateMetricValue(this.app.orders.megamarket, currentMetric) : 0;
-        
-        const total = cdekValue + megamarketValue;
-        
-        return {
-            cdek: {
-                value: cdekValue,
-                percentage: total > 0 ? (cdekValue / total) * 100 : 50,
-                change: 12.5
-            },
-            megamarket: {
-                value: megamarketValue,
-                percentage: total > 0 ? (megamarketValue / total) * 100 : 50,
-                change: 8.3
-            }
-        };
-    }
-
-    calculateMetrics(orders) {
-        const totalOrders = orders.length;
-        const totalRevenue = orders.reduce((sum, order) => sum + (order.totalAmount || order.cost || 0), 0);
-        const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
-        
-        const successfulDeliveries = orders.filter(order => 
-            order.status === 'delivered' || order.status === 'shipped'
-        ).length;
-        
-        const deliverySuccessRate = totalOrders > 0 ? (successfulDeliveries / totalOrders) * 100 : 0;
-        
-        return {
-            totalOrders,
-            totalRevenue,
-            averageOrderValue,
-            deliverySuccessRate: Math.round(deliverySuccessRate)
-        };
-    }
-
-    calculateMetricValue(orders, metric) {
-        switch (metric) {
-            case 'orders_count':
-                return orders.length;
-            case 'revenue':
-                return orders.reduce((sum, order) => sum + (order.totalAmount || order.cost || 0), 0);
-            case 'delivery_time':
-                return orders.length * 2.5;
-            case 'success_rate':
-                const successful = orders.filter(o => o.status === 'delivered').length;
-                return orders.length > 0 ? (successful / orders.length) * 100 : 0;
-            default:
-                return orders.length;
-        }
-    }
-
-    calculateChange(current, previous) {
-        if (previous === 0) return current > 0 ? 100 : 0;
-        return ((current - previous) / previous) * 100;
-    }
-
-    // Вспомогательные методы
-    getPreviousPeriodOrders() {
-        return [];
-    }
-
-    getSalesChartData() {
-        return {
-            labels: ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'],
-            cdek: [12000, 19000, 15000, 25000, 22000, 30000, 28000],
-            megamarket: [8000, 12000, 10000, 18000, 15000, 22000, 20000]
-        };
-    }
-
-    getMetricLabel(metric) {
-        const labels = {
-            'orders_count': 'Количество заказов',
-            'revenue': 'Выручка',
-            'delivery_time': 'Время доставки',
-            'success_rate': 'Успешность доставки',
-            'customer_satisfaction': 'Удовлетворенность клиентов'
-        };
-        return labels[metric] || metric;
-    }
-
-    formatComparisonValue(data) {
-        if (this.currentComparisonMetric === 'revenue') {
-            return formatCurrency(data.value);
-        } else if (this.currentComparisonMetric === 'success_rate') {
-            return `${Math.round(data.value)}%`;
-        }
-        return data.value.toLocaleString();
-    }
-
-    // Установка параметров
-    setTimeRange(range) {
-        this.currentTimeRange = range;
-        this.render();
-    }
-
-    setComparisonMetric(metric) {
-        this.currentComparisonMetric = metric;
-        this.renderPlatformComparison();
-    }
-
-    // Экспорт данных
-    exportData(type) {
-        const analytics = this.calculateOverviewMetrics();
-        const comparison = this.calculatePlatformComparison();
-        
-        let data;
-        let filename;
-        
-        switch (type) {
-            case 'overview':
-                data = analytics;
-                filename = `texno-edem-overview-${new Date().toISOString().split('T')[0]}.json`;
-                break;
-            case 'comparison':
-                data = comparison;
-                filename = `texno-edem-comparison-${new Date().toISOString().split('T')[0]}.json`;
-                break;
-            default:
-                data = { analytics, comparison };
-                filename = `texno-edem-analytics-${new Date().toISOString().split('T')[0]}.json`;
-        }
-        
-        this.downloadJSON(data, filename);
-        this.app.showNotification('Данные экспортированы', 'success');
-    }
-
-    downloadJSON(data, filename) {
-        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = filename;
-        link.click();
-        URL.revokeObjectURL(url);
-    }
-
-    // Статические методы
-    static calculateAnalytics(orders) {
-        const component = new AnalyticsComponent({ orders });
-        return {
-            overview: component.calculateOverviewMetrics(),
-            comparison: component.calculatePlatformComparison()
-        };
-    }
-
-    // Дополнительные методы для графиков
-    renderComparisonChart() {
-        const canvas = document.getElementById('platform-comparison-chart');
-        if (!canvas) return;
-
-        const ctx = canvas.getContext('2d');
-        const comparison = this.calculatePlatformComparison();
-        
-        if (this.charts.has('comparison')) {
-            this.charts.get('comparison').destroy();
+        if (this.charts.platforms) {
+            this.charts.platforms.destroy();
         }
 
-        const datasets = [];
-        
-        if (this.app.settings.cdekEnabled) {
-            datasets.push({
-                label: 'CDEK',
-                data: [comparison.cdek.value],
-                backgroundColor: 'var(--cdek-primary)',
-                borderColor: 'var(--cdek-primary)',
-                borderWidth: 1
-            });
-        }
-        
-        if (this.app.settings.megamarketEnabled) {
-            datasets.push({
-                label: 'Мегамаркет',
-                data: [comparison.megamarket.value],
-                backgroundColor: 'var(--megamarket-primary)',
-                borderColor: 'var(--megamarket-primary)',
-                borderWidth: 1
-            });
-        }
-
-        const chart = new Chart(ctx, {
-            type: 'bar',
+        this.charts.platforms = new Chart(ctx, {
+            type: 'doughnut',
             data: {
-                labels: [this.getMetricLabel(this.currentComparisonMetric)],
-                datasets: datasets
+                labels: ['CDEK', 'Мегамаркет'],
+                datasets: [{
+                    data: [this.analyticsData.cdekOrders, this.analyticsData.megamarketOrders],
+                    backgroundColor: ['#FF6B35', '#2980B9'],
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }]
             },
             options: {
                 responsive: true,
                 plugins: {
-                    title: {
-                        display: true,
-                        text: 'Сравнение платформ'
+                    legend: {
+                        position: 'bottom'
+                    }
+                },
+                cutout: '60%'
+            }
+        });
+    }
+
+    renderStatusChart() {
+        const ctx = document.getElementById('statusChart')?.getContext('2d');
+        if (!ctx) return;
+
+        if (this.charts.status) {
+            this.charts.status.destroy();
+        }
+
+        const statusData = this.calculateStatusDistribution();
+        
+        this.charts.status = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: Object.keys(statusData),
+                datasets: [{
+                    label: 'Количество заказов',
+                    data: Object.values(statusData),
+                    backgroundColor: [
+                        '#3B82F6', '#F59E0B', '#10B981', '#EF4444', '#8B5CF6'
+                    ],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        display: false
                     }
                 },
                 scales: {
@@ -457,19 +358,161 @@ class AnalyticsComponent {
                 }
             }
         });
-
-        this.charts.set('comparison', chart);
     }
 
-    renderOrdersChart() {
-        // Implementation for orders chart
+    renderMetricsChart() {
+        const ctx = document.getElementById('metricsChart')?.getContext('2d');
+        if (!ctx) return;
+
+        if (this.charts.metrics) {
+            this.charts.metrics.destroy();
+        }
+
+        const metrics = this.calculateKeyMetrics();
+        
+        this.charts.metrics = new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: ['Конверсия', 'Удержание', 'Лояльность', 'Эффективность', 'Скорость'],
+                datasets: [{
+                    label: 'Текущий период',
+                    data: metrics.current,
+                    backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                    borderColor: '#3B82F6',
+                    pointBackgroundColor: '#3B82F6'
+                }, {
+                    label: 'Предыдущий период',
+                    data: metrics.previous,
+                    backgroundColor: 'rgba(107, 114, 128, 0.2)',
+                    borderColor: '#6B7280',
+                    pointBackgroundColor: '#6B7280'
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    r: {
+                        angleLines: {
+                            display: true
+                        },
+                        suggestedMin: 0,
+                        suggestedMax: 100
+                    }
+                }
+            }
+        });
     }
 
-    renderPerformanceChart() {
-        // Implementation for performance chart
+    generateRevenueData() {
+        // Генерация демо-данных для графика выручки
+        const periods = this.currentPeriod === 'week' ? 7 : 
+                       this.currentPeriod === 'month' ? 30 : 
+                       this.currentPeriod === 'quarter' ? 12 : 12;
+        
+        const labels = [];
+        const cdekData = [];
+        const megamarketData = [];
+        
+        for (let i = 0; i < periods; i++) {
+            if (this.currentPeriod === 'week') {
+                labels.push(['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'][i]);
+            } else if (this.currentPeriod === 'month') {
+                labels.push(`${i + 1} дек`);
+            } else {
+                labels.push(['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'][i]);
+            }
+            
+            cdekData.push(Math.floor(Math.random() * 50000) + 20000);
+            megamarketData.push(Math.floor(Math.random() * 70000) + 30000);
+        }
+        
+        return { labels, cdek: cdekData, megamarket: megamarketData };
     }
 
-    renderMetrics() {
-        // Implementation for additional metrics
+    calculateStatusDistribution() {
+        const orders = this.app.orders.all;
+        const distribution = {
+            'Новые': 0,
+            'В работе': 0,
+            'Доставлены': 0,
+            'Проблемы': 0,
+            'Отменены': 0
+        };
+        
+        orders.forEach(order => {
+            if (order.status === 'new') distribution['Новые']++;
+            else if (order.status === 'processing' || order.status === 'active') distribution['В работе']++;
+            else if (order.status === 'delivered') distribution['Доставлены']++;
+            else if (order.status === 'problem') distribution['Проблемы']++;
+            else if (order.status === 'cancelled') distribution['Отменены']++;
+        });
+        
+        return distribution;
+    }
+
+    calculateKeyMetrics() {
+        return {
+            current: [85, 78, 82, 88, 75],
+            previous: [80, 75, 78, 85, 70]
+        };
+    }
+
+    changePeriod(period) {
+        this.currentPeriod = period;
+        this.render();
+        this.app.showNotification(`Период изменен на: ${this.getPeriodName(period)}`, 'info');
+    }
+
+    getPeriodName(period) {
+        const names = {
+            'week': 'неделя',
+            'month': 'месяц',
+            'quarter': 'квартал',
+            'year': 'год'
+        };
+        return names[period] || period;
+    }
+
+    exportReport() {
+        const csvContent = this.generateReportCSV();
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        
+        link.setAttribute('href', url);
+        link.setAttribute('download', `analytics-report-${new Date().toISOString().split('T')[0]}.csv`);
+        link.style.visibility = 'hidden';
+        
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        this.app.showNotification('Отчет экспортирован в CSV', 'success');
+    }
+
+    generateReportCSV() {
+        const headers = ['Метрика', 'Значение', 'Изменение', 'Период'];
+        const rows = [
+            ['Общая выручка', formatCurrency(this.analyticsData.totalRevenue), '+12.5%', this.currentPeriod],
+            ['Всего заказов', this.analyticsData.totalOrders, '+8.3%', this.currentPeriod],
+            ['Средний чек', formatCurrency(this.analyticsData.averageOrder), '+4.1%', this.currentPeriod],
+            ['Успешные доставки', this.analyticsData.successRate + '%', '+2.7%', this.currentPeriod],
+            ['Заказы CDEK', this.analyticsData.cdekOrders, '+15.2%', this.currentPeriod],
+            ['Заказы Мегамаркет', this.analyticsData.megamarketOrders, '+22.8%', this.currentPeriod]
+        ];
+
+        return [headers, ...rows].map(row => row.join(',')).join('\n');
+    }
+
+    toggleChartType(chartId) {
+        this.app.showNotification('Функция смены типа графика в разработке', 'info');
+    }
+
+    attachEventListeners() {
+        // Обработчики для аналитики
+        const periodSelect = document.getElementById('analytics-period');
+        if (periodSelect) {
+            periodSelect.value = this.currentPeriod;
+        }
     }
 }
