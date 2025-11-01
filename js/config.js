@@ -2,9 +2,8 @@
 const CONFIG = {
     APP: {
         NAME: 'TEXNO EDEM',
-        VERSION: '1.0.1',
-        COMPANY: 'TEXNO EDEM LLC',
-        DESCRIPTION: 'Business Intelligence Platform'
+        VERSION: '1.0.0',
+        COMPANY: 'TEXNO EDEM LLC'
     },
     
     API: {
@@ -14,18 +13,18 @@ const CONFIG = {
             CLIENT_ID: '',
             CLIENT_SECRET: '',
             ENABLED: true,
-            SYNC_INTERVAL: 600000, // 10 минут
-            TIMEOUT: 30000,
-            MAX_RETRIES: 3
+            SYNC_INTERVAL: 300000, // 5 минут
+            TIMEOUT: 30000
         },
         
         MEGAMARKET: {
-            URL: 'https://api.megamarket.ru/v1',
+            URL: 'https://api.megamarket.ru/api/merchant',
             API_KEY: '',
+            SECRET_KEY: '',
+            CAMPAIGN_ID: '',
             ENABLED: true,
-            SYNC_INTERVAL: 600000, // 10 минут
-            TIMEOUT: 30000,
-            MAX_RETRIES: 3
+            SYNC_INTERVAL: 300000, // 5 минут
+            TIMEOUT: 30000
         },
         
         BACKEND: {
@@ -40,51 +39,66 @@ const CONFIG = {
         ORDER_MANAGEMENT: true,
         NOTIFICATIONS: true,
         EXPORT_REPORTS: true,
-        MULTI_USER: false,
-        CACHE_ENABLED: true
+        MULTI_USER: false
     },
     
     SETTINGS: {
-        DEFAULT_PLATFORM: null,
+        DEFAULT_PLATFORM: 'cdek',
         ITEMS_PER_PAGE: 20,
         NOTIFICATION_SOUND: true,
         AUTO_SYNC: true,
         THEME: 'auto',
-        FORCE_REFRESH: false,
-        CACHE_DURATION: 300000 // 5 минут
+        SYNC_INTERVAL: 300000 // 5 минут
     },
     
     STATUSES: {
         CDEK: {
-            'CREATED': { text: 'Создан', color: '#3b82f6', type: 'info', priority: 1 },
-            'ACCEPTED': { text: 'Принят', color: '#8b5cf6', type: 'info', priority: 2 },
-            'IN_PROGRESS': { text: 'В пути', color: '#f59e0b', type: 'warning', priority: 3 },
-            'DELIVERED': { text: 'Доставлен', color: '#10b981', type: 'success', priority: 4 },
-            'PROBLEM': { text: 'Проблема', color: '#ef4444', type: 'error', priority: 5 },
-            'CANCELLED': { text: 'Отменен', color: '#6b7280', type: 'cancelled', priority: 6 }
+            'CREATED': { text: 'Создан', color: '#3b82f6', type: 'info', action: 'accept' },
+            'ACCEPTED': { text: 'Принят', color: '#8b5cf6', type: 'info', action: 'process' },
+            'IN_PROGRESS': { text: 'В пути', color: '#f59e0b', type: 'warning', action: 'deliver' },
+            'DELIVERED': { text: 'Доставлен', color: '#10b981', type: 'success', action: null },
+            'PROBLEM': { text: 'Проблема', color: '#ef4444', type: 'error', action: 'resolve' },
+            'CANCELLED': { text: 'Отменен', color: '#6b7280', type: 'cancelled', action: null }
         },
         
         MEGAMARKET: {
-            'NEW': { text: 'Новый', color: '#3b82f6', type: 'info', priority: 1 },
-            'CONFIRMED': { text: 'Подтвержден', color: '#8b5cf6', type: 'info', priority: 2 },
-            'PACKAGING': { text: 'Упаковка', color: '#f59e0b', type: 'warning', priority: 3 },
-            'READY_FOR_SHIPMENT': { text: 'Готов к отправке', color: '#f59e0b', type: 'warning', priority: 4 },
-            'SHIPPED': { text: 'Отправлен', color: '#8b5cf6', type: 'info', priority: 5 },
-            'DELIVERED': { text: 'Доставлен', color: '#10b981', type: 'success', priority: 6 },
-            'CANCELLED': { text: 'Отменен', color: '#6b7280', type: 'cancelled', priority: 7 },
-            'RETURNED': { text: 'Возврат', color: '#ef4444', type: 'error', priority: 8 }
+            'NEW': { text: 'Новый', color: '#3b82f6', type: 'info', action: 'confirm' },
+            'CONFIRMED': { text: 'Подтвержден', color: '#8b5cf6', type: 'info', action: 'pack' },
+            'PACKAGING': { text: 'Упаковка', color: '#f59e0b', type: 'warning', action: 'ship' },
+            'READY_FOR_SHIPMENT': { text: 'Готов к отправке', color: '#f59e0b', type: 'warning', action: 'ship' },
+            'SHIPPED': { text: 'Отправлен', color: '#6366f1', type: 'info', action: 'deliver' },
+            'DELIVERED': { text: 'Доставлен', color: '#10b981', type: 'success', action: null },
+            'CANCELLED': { text: 'Отменен', color: '#6b7280', type: 'cancelled', action: null },
+            'RETURNED': { text: 'Возврат', color: '#ef4444', type: 'error', action: 'process_return' }
+        }
+    },
+    
+    ACTIONS: {
+        CDEK: {
+            'accept': { name: 'Принять заказ', method: 'acceptOrder', icon: 'fa-check' },
+            'process': { name: 'В обработку', method: 'processOrder', icon: 'fa-cog' },
+            'deliver': { name: 'Доставить', method: 'deliverOrder', icon: 'fa-truck' },
+            'cancel': { name: 'Отменить', method: 'cancelOrder', icon: 'fa-times' },
+            'resolve': { name: 'Решить проблему', method: 'resolveIssue', icon: 'fa-wrench' }
+        },
+        MEGAMARKET: {
+            'confirm': { name: 'Подтвердить', method: 'confirmOrder', icon: 'fa-check' },
+            'pack': { name: 'Упаковать', method: 'packOrder', icon: 'fa-box' },
+            'ship': { name: 'Отправить', method: 'shipOrder', icon: 'fa-shipping-fast' },
+            'deliver': { name: 'Доставить', method: 'deliverOrder', icon: 'fa-truck' },
+            'cancel': { name: 'Отменить', method: 'cancelOrder', icon: 'fa-times' },
+            'process_return': { name: 'Обработать возврат', method: 'processReturn', icon: 'fa-undo' }
         }
     },
     
     ANALYTICS: {
         METRICS: [
             'total_orders',
-            'total_revenue', 
+            'total_revenue',
             'average_order_value',
             'conversion_rate',
             'delivery_success_rate',
-            'problem_orders_rate',
-            'customer_satisfaction'
+            'problem_orders_rate'
         ],
         
         TIME_RANGES: [
@@ -99,32 +113,17 @@ const CONFIG = {
         COMPARISON_METRICS: [
             'orders_count',
             'revenue',
-            'delivery_time', 
+            'delivery_time',
             'success_rate',
             'customer_satisfaction'
-        ],
-        
-        CHARTS: {
-            SALES: 'sales',
-            ORDERS: 'orders',
-            REVENUE: 'revenue',
-            PERFORMANCE: 'performance'
-        }
+        ]
     },
     
     STORAGE: {
         ORDERS_KEY: 'texno_edem_orders',
-        ANALYTICS_KEY: 'texno_edem_analytics', 
+        ANALYTICS_KEY: 'texno_edem_analytics',
         SETTINGS_KEY: 'texno_edem_settings',
-        CONFIG_KEY: 'texno_edem_config',
-        CACHE_DURATION: 300000
-    },
-    
-    UI: {
-        ANIMATION_DURATION: 300,
-        DEBOUNCE_DELAY: 500,
-        NOTIFICATION_DURATION: 5000,
-        LOADING_DELAY: 1000
+        CACHE_DURATION: 300000 // 5 минут
     }
 };
 
