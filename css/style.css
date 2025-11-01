@@ -1,4 +1,4 @@
-/* Основные стили и переменные */
+/* Основные стили и переменные TEXNO EDEM - ОПТИМИЗИРОВАННЫЕ */
 :root {
     /* Цветовая палитра TEXNO EDEM */
     --primary: #2c3e50;
@@ -11,11 +11,22 @@
     --danger: #e74c3c;
     --info: #3498db;
 
-    /* Платформенные цвета */
-    --cdek-primary: #ff6b35;
-    --cdek-secondary: #ff8e35;
-    --megamarket-primary: #2980b9;
-    --megamarket-secondary: #3498db;
+    /* Платформенные цвета - ОБНОВЛЕННЫЕ */
+    --cdek-primary: #27ae60;
+    --cdek-secondary: #2ecc71;
+    --cdek-light: #d5f4e6;
+    --cdek-dark: #219955;
+    
+    --megamarket-primary: #8e44ad;
+    --megamarket-secondary: #9b59b6;
+    --megamarket-light: #f0e6f5;
+    --megamarket-dark: #7d3c98;
+
+    /* Градиенты */
+    --gradient-primary: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    --gradient-cdek: linear-gradient(135deg, var(--cdek-primary), var(--cdek-dark));
+    --gradient-megamarket: linear-gradient(135deg, var(--megamarket-primary), var(--megamarket-dark));
+    --gradient-success: linear-gradient(135deg, var(--success), #219955);
 
     /* Оттенки серого */
     --white: #ffffff;
@@ -31,14 +42,14 @@
     --gray-900: #212529;
 
     /* Тени */
-    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
     --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
     --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
 
     /* Анимации */
-    --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    --transition-fast: all 0.15s ease-in-out;
+    --transition: all 0.3s ease;
+    --transition-fast: all 0.15s ease;
 
     /* Размеры */
     --border-radius: 8px;
@@ -46,7 +57,7 @@
     --border-radius-xl: 16px;
 
     /* Typography */
-    --font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    --font-family: 'Segoe UI', system-ui, sans-serif;
     --font-size-xs: 0.75rem;
     --font-size-sm: 0.875rem;
     --font-size-base: 1rem;
@@ -86,11 +97,11 @@ body {
 .section {
     display: none;
     padding: 24px 0;
-    animation: fadeIn 0.5s ease-out;
 }
 
 .section.active {
     display: block;
+    animation: fadeIn 0.5s ease;
 }
 
 .section-header {
@@ -112,10 +123,6 @@ body {
     font-size: var(--font-size-base);
     color: var(--gray-600);
     margin-top: 4px;
-}
-
-.section-title-container {
-    flex: 1;
 }
 
 .section-actions {
@@ -196,11 +203,6 @@ body {
     height: auto;
 }
 
-.btn-lg {
-    padding: 12px 24px;
-    font-size: var(--font-size-base);
-}
-
 .btn-icon {
     width: 40px;
     height: 40px;
@@ -220,7 +222,6 @@ body {
     display: none;
     align-items: center;
     justify-content: center;
-    flex-direction: column;
     z-index: 9999;
 }
 
@@ -246,11 +247,6 @@ body {
     margin-bottom: 16px;
 }
 
-#loading-message {
-    color: var(--gray-700);
-    font-weight: 500;
-}
-
 @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
@@ -260,8 +256,6 @@ body {
     from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
 }
-
-/* ===== КРИТИЧЕСКИ ВАЖНЫЕ СТИЛИ ДЛЯ КОМПОНЕНТОВ ===== */
 
 /* Header */
 .header {
@@ -456,7 +450,7 @@ body {
     text-align: center;
     margin-bottom: 40px;
     padding: 40px 20px;
-    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    background: var(--gradient-primary);
     color: var(--white);
     border-radius: var(--border-radius-lg);
 }
@@ -498,7 +492,7 @@ body {
     left: 0;
     right: 0;
     height: 3px;
-    background: linear-gradient(90deg, var(--primary), var(--secondary));
+    background: var(--gradient-primary);
 }
 
 .stat-card:hover {
@@ -518,21 +512,10 @@ body {
     color: var(--white);
 }
 
-.stat-card.orders .stat-icon {
-    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-}
-
-.stat-card.revenue .stat-icon {
-    background: linear-gradient(135deg, #10b981, #059669);
-}
-
-.stat-card.success .stat-icon {
-    background: linear-gradient(135deg, #f59e0b, #d97706);
-}
-
-.stat-card.problems .stat-icon {
-    background: linear-gradient(135deg, #ef4444, #dc2626);
-}
+.stat-card.orders .stat-icon { background: var(--gradient-primary); }
+.stat-card.revenue .stat-icon { background: var(--gradient-success); }
+.stat-card.success .stat-icon { background: var(--gradient-cdek); }
+.stat-card.problems .stat-icon { background: linear-gradient(135deg, var(--danger), #c0392b); }
 
 .stat-value {
     font-size: 2.5rem;
@@ -560,13 +543,8 @@ body {
     margin-top: 8px;
 }
 
-.stat-change.positive {
-    color: var(--success);
-}
-
-.stat-change.negative {
-    color: var(--danger);
-}
+.stat-change.positive { color: var(--success); }
+.stat-change.negative { color: var(--danger); }
 
 .platform-widgets {
     display: grid;
@@ -599,13 +577,8 @@ body {
     height: 4px;
 }
 
-.widget.cdek-widget::before {
-    background: linear-gradient(90deg, var(--cdek-primary), var(--cdek-secondary));
-}
-
-.widget.megamarket-widget::before {
-    background: linear-gradient(90deg, var(--megamarket-primary), var(--megamarket-secondary));
-}
+.widget.cdek-widget::before { background: var(--gradient-cdek); }
+.widget.megamarket-widget::before { background: var(--gradient-megamarket); }
 
 .widget:hover {
     transform: translateY(-4px);
@@ -624,13 +597,8 @@ body {
     flex-shrink: 0;
 }
 
-.widget.cdek-widget .widget-icon {
-    background: linear-gradient(135deg, var(--cdek-primary), var(--cdek-secondary));
-}
-
-.widget.megamarket-widget .widget-icon {
-    background: linear-gradient(135deg, var(--megamarket-primary), var(--megamarket-secondary));
-}
+.widget.cdek-widget .widget-icon { background: var(--gradient-cdek); }
+.widget.megamarket-widget .widget-icon { background: var(--gradient-megamarket); }
 
 .widget-content {
     flex: 1;
@@ -666,13 +634,8 @@ body {
     margin-bottom: 12px;
 }
 
-.widget-trend.positive {
-    color: var(--success);
-}
-
-.widget-trend.negative {
-    color: var(--danger);
-}
+.widget-trend.positive { color: var(--success); }
+.widget-trend.negative { color: var(--danger); }
 
 .widget-action {
     display: flex;
@@ -714,11 +677,6 @@ body {
     color: var(--gray-900);
 }
 
-.card-actions {
-    display: flex;
-    gap: 8px;
-}
-
 .activity-list {
     padding: 0;
 }
@@ -753,13 +711,8 @@ body {
     flex-shrink: 0;
 }
 
-.activity-icon.platform-cdek {
-    background: linear-gradient(135deg, var(--cdek-primary), var(--cdek-secondary));
-}
-
-.activity-icon.platform-megamarket {
-    background: linear-gradient(135deg, var(--megamarket-primary), var(--megamarket-secondary));
-}
+.activity-icon.platform-cdek { background: var(--gradient-cdek); }
+.activity-icon.platform-megamarket { background: var(--gradient-megamarket); }
 
 .activity-content {
     flex: 1;
@@ -825,7 +778,7 @@ body {
 }
 
 .platform-header {
-    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    background: var(--gradient-primary);
     color: var(--white);
     padding: 30px;
     display: flex;
@@ -851,13 +804,8 @@ body {
     background: rgba(255, 255, 255, 0.2);
 }
 
-.platform-icon.cdek {
-    background: linear-gradient(135deg, var(--cdek-primary), var(--cdek-secondary));
-}
-
-.platform-icon.megamarket {
-    background: linear-gradient(135deg, var(--megamarket-primary), var(--megamarket-secondary));
-}
+.platform-icon.cdek { background: var(--gradient-cdek); }
+.platform-icon.megamarket { background: var(--gradient-megamarket); }
 
 .platform-details h2 {
     font-size: 1.8rem;
@@ -967,16 +915,6 @@ body {
     display: flex;
     gap: 4px;
     align-items: center;
-}
-
-.sort-group select {
-    padding: 8px 12px;
-    border: 1px solid var(--gray-300);
-    border-radius: var(--border-radius);
-    background: var(--white);
-    color: var(--gray-700);
-    font-size: 0.9rem;
-    cursor: pointer;
 }
 
 .orders-list {
@@ -1161,16 +1099,6 @@ body {
     font-weight: 600;
 }
 
-.order-item-more {
-    text-align: center;
-    padding: 8px;
-    color: var(--gray-500);
-    font-size: 0.85rem;
-    font-style: italic;
-    background: var(--gray-100);
-    border-radius: var(--border-radius);
-}
-
 .order-footer {
     padding: 16px 20px;
     background: var(--gray-50);
@@ -1268,12 +1196,6 @@ body {
     cursor: not-allowed;
 }
 
-.pagination-current {
-    font-weight: 600;
-    color: var(--gray-700);
-    padding: 0 12px;
-}
-
 /* Modals */
 .modals-container {
     position: fixed;
@@ -1293,7 +1215,7 @@ body {
     width: 100%;
     height: 100%;
     z-index: 1100;
-    animation: fadeIn 0.3s ease-out;
+    animation: fadeIn 0.3s ease;
     pointer-events: all;
 }
 
@@ -1323,7 +1245,7 @@ body {
     display: flex;
     flex-direction: column;
     position: relative;
-    animation: modalSlideIn 0.3s ease-out;
+    animation: modalSlideIn 0.3s ease;
 }
 
 @keyframes modalSlideIn {
@@ -1343,7 +1265,6 @@ body {
     align-items: center;
     padding: 24px;
     border-bottom: 1px solid var(--gray-200);
-    flex-shrink: 0;
 }
 
 .modal-title {
@@ -1376,36 +1297,7 @@ body {
     gap: 12px;
     padding: 24px;
     border-top: 1px solid var(--gray-200);
-    flex-shrink: 0;
 }
-
-/* Утилиты */
-.text-center { text-align: center; }
-.text-left { text-align: left; }
-.text-right { text-align: right; }
-
-.mb-0 { margin-bottom: 0; }
-.mb-1 { margin-bottom: 0.5rem; }
-.mb-2 { margin-bottom: 1rem; }
-.mb-3 { margin-bottom: 1.5rem; }
-.mb-4 { margin-bottom: 2rem; }
-
-.mt-0 { margin-top: 0; }
-.mt-1 { margin-top: 0.5rem; }
-.mt-2 { margin-top: 1rem; }
-.mt-3 { margin-top: 1.5rem; }
-.mt-4 { margin-top: 2rem; }
-
-.p-0 { padding: 0; }
-.p-1 { padding: 0.5rem; }
-.p-2 { padding: 1rem; }
-.p-3 { padding: 1.5rem; }
-.p-4 { padding: 2rem; }
-
-.d-none { display: none; }
-.d-flex { display: flex; }
-.d-block { display: block; }
-.d-grid { display: grid; }
 
 /* Responsive */
 @media (max-width: 768px) {
@@ -1416,11 +1308,6 @@ body {
     .section-header {
         flex-direction: column;
         align-items: flex-start;
-    }
-
-    .section-actions {
-        width: 100%;
-        justify-content: flex-start;
     }
 
     .btn {
@@ -1449,7 +1336,6 @@ body {
     .nav-item {
         padding: 12px 16px;
         font-size: 14px;
-        white-space: nowrap;
     }
 
     .nav-item span:not(.nav-badge) {
