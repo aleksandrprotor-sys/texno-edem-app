@@ -23,6 +23,66 @@ class TexnoEdemApp {
         this.modal = new ModalComponent(this);
         
         this.init();
+        
+      async initComponents() {
+        // Инициализация компонентов
+        this.ordersComponent = new OrdersComponent(this);
+        this.analyticsComponent = new AnalyticsComponent(this);
+        this.settingsComponent = new SettingsComponent(this);
+        this.modal = new ModalComponent(this);
+        
+        // Рендерим статические компоненты
+        this.renderHeader();
+        this.renderNavigation();
+    }
+
+    updateDashboard() {
+        this.updateQuickStats();
+        this.updateRecentActivity();
+        this.updatePlatformWidgets();
+        this.updateAnalyticsPreview();
+    }
+
+    updateAnalyticsPreview() {
+        const container = document.getElementById('analytics-preview');
+        if (!container) return;
+
+        const metrics = [
+            { icon: 'trending-up', label: 'Рост заказов', value: '+15%', change: 'positive' },
+            { icon: 'clock', label: 'Среднее время', value: '2.3 ч', change: 'negative' },
+            { icon: 'users', label: 'Новые клиенты', value: '24', change: 'positive' },
+            { icon: 'repeat', label: 'Повторные заказы', value: '68%', change: 'positive' }
+        ];
+
+        container.innerHTML = metrics.map(metric => `
+            <div class="preview-card">
+                <div class="preview-icon">
+                    <i class="fas fa-${metric.icon}"></i>
+                </div>
+                <div class="preview-content">
+                    <div class="preview-value ${metric.change}">${metric.value}</div>
+                    <div class="preview-label">${metric.label}</div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    // В методе loadSectionData добавьте:
+    loadSectionData(sectionId, platform) {
+        switch (sectionId) {
+            case 'dashboard':
+                this.updateDashboard();
+                break;
+            case 'orders':
+                this.ordersComponent.render(platform);
+                break;
+            case 'analytics':
+                this.analyticsComponent.render();
+                break;
+            case 'settings':
+                this.settingsComponent.render();
+                break;
+        }
     }
 
     async init() {
