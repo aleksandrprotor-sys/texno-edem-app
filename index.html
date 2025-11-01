@@ -52,6 +52,9 @@
                             </div>
                             <div class="stat-value" id="total-orders">0</div>
                             <div class="stat-label">Всего заказов</div>
+                            <div class="stat-change positive" id="orders-change">
+                                <i class="fas fa-arrow-up"></i> 12%
+                            </div>
                         </div>
                         <div class="stat-card revenue">
                             <div class="stat-icon">
@@ -59,6 +62,9 @@
                             </div>
                             <div class="stat-value" id="total-revenue">0 ₽</div>
                             <div class="stat-label">Общая выручка</div>
+                            <div class="stat-change positive" id="revenue-change">
+                                <i class="fas fa-arrow-up"></i> 8%
+                            </div>
                         </div>
                         <div class="stat-card success">
                             <div class="stat-icon">
@@ -66,6 +72,9 @@
                             </div>
                             <div class="stat-value" id="success-rate">0%</div>
                             <div class="stat-label">Успешные доставки</div>
+                            <div class="stat-change positive" id="success-change">
+                                <i class="fas fa-arrow-up"></i> 3%
+                            </div>
                         </div>
                         <div class="stat-card problems">
                             <div class="stat-icon">
@@ -73,6 +82,9 @@
                             </div>
                             <div class="stat-value" id="problem-orders">0</div>
                             <div class="stat-label">Проблемные заказы</div>
+                            <div class="stat-change negative" id="problems-change">
+                                <i class="fas fa-arrow-down"></i> 5%
+                            </div>
                         </div>
                     </div>
 
@@ -87,6 +99,9 @@
                                 <div class="widget-stats">
                                     <span class="stat-value" id="cdek-active">0</span>
                                     <span class="stat-label">активных отправлений</span>
+                                </div>
+                                <div class="widget-trend positive">
+                                    <i class="fas fa-arrow-up"></i> 15% за неделю
                                 </div>
                                 <div class="widget-action">
                                     <span>Управлять отправлениями</span>
@@ -105,11 +120,27 @@
                                     <span class="stat-value" id="megamarket-new">0</span>
                                     <span class="stat-label">новых заказов</span>
                                 </div>
+                                <div class="widget-trend positive">
+                                    <i class="fas fa-arrow-up"></i> 22% за неделю
+                                </div>
                                 <div class="widget-action">
                                     <span>Обработать заказы</span>
                                     <i class="fas fa-arrow-right"></i>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+
+                    <!-- Analytics Preview -->
+                    <div class="analytics-preview">
+                        <div class="preview-header">
+                            <h3>Ключевые метрики</h3>
+                            <button class="btn btn-outline" onclick="app.showSection('analytics')">
+                                <i class="fas fa-chart-bar"></i> Вся аналитика
+                            </button>
+                        </div>
+                        <div class="preview-grid" id="analytics-preview">
+                            <!-- Analytics preview will be loaded here -->
                         </div>
                     </div>
 
@@ -141,7 +172,7 @@
                             <div class="section-subtitle" id="orders-subtitle">Управление заказами и отправлениями</div>
                         </div>
                         <div class="section-actions">
-                            <button class="btn btn-primary" data-action="refresh">
+                            <button class="btn btn-primary" onclick="app.manualSync()">
                                 <i class="fas fa-sync-alt"></i> Обновить
                             </button>
                         </div>
@@ -158,20 +189,24 @@
                     <div class="section-header">
                         <div class="section-title-container">
                             <h2 class="section-title">Аналитика и отчеты</h2>
-                            <div class="section-subtitle">Детальная аналитика по платформам</div>
+                            <div class="section-subtitle">Детальная аналитика по платформам и метрикам</div>
                         </div>
                         <div class="section-actions">
-                            <button class="btn btn-primary" data-action="export">
+                            <div class="time-filter">
+                                <select id="analytics-period" onchange="app.analyticsComponent.changePeriod(this.value)">
+                                    <option value="week">Неделя</option>
+                                    <option value="month" selected>Месяц</option>
+                                    <option value="quarter">Квартал</option>
+                                    <option value="year">Год</option>
+                                </select>
+                            </div>
+                            <button class="btn btn-primary" onclick="app.analyticsComponent.exportReport()">
                                 <i class="fas fa-download"></i> Экспорт отчета
                             </button>
                         </div>
                     </div>
                     <div class="analytics-container" id="analytics-container">
-                        <div class="analytics-placeholder">
-                            <i class="fas fa-chart-bar"></i>
-                            <h3>Аналитика в разработке</h3>
-                            <p>Раздел аналитики будет доступен в следующем обновлении</p>
-                        </div>
+                        <!-- Analytics loaded by JavaScript -->
                     </div>
                 </div>
             </section>
@@ -186,11 +221,7 @@
                         </div>
                     </div>
                     <div class="settings-container" id="settings-container">
-                        <div class="settings-placeholder">
-                            <i class="fas fa-cog"></i>
-                            <h3>Настройки в разработке</h3>
-                            <p>Раздел настроек будет доступен в следующем обновлении</p>
-                        </div>
+                        <!-- Settings loaded by JavaScript -->
                     </div>
                 </div>
             </section>
@@ -215,8 +246,10 @@
     <script src="js/services/api.js"></script>
     <script src="js/services/cdek-service.js"></script>
     <script src="js/services/megamarket-service.js"></script>
+    <script src="js/components/analytics.js"></script>
     <script src="js/components/orders.js"></script>
     <script src="js/components/modal.js"></script>
+    <script src="js/components/settings.js"></script>
     <script src="data/mock-data.js"></script>
     <script src="js/app.js"></script>
 </body>
