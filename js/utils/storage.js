@@ -170,4 +170,77 @@ class StorageManager {
     }
 
     importData(jsonData) {
-        try
+        try {
+            const data = JSON.parse(jsonData);
+            
+            Object.keys(data).forEach(key => {
+                if (key.startsWith(this.prefix)) {
+                    const item = JSON.parse(data[key]);
+                    this.cache.set(key, item);
+                    
+                    if (this.isAvailable) {
+                        try {
+                            localStorage.setItem(key, data[key]);
+                        } catch (error) {
+                            console.warn(`⚠️ Failed to import key ${key}:`, error);
+                        }
+                    }
+                }
+            });
+
+            return true;
+        } catch (error) {
+            console.error('❌ Import failed:', error);
+            return false;
+        }
+    }
+}
+
+// Глобальный экземпляр хранилища
+const STORAGE = new StorageManager();
+
+// Утилиты для работы с конфигурацией
+const CONFIG = {
+    defaults: {
+        'SETTINGS.AUTO_SYNC': true,
+        'SETTINGS.SYNC_INTERVAL': 300000,
+        'SETTINGS.NOTIFICATION_SOUND': true,
+        'SETTINGS.THEME': 'auto',
+        'UI.COMPACT_MODE': false,
+        'API.CDEK.ENABLED': true,
+        'API.MEGAMARKET.ENABLED': true,
+        'APP.VERSION': '1.0.0',
+        'APP.BUILD': '2024.01.15'
+    },
+
+    get(key, defaultValue = null) {
+        const value = STORAGE.get(`config_${key}`);
+        return value !== null ? value : (this.defaults[key] !== undefined ? this.defaults[key] : defaultValue);
+    },
+
+    set(key, value) {
+        STORAGE.set(`config_${key}`, value);
+    },
+
+    reset() {
+        Object.keys(this.defaults).forEach(key => {
+            STORAGE.remove(`config_${key}`);
+        });
+    },
+
+    applyTheme() {
+        const theme = this.get('SETTINGS.THEME', 'auto');
+        let actualTheme = theme;
+
+        if (theme === 'auto') {
+            actualTheme = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        }
+
+        document.documentElement.setAttribute('data-theme', actualTheme);
+    }
+};
+
+// Инициализация темы при загрузке
+document.addEventListener('DOMContentLoaded', () => {
+    CONFIG.applyTheme();
+});
