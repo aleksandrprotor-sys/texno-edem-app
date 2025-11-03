@@ -1,14 +1,16 @@
-// js/config.js
+// config.js - УЛУЧШЕННАЯ ВЕРСИЯ
 class ConfigManager {
     constructor() {
         this.defaultConfig = {
             APP: {
                 NAME: 'TEXNO EDEM',
-                VERSION: '1.3.0',
+                VERSION: '1.4.0', // Обновленная версия
                 COMPANY: 'TEXNO EDEM LLC',
-                BUILD: '2024.01.25'
+                BUILD: '2024.01.28',
+                ENVIRONMENT: this.detectEnvironment()
             },
             
+            // Улучшенная конфигурация API
             API: {
                 CDEK: {
                     URL: 'https://api.cdek.ru/v2',
@@ -17,7 +19,9 @@ class ConfigManager {
                     CLIENT_SECRET: '',
                     ENABLED: true,
                     SYNC_INTERVAL: 300000,
-                    TIMEOUT: 30000
+                    TIMEOUT: 30000,
+                    RETRY_ATTEMPTS: 3,
+                    RETRY_DELAY: 1000
                 },
                 
                 MEGAMARKET: {
@@ -27,29 +31,40 @@ class ConfigManager {
                     CAMPAIGN_ID: '',
                     ENABLED: true,
                     SYNC_INTERVAL: 300000,
-                    TIMEOUT: 30000
+                    TIMEOUT: 30000,
+                    RETRY_ATTEMPTS: 3,
+                    RETRY_DELAY: 1000
+                },
+                
+                // Новые настройки для резервных API
+                FALLBACK: {
+                    ENABLED: true,
+                    TIMEOUT: 10000,
+                    RETRY_ATTEMPTS: 2
                 }
             },
             
+            // Расширенные статусы
             STATUSES: {
                 CDEK: {
-                    'CREATED': { text: 'Создан', color: '#3B82F6' },
-                    'ACCEPTED': { text: 'Принят', color: '#F59E0B' },
-                    'IN_PROGRESS': { text: 'В пути', color: '#8B5CF6' },
-                    'DELIVERED': { text: 'Доставлен', color: '#10B981' },
-                    'PROBLEM': { text: 'Проблема', color: '#EF4444' },
-                    'CANCELLED': { text: 'Отменен', color: '#6B7280' }
+                    'CREATED': { text: 'Создан', color: '#3B82F6', priority: 1 },
+                    'ACCEPTED': { text: 'Принят', color: '#F59E0B', priority: 2 },
+                    'IN_PROGRESS': { text: 'В пути', color: '#8B5CF6', priority: 3 },
+                    'DELIVERED': { text: 'Доставлен', color: '#10B981', priority: 5 },
+                    'PROBLEM': { text: 'Проблема', color: '#EF4444', priority: 4 },
+                    'CANCELLED': { text: 'Отменен', color: '#6B7280', priority: 0 }
                 },
                 MEGAMARKET: {
-                    'NEW': { text: 'Новый', color: '#3B82F6' },
-                    'CONFIRMED': { text: 'Подтвержден', color: '#F59E0B' },
-                    'PACKAGING': { text: 'Упаковка', color: '#8B5CF6' },
-                    'SHIPPED': { text: 'Отправлен', color: '#6366F1' },
-                    'DELIVERED': { text: 'Доставлен', color: '#10B981' },
-                    'CANCELLED': { text: 'Отменен', color: '#6B7280' }
+                    'NEW': { text: 'Новый', color: '#3B82F6', priority: 1 },
+                    'CONFIRMED': { text: 'Подтвержден', color: '#F59E0B', priority: 2 },
+                    'PACKAGING': { text: 'Упаковка', color: '#8B5CF6', priority: 3 },
+                    'SHIPPED': { text: 'Отправлен', color: '#6366F1', priority: 4 },
+                    'DELIVERED': { text: 'Доставлен', color: '#10B981', priority: 5 },
+                    'CANCELLED': { text: 'Отменен', color: '#6B7280', priority: 0 }
                 }
             },
             
+            // Улучшенные темы
             THEMES: {
                 light: {
                     '--primary': '#2C3E50',
@@ -77,7 +92,10 @@ class ConfigManager {
                     '--megamarket-secondary': '#3498DB',
                     '--shadow': '0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24)',
                     '--shadow-md': '0 4px 6px rgba(0,0,0,0.1), 0 1px 3px rgba(0,0,0,0.08)',
-                    '--shadow-lg': '0 10px 25px rgba(0,0,0,0.15), 0 5px 10px rgba(0,0,0,0.05)'
+                    '--shadow-lg': '0 10px 25px rgba(0,0,0,0.15), 0 5px 10px rgba(0,0,0,0.05)',
+                    '--border-radius': '8px',
+                    '--border-radius-lg': '12px',
+                    '--transition': 'all 0.3s ease'
                 },
                 dark: {
                     '--primary': '#3498DB',
@@ -105,10 +123,14 @@ class ConfigManager {
                     '--megamarket-secondary': '#2980B9',
                     '--shadow': '0 1px 3px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.4)',
                     '--shadow-md': '0 4px 6px rgba(0,0,0,0.25), 0 1px 3px rgba(0,0,0,0.2)',
-                    '--shadow-lg': '0 10px 25px rgba(0,0,0,0.3), 0 5px 10px rgba(0,0,0,0.2)'
+                    '--shadow-lg': '0 10px 25px rgba(0,0,0,0.3), 0 5px 10px rgba(0,0,0,0.2)',
+                    '--border-radius': '8px',
+                    '--border-radius-lg': '12px',
+                    '--transition': 'all 0.3s ease'
                 }
             },
             
+            // Расширенные функции
             FEATURES: {
                 REAL_TIME_SYNC: true,
                 ADVANCED_ANALYTICS: true,
@@ -117,9 +139,13 @@ class ConfigManager {
                 EXPORT_REPORTS: true,
                 MULTI_USER: false,
                 DARK_MODE: true,
-                OFFLINE_MODE: true
+                OFFLINE_MODE: true,
+                PERFORMANCE_MONITORING: true, // НОВОЕ
+                ERROR_TRACKING: true, // НОВОЕ
+                CACHING: true // НОВОЕ
             },
             
+            // Улучшенные настройки
             SETTINGS: {
                 DEFAULT_PLATFORM: 'cdek',
                 ITEMS_PER_PAGE: 20,
@@ -134,20 +160,115 @@ class ConfigManager {
                 REDUCE_MOTION: false,
                 LANGUAGE: 'ru',
                 CURRENCY: 'RUB',
-                TIMEZONE: Intl.DateTimeFormat().resolvedOptions().timeZone
+                TIMEZONE: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                CACHE_TTL: 300000, // НОВОЕ: Время жизни кэша
+                PERFORMANCE_SAMPLING: 0.1 // НОВОЕ: Частота сбора метрик
             },
             
             UI: {
                 ANIMATIONS: true,
                 COMPACT_MODE: false,
                 SIDEBAR_COLLAPSED: false,
-                GRID_VIEW: false
+                GRID_VIEW: false,
+                DENSITY: 'comfortable' // НОВОЕ: Плотность интерфейса
+            },
+            
+            // НОВЫЙ РАЗДЕЛ: Аналитика и мониторинг
+            ANALYTICS: {
+                ENABLED: true,
+                ENDPOINT: '',
+                SAMPLE_RATE: 0.1,
+                TRACK_PAGE_VIEWS: true,
+                TRACK_ERRORS: true,
+                TRACK_PERFORMANCE: true
             }
         };
         
         this.config = { ...this.defaultConfig };
+        this.migrationHistory = this.loadMigrationHistory();
         this.loadConfig();
-        this.applyTheme(); // Применяем тему сразу после загрузки
+        this.applyTheme();
+        this.runMigrations(); // НОВОЕ: Миграции конфигурации
+    }
+
+    // НОВЫЙ МЕТОД: Определение окружения
+    detectEnvironment() {
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+            return 'development';
+        }
+        if (window.location.hostname.includes('staging')) {
+            return 'staging';
+        }
+        if (window.location.hostname.includes('test')) {
+            return 'test';
+        }
+        return 'production';
+    }
+
+    // НОВЫЙ МЕТОД: Миграции конфигурации
+    runMigrations() {
+        const currentVersion = this.get('APP.VERSION');
+        const lastMigratedVersion = this.migrationHistory[this.migrationHistory.length - 1];
+        
+        if (lastMigratedVersion === currentVersion) {
+            return;
+        }
+        
+        console.log('🔄 Running config migrations...');
+        
+        // Миграция с версии 1.3.0 на 1.4.0
+        if (!lastMigratedVersion || lastMigratedVersion === '1.3.0') {
+            this.migrateTo_1_4_0();
+        }
+        
+        this.migrationHistory.push(currentVersion);
+        this.saveMigrationHistory();
+    }
+
+    migrateTo_1_4_0() {
+        console.log('🔄 Migrating to version 1.4.0');
+        
+        // Добавляем новые настройки если их нет
+        if (this.get('SETTINGS.CACHE_TTL') === null) {
+            this.set('SETTINGS.CACHE_TTL', 300000);
+        }
+        
+        if (this.get('SETTINGS.PERFORMANCE_SAMPLING') === null) {
+            this.set('SETTINGS.PERFORMANCE_SAMPLING', 0.1);
+        }
+        
+        if (this.get('UI.DENSITY') === null) {
+            this.set('UI.DENSITY', 'comfortable');
+        }
+        
+        // Обновляем настройки API
+        const apiConfigs = ['CDEK', 'MEGAMARKET'];
+        apiConfigs.forEach(platform => {
+            if (this.get(`API.${platform}.RETRY_ATTEMPTS`) === null) {
+                this.set(`API.${platform}.RETRY_ATTEMPTS`, 3);
+            }
+            if (this.get(`API.${platform}.RETRY_DELAY`) === null) {
+                this.set(`API.${platform}.RETRY_DELAY`, 1000);
+            }
+        });
+        
+        this.saveConfig();
+    }
+
+    loadMigrationHistory() {
+        try {
+            return JSON.parse(localStorage.getItem('texno_edem_migrations') || '[]');
+        } catch {
+            return [];
+        }
+    }
+
+    saveMigrationHistory() {
+        try {
+            localStorage.setItem('texno_edem_migrations', JSON.stringify(this.migrationHistory));
+        } catch (error) {
+            console.warn('⚠️ Failed to save migration history:', error);
+        }
     }
 
     loadConfig() {
@@ -157,17 +278,77 @@ class ConfigManager {
                 const parsed = JSON.parse(saved);
                 this.config = this.deepMerge(this.defaultConfig, parsed);
                 console.log('✅ Config loaded successfully');
+                
+                // Валидация загруженной конфигурации
+                const validation = this.validateConfig();
+                if (!validation.isValid) {
+                    console.warn('⚠️ Config validation warnings:', validation.errors);
+                }
             }
         } catch (error) {
             console.error('❌ Error loading config:', error);
             this.config = { ...this.defaultConfig };
+            this.backupCorruptedConfig(saved);
         }
+    }
+
+    // НОВЫЙ МЕТОД: Резервное копирование поврежденной конфигурации
+    backupCorruptedConfig(corruptedConfig) {
+        try {
+            if (corruptedConfig) {
+                const backupKey = `texno_edem_config_backup_${Date.now()}`;
+                localStorage.setItem(backupKey, corruptedConfig);
+                console.log('💾 Created config backup:', backupKey);
+            }
+        } catch (error) {
+            console.warn('⚠️ Failed to backup corrupted config:', error);
+        }
+    }
+
+    // НОВЫЙ МЕТОД: Валидация конфигурации
+    validateConfig() {
+        const errors = [];
+        
+        // Проверка обязательных полей
+        const requiredPaths = [
+            'APP.NAME',
+            'APP.VERSION',
+            'SETTINGS.DEFAULT_PLATFORM',
+            'SETTINGS.THEME_MODE'
+        ];
+        
+        requiredPaths.forEach(path => {
+            if (this.get(path) === null || this.get(path) === undefined) {
+                errors.push(`Missing required config: ${path}`);
+            }
+        });
+        
+        // Проверка допустимых значений
+        const platform = this.get('SETTINGS.DEFAULT_PLATFORM');
+        if (platform && !['cdek', 'megamarket'].includes(platform)) {
+            errors.push(`Invalid default platform: ${platform}`);
+        }
+        
+        const themeMode = this.get('SETTINGS.THEME_MODE');
+        if (themeMode && !['light', 'dark', 'auto'].includes(themeMode)) {
+            errors.push(`Invalid theme mode: ${themeMode}`);
+        }
+        
+        return {
+            isValid: errors.length === 0,
+            errors
+        };
     }
 
     saveConfig() {
         try {
-            localStorage.setItem('texno_edem_config', JSON.stringify(this.config));
-            console.log('💾 Config saved');
+            const configToSave = this.prepareConfigForSave();
+            localStorage.setItem('texno_edem_config', JSON.stringify(configToSave));
+            console.log('✅ Config saved successfully');
+            
+            // Применяем изменения
+            this.applyTheme();
+            
             return true;
         } catch (error) {
             console.error('❌ Error saving config:', error);
@@ -175,244 +356,190 @@ class ConfigManager {
         }
     }
 
-    get(keyPath, defaultValue = null) {
-        try {
-            const keys = keyPath.split('.');
-            let value = this.config;
-            
-            for (const key of keys) {
-                if (value && typeof value === 'object' && key in value) {
-                    value = value[key];
-                } else {
-                    return defaultValue;
-                }
-            }
-            
-            return value !== undefined ? value : defaultValue;
-        } catch (error) {
-            console.warn('⚠️ Config get error:', error);
-            return defaultValue;
-        }
+    // НОВЫЙ МЕТОД: Подготовка конфигурации к сохранению
+    prepareConfigForSave() {
+        const configToSave = { ...this.config };
+        
+        // Удаляем чувствительные данные перед сохранением
+        delete configToSave.API.CDEK.CLIENT_SECRET;
+        delete configToSave.API.MEGAMARKET.SECRET_KEY;
+        
+        // Удаляем временные настройки
+        delete configToSave.APP.ENVIRONMENT;
+        
+        return configToSave;
     }
 
-    set(keyPath, value) {
-        try {
-            const keys = keyPath.split('.');
-            let current = this.config;
-            
-            for (let i = 0; i < keys.length - 1; i++) {
-                const key = keys[i];
-                if (!(key in current) || typeof current[key] !== 'object') {
-                    current[key] = {};
-                }
-                current = current[key];
-            }
-            
-            current[keys[keys.length - 1]] = value;
-            const success = this.saveConfig();
-            
-            // Автоматически применяем изменения темы
-            if (keyPath.includes('THEME') || keyPath.includes('ACCENT_COLOR')) {
-                this.applyTheme();
-            }
-            
-            return success;
-            
-        } catch (error) {
-            console.error('❌ Config set error:', error);
-            return false;
-        }
+    get(path, defaultValue = null) {
+        return this.getNestedValue(this.config, path, defaultValue);
+    }
+
+    set(path, value) {
+        this.setNestedValue(this.config, path, value);
+        this.saveConfig();
     }
 
     reset() {
         this.config = { ...this.defaultConfig };
-        const success = this.saveConfig();
-        this.applyTheme(); // Применяем тему по умолчанию
-        return success;
+        this.saveConfig();
+        this.applyTheme();
     }
 
-    deepMerge(target, source) {
-        const output = { ...target };
-        
-        if (this.isObject(target) && this.isObject(source)) {
-            Object.keys(source).forEach(key => {
-                if (this.isObject(source[key])) {
-                    if (!(key in target)) {
-                        output[key] = source[key];
-                    } else {
-                        output[key] = this.deepMerge(target[key], source[key]);
-                    }
-                } else {
-                    output[key] = source[key];
-                }
-            });
+    // НОВЫЙ МЕТОД: Сброс только определенного раздела
+    resetSection(section) {
+        if (this.defaultConfig[section]) {
+            this.config[section] = { ...this.defaultConfig[section] };
+            this.saveConfig();
+            return true;
         }
-        
-        return output;
+        return false;
     }
 
-    isObject(item) {
-        return item && typeof item === 'object' && !Array.isArray(item);
+    // НОВЫЙ МЕТОД: Экспорт конфигурации
+    exportConfig() {
+        const configToExport = this.prepareConfigForSave();
+        const blob = new Blob([JSON.stringify(configToExport, null, 2)], {
+            type: 'application/json'
+        });
+        return URL.createObjectURL(blob);
+    }
+
+    // НОВЫЙ МЕТОД: Импорт конфигурации
+    importConfig(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const importedConfig = JSON.parse(e.target.result);
+                    this.config = this.deepMerge(this.defaultConfig, importedConfig);
+                    
+                    const validation = this.validateConfig();
+                    if (!validation.isValid) {
+                        reject(new Error(`Invalid config: ${validation.errors.join(', ')}`));
+                        return;
+                    }
+                    
+                    this.saveConfig();
+                    resolve(true);
+                } catch (error) {
+                    reject(error);
+                }
+            };
+            reader.onerror = () => reject(new Error('Failed to read file'));
+            reader.readAsText(file);
+        });
     }
 
     applyTheme() {
-        try {
-            const themeMode = this.get('SETTINGS.THEME_MODE', 'light');
-            let actualTheme = themeMode;
-
-            if (themeMode === 'auto') {
-                actualTheme = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-            }
-
-            // Применяем выбранную тему
-            const themeVars = this.get(`THEMES.${actualTheme}`, this.defaultConfig.THEMES.light);
-            this.applyThemeVariables(themeVars);
-            
-            // Применяем акцентный цвет
-            this.applyAccentColor();
-            
-            document.documentElement.setAttribute('data-theme', actualTheme);
-            console.log(`🎨 Theme applied: ${actualTheme}`);
-            
-        } catch (error) {
-            console.error('❌ Error applying theme:', error);
-        }
-    }
-
-    applyThemeVariables(themeVars) {
-        const root = document.documentElement;
-        Object.entries(themeVars).forEach(([property, value]) => {
-            root.style.setProperty(property, value);
+        const themeMode = this.get('SETTINGS.THEME_MODE');
+        const theme = this.get('THEMES')[themeMode] || this.get('THEMES').light;
+        
+        Object.entries(theme).forEach(([property, value]) => {
+            document.documentElement.style.setProperty(property, value);
         });
-    }
-
-    applyAccentColor() {
-        const accentColor = this.get('SETTINGS.ACCENT_COLOR', '#3498DB');
-        document.documentElement.style.setProperty('--accent', accentColor);
-        document.documentElement.style.setProperty('--secondary', this.adjustColor(accentColor, 20));
-    }
-
-    adjustColor(color, amount) {
-        try {
-            let usePound = false;
-            if (color[0] === "#") {
-                color = color.slice(1);
-                usePound = true;
-            }
-            const num = parseInt(color, 16);
-            let r = (num >> 16) + amount;
-            if (r > 255) r = 255;
-            else if (r < 0) r = 0;
-            let b = ((num >> 8) & 0x00FF) + amount;
-            if (b > 255) b = 255;
-            else if (b < 0) b = 0;
-            let g = (num & 0x0000FF) + amount;
-            if (g > 255) g = 255;
-            else if (g < 0) g = 0;
-            return (usePound ? "#" : "") + (g | (b << 8) | (r << 16)).toString(16).padStart(6, '0');
-        } catch (error) {
-            return '#3498DB';
+        
+        // Применяем настройки шрифтов
+        const fontSize = this.get('SETTINGS.FONT_SIZE');
+        if (fontSize) {
+            document.documentElement.style.setProperty('--font-size', this.getFontSize(fontSize));
         }
+        
+        // Применяем настройки анимаций
+        const animations = this.get('SETTINGS.ANIMATIONS');
+        const reduceMotion = this.get('SETTINGS.REDUCE_MOTION');
+        document.documentElement.classList.toggle('no-animations', !animations);
+        document.documentElement.classList.toggle('reduce-motion', reduceMotion);
+        
+        // Применяем плотность интерфейса
+        const density = this.get('UI.DENSITY');
+        document.documentElement.setAttribute('data-density', density);
     }
 
-    // Новые методы для работы с API
-    getApiConfig(platform) {
-        return this.get(`API.${platform.toUpperCase()}`, {});
-    }
-
-    isPlatformEnabled(platform) {
-        return this.get(`API.${platform.toUpperCase()}.ENABLED`, false);
-    }
-
-    setApiCredentials(platform, credentials) {
-        const platformKey = platform.toUpperCase();
-        Object.entries(credentials).forEach(([key, value]) => {
-            this.set(`API.${platformKey}.${key.toUpperCase()}`, value);
-        });
-        return this.saveConfig();
-    }
-
-    // Методы для работы с настройками пользователя
-    getUserSettings() {
-        return {
-            userName: this.get('USER.NAME', 'Пользователь'),
-            userEmail: this.get('USER.EMAIL', ''),
-            userPhone: this.get('USER.PHONE', ''),
-            emailReports: this.get('USER.EMAIL_REPORTS', false),
-            pushNotifications: this.get('USER.PUSH_NOTIFICATIONS', true)
+    getFontSize(size) {
+        const sizes = {
+            'small': '12px',
+            'medium': '14px',
+            'large': '16px'
         };
+        return sizes[size] || sizes.medium;
     }
 
-    setUserSettings(settings) {
-        Object.entries(settings).forEach(([key, value]) => {
-            this.set(`USER.${key.toUpperCase()}`, value);
-        });
-        return this.saveConfig();
-    }
-
-    // Валидация конфигурации
-    validateConfig() {
-        const errors = [];
-        
-        // Проверка обязательных полей API
-        if (this.get('API.CDEK.ENABLED') && (!this.get('API.CDEK.CLIENT_ID') || !this.get('API.CDEK.CLIENT_SECRET'))) {
-            errors.push('CDEK: Не заполнены Client ID или Client Secret');
-        }
-        
-        if (this.get('API.MEGAMARKET.ENABLED') && (!this.get('API.MEGAMARKET.API_KEY') || !this.get('API.MEGAMARKET.SECRET_KEY'))) {
-            errors.push('Megamarket: Не заполнены API Key или Secret Key');
+    // НОВЫЙ МЕТОД: Получение конфигурации для конкретной платформы
+    getPlatformConfig(platform) {
+        const baseConfig = this.get(`API.${platform.toUpperCase()}`);
+        if (!baseConfig) {
+            throw new Error(`Unknown platform: ${platform}`);
         }
         
         return {
-            isValid: errors.length === 0,
-            errors: errors
+            ...baseConfig,
+            // Добавляем общие настройки
+            timeout: baseConfig.TIMEOUT || 30000,
+            retryAttempts: baseConfig.RETRY_ATTEMPTS || 3,
+            retryDelay: baseConfig.RETRY_DELAY || 1000
         };
     }
 
-    // Экспорт/импорт настроек
-    exportSettings() {
-        return JSON.stringify(this.config, null, 2);
+    // НОВЫЙ МЕТОД: Получение статуса по коду
+    getStatusConfig(platform, statusCode) {
+        const statuses = this.get(`STATUSES.${platform.toUpperCase()}`);
+        return statuses?.[statusCode] || { 
+            text: statusCode, 
+            color: '#6B7280', 
+            priority: 0 
+        };
     }
 
-    importSettings(jsonString) {
-        try {
-            const imported = JSON.parse(jsonString);
-            this.config = this.deepMerge(this.defaultConfig, imported);
-            return this.saveConfig();
-        } catch (error) {
-            console.error('❌ Error importing settings:', error);
-            return false;
+    // НОВЫЙ МЕТОД: Получение всех статусов для платформы
+    getPlatformStatuses(platform) {
+        return this.get(`STATUSES.${platform.toUpperCase()}`) || {};
+    }
+
+    // Вспомогательные методы остаются без изменений...
+    getNestedValue(obj, path, defaultValue = null) {
+        const keys = path.split('.');
+        let current = obj;
+        
+        for (const key of keys) {
+            if (current && typeof current === 'object' && key in current) {
+                current = current[key];
+            } else {
+                return defaultValue;
+            }
         }
+        
+        return current !== undefined ? current : defaultValue;
     }
-}
 
-// Создаем глобальный экземпляр с обработкой ошибок
-let CONFIG;
-
-try {
-    CONFIG = new ConfigManager();
-    console.log('✅ ConfigManager initialized successfully');
-    
-    // Экспортируем для использования в других модулях
-    if (typeof module !== 'undefined' && module.exports) {
-        module.exports = { ConfigManager, CONFIG };
-    }
-    
-} catch (error) {
-    console.error('❌ Failed to initialize ConfigManager:', error);
-    // Fallback конфиг
-    CONFIG = {
-        get: (key, defaultValue) => defaultValue,
-        set: () => false,
-        applyTheme: () => {}
-    };
-}
-
-// Автоматическое применение темы при изменении системных предпочтений
-if (window.matchMedia) {
-    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
-        if (CONFIG && CONFIG.get('SETTINGS.THEME_MODE') === 'auto') {
-            CONFIG.applyTheme();
+    setNestedValue(obj, path, value) {
+        const keys = path.split('.');
+        let current = obj;
+        
+        for (let i = 0; i < keys.length - 1; i++) {
+            const key = keys[i];
+            if (!(key in current) || typeof current[key] !== 'object') {
+                current[key] = {};
+            }
+            current = current[key];
         }
-    });
+        
+        current[keys[keys.length - 1]] = value;
+    }
+
+    deepMerge(target, source) {
+        const result = { ...target };
+        
+        for (const key in source) {
+            if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key])) {
+                result[key] = this.deepMerge(result[key] || {}, source[key]);
+            } else {
+                result[key] = source[key];
+            }
+        }
+        
+        return result;
+    }
 }
+
+// Глобальный экземпляр конфигурации
+window.configManager = new ConfigManager();
