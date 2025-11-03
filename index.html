@@ -402,5 +402,32 @@
             event.preventDefault();
         });
     </script>
+    <!-- Контейнер для модальных окон -->
+<div id="modals-container"></div>
+
+<!-- Скрипт инициализации -->
+<script>
+// Простая инициализация если основной скрипт не загрузился
+if (!window.app) {
+    console.log('🔄 Fallback initialization...');
+    setTimeout(() => {
+        if (!window.app) {
+            console.error('❌ Main app not loaded, showing error state');
+            document.getElementById('main-content').innerHTML = `
+                <div class="error-state">
+                    <div class="error-icon">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <h2>Приложение не загрузилось</h2>
+                    <p>Попробуйте обновить страницу или проверьте консоль для ошибок</p>
+                    <button class="btn btn-primary" onclick="location.reload()">
+                        <i class="fas fa-redo"></i> Обновить страницу
+                    </button>
+                </div>
+            `;
+        }
+    }, 2000);
+}
+</script>
 </body>
 </html>
