@@ -388,20 +388,60 @@ class TexnoEdemApp {
     }
 
     getStatusConfig(order) {
-        const statusMap = {
-            'new': { text: 'Новый', color: '#3b82f6' },
-            'processing': { text: 'В обработке', color: '#f59e0b' },
-            'active': { text: 'Активный', color: '#8b5cf6' },
-            'confirmed': { text: 'Подтвержден', color: '#10b981' },
-            'packed': { text: 'Упакован', color: '#06b6d4' },
-            'shipped': { text: 'Отправлен', color: '#6366f1' },
-            'delivered': { text: 'Доставлен', color: '#22c55e' },
-            'problem': { text: 'Проблема', color: '#ef4444' },
-            'cancelled': { text: 'Отменен', color: '#6b7280' }
-        };
-        
-        return statusMap[order.status] || { text: order.status, color: '#6b7280' };
+    const platform = order.platform.toUpperCase();
+    const statusConfig = CONFIG.STATUSES[platform]?.[order.statusCode];
+    
+    if (statusConfig) {
+        return statusConfig;
     }
+    
+    // Fallback для неизвестных статусов
+    const fallbackStatuses = {
+        'new': { text: 'Новый', color: '#3b82f6', type: 'info' },
+        'processing': { text: 'В обработке', color: '#f59e0b', type: 'warning' },
+        'active': { text: 'Активный', color: '#8b5cf6', type: 'info' },
+        'delivered': { text: 'Доставлен', color: '#10b981', type: 'success' },
+        'problem': { text: 'Проблема', color: '#ef4444', type: 'error' },
+        'cancelled': { text: 'Отменен', color: '#6b7280', type: 'cancelled' }
+    };
+    
+    return fallbackStatuses[order.status] || { text: order.status, color: '#6b7280', type: 'info' };
+}
+
+// Метод для ручной синхронизации
+async manualSync() {
+    if (this.isSyncing) {
+        this.showNotification('Синхронизация уже выполняется', 'warning');
+        return;
+    }
+    
+    this.isSyncing = true;
+    this.showLoading('Синхронизация данных...');
+    this.renderHeader(); // Обновляем статус в хедере
+    
+    try {
+        await this.loadOrders();
+        this.updateDashboard();
+        this.updateNavigationBadges();
+        this.lastSyncTime = new Date();
+        
+        this.showNotification('Данные успешно синхронизированы', 'success');
+        
+    } catch (error) {
+        console.error('Sync error:', error);
+        this.showNotification('Ошибка синхронизации', 'error');
+    } finally {
+        this.isSyncing = false;
+        this.hideLoading();
+        this.renderHeader(); // Обновляем статус в хедере
+    }
+}
+
+// Метод для получения заказа по ID
+getOrderById(platform, orderId) {
+    const orders = this.orders[platform] || [];
+    return orders.find(order => order.id === orderId) || null;
+}
 
     getSyncText() {
         if (this.isSyncing) return 'Синхронизация...';
