@@ -1061,28 +1061,30 @@ class TexnoEdemApp {
     }
 }
 
-// Глобальная инициализация
-let app;
-
+// Глобальная инициализация - ТОЛЬКО ОДИН РАЗ
 document.addEventListener('DOMContentLoaded', async () => {
-    console.log('📄 DOM Content Loaded');
+    console.log('📄 DOM Content Loaded - Starting app...');
     
     try {
-        app = new TexnoEdemApp();
-        window.app = app;
+        // Создаем экземпляр приложения только если его нет
+        if (!window.app) {
+            window.app = new TexnoEdemApp();
+        }
         
-        // Даем время на загрузку DOM
+        // Даем время на загрузку всех скриптов
         setTimeout(() => {
-            app.init().catch(error => {
+            window.app.init().catch(error => {
                 console.error('❌ App init failed:', error);
-                app.emergencyInit();
+                window.app.emergencyInit();
             });
-        }, 100);
+        }, 200);
         
     } catch (error) {
-        console.error('❌ Failed to create app instance:', error);
-        // Создаем базовый app
-        window.app = new TexnoEdemApp();
+        console.error('❌ Failed to initialize app:', error);
+        // Аварийная инициализация
+        if (!window.app) {
+            window.app = new TexnoEdemApp();
+        }
         window.app.emergencyInit();
     }
 });
