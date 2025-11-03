@@ -1,133 +1,238 @@
-// Конфигурация приложения TEXNO EDEM
-const CONFIG = {
-    APP: {
-        NAME: 'TEXNO EDEM',
-        VERSION: '1.0.0',
-        COMPANY: 'TEXNO EDEM LLC'
-    },
-    
-    API: {
-        CDEK: {
-            URL: 'https://api.cdek.ru/v2',
-            AUTH_URL: 'https://api.cdek.ru/v2/oauth/token',
-            CLIENT_ID: '',
-            CLIENT_SECRET: '',
-            ENABLED: true,
-            SYNC_INTERVAL: 300000, // 5 минут
-            TIMEOUT: 30000
-        },
-        
-        MEGAMARKET: {
-            URL: 'https://api.megamarket.ru/api/merchant',
-            API_KEY: '',
-            SECRET_KEY: '',
-            CAMPAIGN_ID: '',
-            ENABLED: true,
-            SYNC_INTERVAL: 300000, // 5 минут
-            TIMEOUT: 30000
-        },
-        
-        BACKEND: {
-            URL: 'https://api.texno-edem.com/v1',
-            TIMEOUT: 15000
-        }
-    },
-    
-    FEATURES: {
-        REAL_TIME_SYNC: true,
-        ADVANCED_ANALYTICS: true,
-        ORDER_MANAGEMENT: true,
-        NOTIFICATIONS: true,
-        EXPORT_REPORTS: true,
-        MULTI_USER: false
-    },
-    
-    SETTINGS: {
-        DEFAULT_PLATFORM: 'cdek',
-        ITEMS_PER_PAGE: 20,
-        NOTIFICATION_SOUND: true,
-        AUTO_SYNC: true,
-        THEME: 'auto',
-        SYNC_INTERVAL: 300000 // 5 минут
-    },
-    
-    STATUSES: {
-        CDEK: {
-            'CREATED': { text: 'Создан', color: '#3b82f6', type: 'info', action: 'accept' },
-            'ACCEPTED': { text: 'Принят', color: '#8b5cf6', type: 'info', action: 'process' },
-            'IN_PROGRESS': { text: 'В пути', color: '#f59e0b', type: 'warning', action: 'deliver' },
-            'DELIVERED': { text: 'Доставлен', color: '#10b981', type: 'success', action: null },
-            'PROBLEM': { text: 'Проблема', color: '#ef4444', type: 'error', action: 'resolve' },
-            'CANCELLED': { text: 'Отменен', color: '#6b7280', type: 'cancelled', action: null }
-        },
-        
-        MEGAMARKET: {
-            'NEW': { text: 'Новый', color: '#3b82f6', type: 'info', action: 'confirm' },
-            'CONFIRMED': { text: 'Подтвержден', color: '#8b5cf6', type: 'info', action: 'pack' },
-            'PACKAGING': { text: 'Упаковка', color: '#f59e0b', type: 'warning', action: 'ship' },
-            'READY_FOR_SHIPMENT': { text: 'Готов к отправке', color: '#f59e0b', type: 'warning', action: 'ship' },
-            'SHIPPED': { text: 'Отправлен', color: '#6366f1', type: 'info', action: 'deliver' },
-            'DELIVERED': { text: 'Доставлен', color: '#10b981', type: 'success', action: null },
-            'CANCELLED': { text: 'Отменен', color: '#6b7280', type: 'cancelled', action: null },
-            'RETURNED': { text: 'Возврат', color: '#ef4444', type: 'error', action: 'process_return' }
-        }
-    },
-    
-    ACTIONS: {
-        CDEK: {
-            'accept': { name: 'Принять заказ', method: 'acceptOrder', icon: 'fa-check' },
-            'process': { name: 'В обработку', method: 'processOrder', icon: 'fa-cog' },
-            'deliver': { name: 'Доставить', method: 'deliverOrder', icon: 'fa-truck' },
-            'cancel': { name: 'Отменить', method: 'cancelOrder', icon: 'fa-times' },
-            'resolve': { name: 'Решить проблему', method: 'resolveIssue', icon: 'fa-wrench' }
-        },
-        MEGAMARKET: {
-            'confirm': { name: 'Подтвердить', method: 'confirmOrder', icon: 'fa-check' },
-            'pack': { name: 'Упаковать', method: 'packOrder', icon: 'fa-box' },
-            'ship': { name: 'Отправить', method: 'shipOrder', icon: 'fa-shipping-fast' },
-            'deliver': { name: 'Доставить', method: 'deliverOrder', icon: 'fa-truck' },
-            'cancel': { name: 'Отменить', method: 'cancelOrder', icon: 'fa-times' },
-            'process_return': { name: 'Обработать возврат', method: 'processReturn', icon: 'fa-undo' }
-        }
-    },
-    
-    ANALYTICS: {
-        METRICS: [
-            'total_orders',
-            'total_revenue',
-            'average_order_value',
-            'conversion_rate',
-            'delivery_success_rate',
-            'problem_orders_rate'
-        ],
-        
-        TIME_RANGES: [
-            { value: 'today', label: 'Сегодня' },
-            { value: 'yesterday', label: 'Вчера' },
-            { value: 'week', label: 'Неделя' },
-            { value: 'month', label: 'Месяц' },
-            { value: 'quarter', label: 'Квартал' },
-            { value: 'year', label: 'Год' }
-        ],
-        
-        COMPARISON_METRICS: [
-            'orders_count',
-            'revenue',
-            'delivery_time',
-            'success_rate',
-            'customer_satisfaction'
-        ]
-    },
-    
-    STORAGE: {
-        ORDERS_KEY: 'texno_edem_orders',
-        ANALYTICS_KEY: 'texno_edem_analytics',
-        SETTINGS_KEY: 'texno_edem_settings',
-        CACHE_DURATION: 300000 // 5 минут
+// js/config.js - Улучшенная конфигурация с автосохранением
+class ConfigManager {
+    constructor() {
+        this.defaultConfig = {
+            APP: {
+                NAME: 'TEXNO EDEM',
+                VERSION: '1.0.0',
+                COMPANY: 'TEXNO EDEM LLC',
+                BUILD: '2024.01.001'
+            },
+            
+            API: {
+                CDEK: {
+                    URL: 'https://api.cdek.ru/v2',
+                    AUTH_URL: 'https://api.cdek.ru/v2/oauth/token',
+                    CLIENT_ID: '',
+                    CLIENT_SECRET: '',
+                    ENABLED: true,
+                    SYNC_INTERVAL: 300000,
+                    TIMEOUT: 30000
+                },
+                
+                MEGAMARKET: {
+                    URL: 'https://api.megamarket.ru/api/merchant',
+                    API_KEY: '',
+                    SECRET_KEY: '',
+                    CAMPAIGN_ID: '',
+                    ENABLED: true,
+                    SYNC_INTERVAL: 300000,
+                    TIMEOUT: 30000
+                },
+                
+                BACKEND: {
+                    URL: 'https://api.texno-edem.com/v1',
+                    TIMEOUT: 15000
+                }
+            },
+            
+            FEATURES: {
+                REAL_TIME_SYNC: true,
+                ADVANCED_ANALYTICS: true,
+                ORDER_MANAGEMENT: true,
+                NOTIFICATIONS: true,
+                EXPORT_REPORTS: true,
+                MULTI_USER: false,
+                DARK_MODE: true,
+                OFFLINE_MODE: true
+            },
+            
+            SETTINGS: {
+                DEFAULT_PLATFORM: 'cdek',
+                ITEMS_PER_PAGE: 20,
+                NOTIFICATION_SOUND: true,
+                AUTO_SYNC: true,
+                SYNC_INTERVAL: 300000,
+                THEME: 'auto',
+                LANGUAGE: 'ru',
+                CURRENCY: 'RUB',
+                TIMEZONE: Intl.DateTimeFormat().resolvedOptions().timeZone
+            },
+            
+            UI: {
+                ANIMATIONS: true,
+                COMPACT_MODE: false,
+                SIDEBAR_COLLAPSED: false,
+                GRID_VIEW: false,
+                FONT_SIZE: 'medium'
+            },
+            
+            NOTIFICATIONS: {
+                NEW_ORDERS: true,
+                STATUS_CHANGES: true,
+                PROBLEMS: true,
+                SOUND: true,
+                DESKTOP_NOTIFICATIONS: false,
+                PUSH_NOTIFICATIONS: false
+            }
+        };
+
+        this.load();
     }
-};
+
+    load() {
+        try {
+            const savedConfig = storageManager.get('config');
+            if (savedConfig) {
+                this.config = this.deepMerge(this.defaultConfig, savedConfig);
+                console.log('✅ Config loaded from storage');
+            } else {
+                this.config = this.defaultConfig;
+                this.save();
+                console.log('✅ Default config loaded');
+            }
+        } catch (error) {
+            console.error('❌ Config load error:', error);
+            this.config = this.defaultConfig;
+        }
+    }
+
+    save() {
+        try {
+            const success = storageManager.set('config', this.config);
+            if (success) {
+                console.log('✅ Config saved');
+            } else {
+                console.error('❌ Config save failed');
+            }
+            return success;
+        } catch (error) {
+            console.error('❌ Config save error:', error);
+            return false;
+        }
+    }
+
+    get(path, defaultValue = null) {
+        const keys = path.split('.');
+        let value = this.config;
+        
+        for (const key of keys) {
+            if (value && typeof value === 'object' && key in value) {
+                value = value[key];
+            } else {
+                return defaultValue;
+            }
+        }
+        
+        return value !== undefined ? value : defaultValue;
+    }
+
+    set(path, value) {
+        const keys = path.split('.');
+        let current = this.config;
+        
+        for (let i = 0; i < keys.length - 1; i++) {
+            const key = keys[i];
+            if (!(key in current) || typeof current[key] !== 'object') {
+                current[key] = {};
+            }
+            current = current[key];
+        }
+        
+        current[keys[keys.length - 1]] = value;
+        this.save();
+        
+        // Генерируем событие изменения конфигурации
+        this.dispatchChangeEvent(path, value);
+    }
+
+    reset() {
+        this.config = this.defaultConfig;
+        this.save();
+        console.log('✅ Config reset to defaults');
+    }
+
+    deepMerge(target, source) {
+        const output = { ...target };
+        
+        if (this.isObject(target) && this.isObject(source)) {
+            Object.keys(source).forEach(key => {
+                if (this.isObject(source[key])) {
+                    if (!(key in target)) {
+                        output[key] = source[key];
+                    } else {
+                        output[key] = this.deepMerge(target[key], source[key]);
+                    }
+                } else {
+                    output[key] = source[key];
+                }
+            });
+        }
+        
+        return output;
+    }
+
+    isObject(item) {
+        return item && typeof item === 'object' && !Array.isArray(item);
+    }
+
+    dispatchChangeEvent(path, value) {
+        const event = new CustomEvent('configChanged', {
+            detail: { path, value, timestamp: new Date() }
+        });
+        window.dispatchEvent(event);
+    }
+
+    // Методы для работы с настройками
+    enableFeature(feature) {
+        this.set(`FEATURES.${feature}`, true);
+    }
+
+    disableFeature(feature) {
+        this.set(`FEATURES.${feature}`, false);
+    }
+
+    setTheme(theme) {
+        this.set('SETTINGS.THEME', theme);
+        document.documentElement.setAttribute('data-theme', theme);
+    }
+
+    setLanguage(language) {
+        this.set('SETTINGS.LANGUAGE', language);
+        // Здесь можно добавить логику смены языка
+    }
+
+    // Получение всей конфигурации
+    getAll() {
+        return { ...this.config };
+    }
+
+    // Экспорт конфигурации
+    export() {
+        return {
+            config: this.config,
+            timestamp: new Date().toISOString(),
+            version: this.config.APP.VERSION
+        };
+    }
+
+    // Импорт конфигурации
+    import(configData) {
+        if (configData && configData.config) {
+            this.config = this.deepMerge(this.defaultConfig, configData.config);
+            this.save();
+            console.log('✅ Config imported');
+            return true;
+        }
+        return false;
+    }
+}
+
+// Создаем глобальный экземпляр
+const configManager = new ConfigManager();
+const CONFIG = configManager.config;
 
 // Экспорт для использования в других модулях
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = CONFIG;
+    module.exports = { ConfigManager, configManager, CONFIG };
 }
