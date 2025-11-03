@@ -1,272 +1,224 @@
-// js/components/settings.js - Полная реализация
+// js/components/settings.js - Восстановленный компонент настроек
 class SettingsComponent {
     constructor(app) {
         this.app = app;
         this.unsavedChanges = false;
+        this.currentSettings = this.loadCurrentSettings();
     }
 
     render() {
         const container = document.getElementById('settings-container');
-        if (!container) return;
+        if (!container) {
+            console.error('❌ Settings container not found');
+            return;
+        }
 
+        console.log('🎨 Rendering settings...');
         container.innerHTML = this.createSettingsHTML();
         this.attachEventListeners();
+        this.updateSaveButton();
+    }
+
+    loadCurrentSettings() {
+        return {
+            autoSync: CONFIG.get('SETTINGS.AUTO_SYNC', true),
+            syncInterval: CONFIG.get('SETTINGS.SYNC_INTERVAL', 300000),
+            notificationSound: CONFIG.get('SETTINGS.NOTIFICATION_SOUND', true),
+            theme: CONFIG.get('SETTINGS.THEME', 'auto'),
+            compactMode: CONFIG.get('UI.COMPACT_MODE', false),
+            cdekEnabled: CONFIG.get('API.CDEK.ENABLED', true),
+            megamarketEnabled: CONFIG.get('API.MEGAMARKET.ENABLED', true)
+        };
     }
 
     createSettingsHTML() {
         return `
             <div class="settings-content">
-                <div class="settings-grid">
-                    <!-- Настройки API -->
-                    <div class="settings-section">
-                        <div class="section-header">
-                            <h3 class="section-title">
-                                <i class="fas fa-plug"></i>
-                                Настройки API
-                            </h3>
-                            <p>Настройки интеграции с платформами</p>
-                        </div>
-                        
-                        <div class="settings-grid">
-                            <!-- CDEK Settings -->
-                            <div class="setting-item">
-                                <div class="setting-info">
-                                    <h4 class="setting-title">CDEK API</h4>
-                                    <p class="setting-description">
-                                        Настройки интеграции с CDEK Logistics
-                                    </p>
-                                </div>
-                                <label class="switch">
-                                    <input type="checkbox" id="cdek-enabled" 
-                                           ${this.app.config.API.CDEK.ENABLED ? 'checked' : ''}>
-                                    <span class="slider"></span>
-                                </label>
-                            </div>
-
-                            <div class="setting-item">
-                                <div class="setting-info">
-                                    <h4 class="setting-title">Client ID</h4>
-                                    <p class="setting-description">Идентификатор клиента CDEK</p>
-                                </div>
-                                <input type="text" class="setting-input" id="cdek-client-id" 
-                                       value="${this.app.config.API.CDEK.CLIENT_ID}" 
-                                       placeholder="Введите Client ID">
-                            </div>
-
-                            <div class="setting-item">
-                                <div class="setting-info">
-                                    <h4 class="setting-title">Client Secret</h4>
-                                    <p class="setting-description">Секретный ключ CDEK</p>
-                                </div>
-                                <input type="password" class="setting-input" id="cdek-client-secret" 
-                                       value="${this.app.config.API.CDEK.CLIENT_SECRET}" 
-                                       placeholder="Введите Client Secret">
-                            </div>
-
-                            <!-- Megamarket Settings -->
-                            <div class="setting-item">
-                                <div class="setting-info">
-                                    <h4 class="setting-title">Мегамаркет API</h4>
-                                    <p class="setting-description">
-                                        Настройки интеграции с Мегамаркет
-                                    </p>
-                                </div>
-                                <label class="switch">
-                                    <input type="checkbox" id="megamarket-enabled" 
-                                           ${this.app.config.API.MEGAMARKET.ENABLED ? 'checked' : ''}>
-                                    <span class="slider"></span>
-                                </label>
-                            </div>
-
-                            <div class="setting-item">
-                                <div class="setting-info">
-                                    <h4 class="setting-title">API Key</h4>
-                                    <p class="setting-description">Ключ API Мегамаркет</p>
-                                </div>
-                                <input type="text" class="setting-input" id="megamarket-api-key" 
-                                       value="${this.app.config.API.MEGAMARKET.API_KEY}" 
-                                       placeholder="Введите API Key">
-                            </div>
-
-                            <div class="setting-item">
-                                <div class="setting-info">
-                                    <h4 class="setting-title">Campaign ID</h4>
-                                    <p class="setting-description">ID кампании в Мегамаркет</p>
-                                </div>
-                                <input type="text" class="setting-input" id="megamarket-campaign-id" 
-                                       value="${this.app.config.API.MEGAMARKET.CAMPAIGN_ID}" 
-                                       placeholder="Введите Campaign ID">
-                            </div>
-                        </div>
-
-                        <div class="setting-actions">
-                            <button class="btn btn-primary" onclick="app.settingsComponent.testApiConnections()">
-                                <i class="fas fa-bolt"></i>
-                                Проверить соединение
-                            </button>
+                <!-- Настройки синхронизации -->
+                <div class="settings-section">
+                    <div class="section-header">
+                        <i class="fas fa-sync-alt"></i>
+                        <div class="section-header-text">
+                            <h3>Синхронизация данных</h3>
+                            <p>Настройки автоматического обновления данных</p>
                         </div>
                     </div>
-
-                    <!-- Настройки приложения -->
-                    <div class="settings-section">
-                        <div class="section-header">
-                            <h3 class="section-title">
-                                <i class="fas fa-cog"></i>
-                                Настройки приложения
-                            </h3>
-                            <p>Общие настройки приложения</p>
-                        </div>
-
-                        <div class="settings-grid">
-                            <div class="setting-item">
-                                <div class="setting-info">
-                                    <h4 class="setting-title">Автосинхронизация</h4>
-                                    <p class="setting-description">
-                                        Автоматическая синхронизация данных каждые 5 минут
-                                    </p>
-                                </div>
+                    <div class="settings-grid">
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <h4>Автоматическая синхронизация</h4>
+                                <p>Автоматически обновлять данные с платформ</p>
+                            </div>
+                            <div class="setting-control">
                                 <label class="switch">
                                     <input type="checkbox" id="auto-sync" 
-                                           ${this.app.config.SETTINGS.AUTO_SYNC ? 'checked' : ''}>
+                                           ${this.currentSettings.autoSync ? 'checked' : ''}>
                                     <span class="slider"></span>
                                 </label>
                             </div>
+                        </div>
 
-                            <div class="setting-item">
-                                <div class="setting-info">
-                                    <h4 class="setting-title">Уведомления</h4>
-                                    <p class="setting-description">
-                                        Показывать уведомления о новых заказах
-                                    </p>
-                                </div>
-                                <label class="switch">
-                                    <input type="checkbox" id="notifications-enabled" 
-                                           ${this.app.config.FEATURES.NOTIFICATIONS ? 'checked' : ''}>
-                                    <span class="slider"></span>
-                                </label>
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <h4>Интервал синхронизации</h4>
+                                <p>Как часто обновлять данные с платформ</p>
                             </div>
-
-                            <div class="setting-item">
-                                <div class="setting-info">
-                                    <h4 class="setting-title">Звук уведомлений</h4>
-                                    <p class="setting-description">
-                                        Воспроизводить звук при новых уведомлениях
-                                    </p>
-                                </div>
-                                <label class="switch">
-                                    <input type="checkbox" id="notification-sound" 
-                                           ${this.app.config.SETTINGS.NOTIFICATION_SOUND ? 'checked' : ''}>
-                                    <span class="slider"></span>
-                                </label>
-                            </div>
-
-                            <div class="setting-item">
-                                <div class="setting-info">
-                                    <h4 class="setting-title">Элементов на странице</h4>
-                                    <p class="setting-description">
-                                        Количество заказов на одной странице
-                                    </p>
-                                </div>
-                                <select class="setting-select" id="items-per-page">
-                                    <option value="10" ${this.app.config.SETTINGS.ITEMS_PER_PAGE === 10 ? 'selected' : ''}>10</option>
-                                    <option value="20" ${this.app.config.SETTINGS.ITEMS_PER_PAGE === 20 ? 'selected' : ''}>20</option>
-                                    <option value="50" ${this.app.config.SETTINGS.ITEMS_PER_PAGE === 50 ? 'selected' : ''}>50</option>
-                                    <option value="100" ${this.app.config.SETTINGS.ITEMS_PER_PAGE === 100 ? 'selected' : ''}>100</option>
+                            <div class="setting-control">
+                                <select id="sync-interval" class="form-control">
+                                    <option value="60000" ${this.currentSettings.syncInterval === 60000 ? 'selected' : ''}>1 минута</option>
+                                    <option value="300000" ${this.currentSettings.syncInterval === 300000 ? 'selected' : ''}>5 минут</option>
+                                    <option value="900000" ${this.currentSettings.syncInterval === 900000 ? 'selected' : ''}>15 минут</option>
+                                    <option value="1800000" ${this.currentSettings.syncInterval === 1800000 ? 'selected' : ''}>30 минут</option>
                                 </select>
-                            </div>
-
-                            <div class="setting-item">
-                                <div class="setting-info">
-                                    <h4 class="setting-title">Тема оформления</h4>
-                                    <p class="setting-description">
-                                        Внешний вид приложения
-                                    </p>
-                                </div>
-                                <select class="setting-select" id="theme-select">
-                                    <option value="auto" ${this.app.config.SETTINGS.THEME === 'auto' ? 'selected' : ''}>Авто</option>
-                                    <option value="light" ${this.app.config.SETTINGS.THEME === 'light' ? 'selected' : ''}>Светлая</option>
-                                    <option value="dark" ${this.app.config.SETTINGS.THEME === 'dark' ? 'selected' : ''}>Темная</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Статус API -->
-                    <div class="settings-section">
-                        <div class="section-header">
-                            <h3 class="section-title">
-                                <i class="fas fa-heartbeat"></i>
-                                Статус сервисов
-                            </h3>
-                            <p>Статус подключения к API платформ</p>
-                        </div>
-
-                        <div class="api-status">
-                            <div class="status-item">
-                                <div class="status-indicator ${this.getCDEKStatus()}"></div>
-                                <span>CDEK API</span>
-                                <span class="status-details">${this.getCDEKStatusText()}</span>
-                            </div>
-                            
-                            <div class="status-item">
-                                <div class="status-indicator ${this.getMegamarketStatus()}"></div>
-                                <span>Мегамаркет API</span>
-                                <span class="status-details">${this.getMegamarketStatusText()}</span>
-                            </div>
-
-                            <div class="status-testing" id="api-test-results">
-                                <i class="fas fa-info-circle"></i>
-                                <span>Нажмите "Проверить соединение" для тестирования API</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- О приложении -->
-                    <div class="settings-section">
-                        <div class="section-header">
-                            <h3 class="section-title">
-                                <i class="fas fa-info-circle"></i>
-                                О приложении
-                            </h3>
-                            <p>Информация о приложении TEXNO EDEM</p>
-                        </div>
-
-                        <div class="about-info">
-                            <div class="about-item">
-                                <span class="label">Версия</span>
-                                <span class="value">${this.app.config.APP.VERSION}</span>
-                            </div>
-                            <div class="about-item">
-                                <span class="label">Компания</span>
-                                <span class="value">${this.app.config.APP.COMPANY}</span>
-                            </div>
-                            <div class="about-item">
-                                <span class="label">Последнее обновление</span>
-                                <span class="value">${new Date().toLocaleDateString('ru-RU')}</span>
-                            </div>
-                            <div class="about-item">
-                                <span class="label">Кэш приложения</span>
-                                <span class="value">
-                                    <button class="btn btn-sm btn-outline" onclick="app.settingsComponent.clearCache()">
-                                        Очистить кэш
-                                    </button>
-                                </span>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Действия настроек -->
+                <!-- Настройки уведомлений -->
+                <div class="settings-section">
+                    <div class="section-header">
+                        <i class="fas fa-bell"></i>
+                        <div class="section-header-text">
+                            <h3>Уведомления</h3>
+                            <p>Настройки оповещений и звуков</p>
+                        </div>
+                    </div>
+                    <div class="settings-grid">
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <h4>Звуковые уведомления</h4>
+                                <p>Воспроизводить звук при новых уведомлениях</p>
+                            </div>
+                            <div class="setting-control">
+                                <label class="switch">
+                                    <input type="checkbox" id="notification-sound" 
+                                           ${this.currentSettings.notificationSound ? 'checked' : ''}>
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Настройки интерфейса -->
+                <div class="settings-section">
+                    <div class="section-header">
+                        <i class="fas fa-palette"></i>
+                        <div class="section-header-text">
+                            <h3>Внешний вид</h3>
+                            <p>Настройки темы и отображения</p>
+                        </div>
+                    </div>
+                    <div class="settings-grid">
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <h4>Тема оформления</h4>
+                                <p>Выберите preferred цветовую схему</p>
+                            </div>
+                            <div class="setting-control">
+                                <select id="theme-select" class="form-control">
+                                    <option value="auto" ${this.currentSettings.theme === 'auto' ? 'selected' : ''}>Авто</option>
+                                    <option value="light" ${this.currentSettings.theme === 'light' ? 'selected' : ''}>Светлая</option>
+                                    <option value="dark" ${this.currentSettings.theme === 'dark' ? 'selected' : ''}>Темная</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <h4>Компактный режим</h4>
+                                <p>Показывать больше информации на экране</p>
+                            </div>
+                            <div class="setting-control">
+                                <label class="switch">
+                                    <input type="checkbox" id="compact-mode" 
+                                           ${this.currentSettings.compactMode ? 'checked' : ''}>
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Интеграции -->
+                <div class="settings-section">
+                    <div class="section-header">
+                        <i class="fas fa-plug"></i>
+                        <div class="section-header-text">
+                            <h3>Интеграции</h3>
+                            <p>Управление подключенными платформами</p>
+                        </div>
+                    </div>
+                    <div class="settings-grid">
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <h4>CDEK API</h4>
+                                <p>Интеграция с логистической платформой CDEK</p>
+                            </div>
+                            <div class="setting-control">
+                                <label class="switch">
+                                    <input type="checkbox" id="cdek-enabled" 
+                                           ${this.currentSettings.cdekEnabled ? 'checked' : ''}>
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <h4>Мегамаркет API</h4>
+                                <p>Интеграция с маркетплейсом Мегамаркет</p>
+                            </div>
+                            <div class="setting-control">
+                                <label class="switch">
+                                    <input type="checkbox" id="megamarket-enabled" 
+                                           ${this.currentSettings.megamarketEnabled ? 'checked' : ''}>
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- О приложении -->
+                <div class="settings-section">
+                    <div class="section-header">
+                        <i class="fas fa-info-circle"></i>
+                        <div class="section-header-text">
+                            <h3>О приложении</h3>
+                            <p>Информация о версии и системные данные</p>
+                        </div>
+                    </div>
+                    <div class="about-info">
+                        <div class="about-item">
+                            <span class="label">Версия</span>
+                            <span class="value">${CONFIG.get('APP.VERSION', '1.2.0')}</span>
+                        </div>
+                        <div class="about-item">
+                            <span class="label">Сборка</span>
+                            <span class="value">${CONFIG.get('APP.BUILD', '2024.01.20')}</span>
+                        </div>
+                        <div class="about-item">
+                            <span class="label">Последнее обновление</span>
+                            <span class="value">${this.app.lastSyncTime ? this.formatRelativeTime(this.app.lastSyncTime) : 'Никогда'}</span>
+                        </div>
+                        <div class="about-item">
+                            <span class="label">Режим работы</span>
+                            <span class="value">${this.app.tg ? 'Telegram Mini App' : 'Браузер'}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Действия -->
                 <div class="settings-actions">
-                    <button class="btn btn-secondary" onclick="app.showSection('dashboard')">
-                        <i class="fas fa-arrow-left"></i>
-                        Назад
+                    <button class="btn btn-secondary" onclick="app.settingsComponent.resetSettings()">
+                        <i class="fas fa-undo"></i> Сбросить настройки
                     </button>
-                    <button class="btn btn-primary ${this.unsavedChanges ? 'has-changes' : ''}" 
+                    <button class="btn btn-primary" id="save-settings-btn"
                             onclick="app.settingsComponent.saveSettings()"
-                            ${!this.unsavedChanges ? 'disabled' : ''}>
-                        <i class="fas fa-save"></i>
-                        Сохранить настройки
+                            disabled>
+                        <i class="fas fa-save"></i> Сохранить изменения
                     </button>
                 </div>
             </div>
@@ -274,217 +226,130 @@ class SettingsComponent {
     }
 
     attachEventListeners() {
-        // Отслеживаем изменения в настройках
-        const inputs = document.querySelectorAll('#settings-container input, #settings-container select');
-        inputs.forEach(input => {
-            input.addEventListener('change', () => {
-                this.unsavedChanges = true;
-                this.updateSaveButton();
-            });
+        // Отслеживаем изменения настроек
+        const inputs = [
+            'auto-sync', 'sync-interval', 'notification-sound',
+            'theme-select', 'compact-mode', 'cdek-enabled', 'megamarket-enabled'
+        ];
+
+        inputs.forEach(id => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.addEventListener('change', () => {
+                    this.unsavedChanges = true;
+                    this.updateSaveButton();
+                });
+            }
         });
+
+        console.log('✅ Settings event listeners attached');
     }
 
     updateSaveButton() {
-        const saveButton = document.querySelector('.settings-actions .btn-primary');
+        const saveButton = document.getElementById('save-settings-btn');
         if (saveButton) {
             saveButton.disabled = !this.unsavedChanges;
             if (this.unsavedChanges) {
                 saveButton.classList.add('has-changes');
+                saveButton.innerHTML = '<i class="fas fa-save"></i> Сохранить изменения ●';
             } else {
                 saveButton.classList.remove('has-changes');
+                saveButton.innerHTML = '<i class="fas fa-save"></i> Сохранить изменения';
             }
         }
     }
 
-    // Методы статуса API
-    getCDEKStatus() {
-        const config = this.app.config.API.CDEK;
-        if (!config.ENABLED) return 'offline';
-        if (!config.CLIENT_ID || !config.CLIENT_SECRET) return 'warning';
-        return 'online';
-    }
-
-    getCDEKStatusText() {
-        const status = this.getCDEKStatus();
-        const texts = {
-            'online': 'Подключено',
-            'offline': 'Отключено',
-            'warning': 'Требуется настройка',
-            'error': 'Ошибка подключения'
-        };
-        return texts[status] || 'Неизвестно';
-    }
-
-    getMegamarketStatus() {
-        const config = this.app.config.API.MEGAMARKET;
-        if (!config.ENABLED) return 'offline';
-        if (!config.API_KEY || !config.CAMPAIGN_ID) return 'warning';
-        return 'online';
-    }
-
-    getMegamarketStatusText() {
-        const status = this.getMegamarketStatus();
-        const texts = {
-            'online': 'Подключено',
-            'offline': 'Отключено',
-            'warning': 'Требуется настройка',
-            'error': 'Ошибка подключения'
-        };
-        return texts[status] || 'Неизвестно';
-    }
-
-    // Тестирование API
-    async testApiConnections() {
-        const resultsContainer = document.getElementById('api-test-results');
-        if (!resultsContainer) return;
-
-        resultsContainer.innerHTML = `
-            <i class="fas fa-sync fa-spin"></i>
-            <span>Тестирование подключения к API...</span>
-        `;
-
+    saveSettings() {
         try {
-            const tests = [];
+            console.log('💾 Saving settings...');
+
+            // Собираем данные с формы
+            const newSettings = {
+                autoSync: document.getElementById('auto-sync').checked,
+                syncInterval: parseInt(document.getElementById('sync-interval').value),
+                notificationSound: document.getElementById('notification-sound').checked,
+                theme: document.getElementById('theme-select').value,
+                compactMode: document.getElementById('compact-mode').checked,
+                cdekEnabled: document.getElementById('cdek-enabled').checked,
+                megamarketEnabled: document.getElementById('megamarket-enabled').checked
+            };
+
+            // Сохраняем в конфиг
+            CONFIG.set('SETTINGS.AUTO_SYNC', newSettings.autoSync);
+            CONFIG.set('SETTINGS.SYNC_INTERVAL', newSettings.syncInterval);
+            CONFIG.set('SETTINGS.NOTIFICATION_SOUND', newSettings.notificationSound);
+            CONFIG.set('SETTINGS.THEME', newSettings.theme);
+            CONFIG.set('UI.COMPACT_MODE', newSettings.compactMode);
+            CONFIG.set('API.CDEK.ENABLED', newSettings.cdekEnabled);
+            CONFIG.set('API.MEGAMARKET.ENABLED', newSettings.megamarketEnabled);
+
+            // Применяем изменения
+            CONFIG.applyTheme();
             
-            // Тест CDEK
-            if (this.app.config.API.CDEK.ENABLED) {
-                tests.push(this.testCDEKConnection());
-            }
-            
-            // Тест Мегамаркет
-            if (this.app.config.API.MEGAMARKET.ENABLED) {
-                tests.push(this.testMegamarketConnection());
-            }
+            // Перезапускаем автосинхронизацию если нужно
+            this.app.stopAutoSync();
+            this.app.startAutoSync();
 
-            const results = await Promise.allSettled(tests);
-            
-            let successCount = 0;
-            let errorCount = 0;
-            const messages = [];
-
-            results.forEach((result, index) => {
-                if (result.status === 'fulfilled' && result.value.success) {
-                    successCount++;
-                    messages.push(`✓ ${result.value.service}: Успешно`);
-                } else {
-                    errorCount++;
-                    const serviceName = index === 0 ? 'CDEK' : 'Мегамаркет';
-                    messages.push(`✗ ${serviceName}: Ошибка подключения`);
-                }
-            });
-
-            resultsContainer.innerHTML = `
-                <i class="fas fa-${errorCount === 0 ? 'check' : 'exclamation-triangle'}"></i>
-                <span>${successCount} успешно, ${errorCount} с ошибками</span>
-                <div style="font-size: 12px; margin-top: 4px;">${messages.join(', ')}</div>
-            `;
-
-            this.app.showNotification(
-                `Тестирование завершено: ${successCount} успешно, ${errorCount} с ошибками`,
-                errorCount === 0 ? 'success' : 'warning'
-            );
-
-        } catch (error) {
-            resultsContainer.innerHTML = `
-                <i class="fas fa-exclamation-circle"></i>
-                <span>Ошибка тестирования: ${error.message}</span>
-            `;
-            this.app.showNotification('Ошибка тестирования API', 'error');
-        }
-    }
-
-    async testCDEKConnection() {
-        try {
-            // Для демо - имитируем успешное подключение
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            return { success: true, service: 'CDEK' };
-        } catch (error) {
-            return { success: false, service: 'CDEK', error: error.message };
-        }
-    }
-
-    async testMegamarketConnection() {
-        try {
-            // Для демо - имитируем успешное подключение
-            await new Promise(resolve => setTimeout(resolve, 1500));
-            return { success: true, service: 'Мегамаркет' };
-        } catch (error) {
-            return { success: false, service: 'Мегамаркет', error: error.message };
-        }
-    }
-
-    // Сохранение настроек
-    async saveSettings() {
-        try {
-            this.app.showLoading('Сохранение настроек...');
-
-            // Собираем настройки API
-            this.app.config.API.CDEK.ENABLED = document.getElementById('cdek-enabled').checked;
-            this.app.config.API.CDEK.CLIENT_ID = document.getElementById('cdek-client-id').value;
-            this.app.config.API.CDEK.CLIENT_SECRET = document.getElementById('cdek-client-secret').value;
-
-            this.app.config.API.MEGAMARKET.ENABLED = document.getElementById('megamarket-enabled').checked;
-            this.app.config.API.MEGAMARKET.API_KEY = document.getElementById('megamarket-api-key').value;
-            this.app.config.API.MEGAMARKET.CAMPAIGN_ID = document.getElementById('megamarket-campaign-id').value;
-
-            // Собираем настройки приложения
-            this.app.config.SETTINGS.AUTO_SYNC = document.getElementById('auto-sync').checked;
-            this.app.config.SETTINGS.NOTIFICATION_SOUND = document.getElementById('notification-sound').checked;
-            this.app.config.SETTINGS.ITEMS_PER_PAGE = parseInt(document.getElementById('items-per-page').value);
-            this.app.config.SETTINGS.THEME = document.getElementById('theme-select').value;
-            this.app.config.FEATURES.NOTIFICATIONS = document.getElementById('notifications-enabled').checked;
-
-            // Сохраняем конфигурацию
-            this.app.saveConfig();
-            
-            // Применяем тему
-            this.applyTheme();
-
+            // Обновляем текущие настройки
+            this.currentSettings = newSettings;
             this.unsavedChanges = false;
             this.updateSaveButton();
             
             this.app.showNotification('Настройки успешно сохранены', 'success');
             
-            // Перерисовываем компонент для обновления статусов
-            setTimeout(() => this.render(), 100);
+            console.log('✅ Settings saved successfully');
 
         } catch (error) {
-            console.error('Error saving settings:', error);
+            console.error('❌ Error saving settings:', error);
             this.app.showNotification('Ошибка сохранения настроек', 'error');
-        } finally {
-            this.app.hideLoading();
         }
     }
 
-    applyTheme() {
-        const theme = this.app.config.SETTINGS.THEME;
-        if (theme === 'auto') {
-            document.documentElement.removeAttribute('data-theme');
-        } else {
-            document.documentElement.setAttribute('data-theme', theme);
-        }
-    }
-
-    clearCache() {
-        try {
-            localStorage.removeItem('texno_edem_orders');
-            localStorage.removeItem('texno_edem_analytics');
-            localStorage.removeItem('texno_edem_settings');
+    resetSettings() {
+        if (confirm('Вы уверены, что хотите сбросить все настройки к значениям по умолчанию?')) {
+            CONFIG.reset();
+            this.app.showNotification('Настройки сброшены к значениям по умолчанию', 'info');
             
-            if (apiManager && apiManager.clearCache) {
-                apiManager.clearCache();
-            }
-            
-            this.app.showNotification('Кэш успешно очищен', 'success');
-            
-            // Перезагружаем данные
+            // Перезагружаем компонент
             setTimeout(() => {
-                this.app.refreshData();
-            }, 1000);
-            
-        } catch (error) {
-            console.error('Error clearing cache:', error);
-            this.app.showNotification('Ошибка очистки кэша', 'error');
+                this.render();
+            }, 500);
         }
+    }
+
+    formatRelativeTime(date) {
+        if (!date) return 'Никогда';
+        
+        try {
+            const now = new Date();
+            const diffMs = now - new Date(date);
+            const diffMins = Math.floor(diffMs / (1000 * 60));
+            const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+            const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+            
+            if (diffMins < 1) return 'только что';
+            if (diffMins < 60) return `${diffMins} мин. назад`;
+            if (diffHours < 24) return `${diffHours} ч. назад`;
+            if (diffDays === 1) return 'вчера';
+            if (diffDays < 7) return `${diffDays} дн. назад`;
+            
+            return new Date(date).toLocaleDateString('ru-RU');
+        } catch (error) {
+            return 'Ошибка даты';
+        }
+    }
+
+    // Метод для проверки несохраненных изменений
+    hasUnsavedChanges() {
+        return this.unsavedChanges;
+    }
+
+    // Метод для принудительного сохранения
+    forceSave() {
+        if (this.unsavedChanges) {
+            this.saveSettings();
+            return true;
+        }
+        return false;
     }
 }
