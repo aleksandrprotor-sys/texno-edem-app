@@ -1,4 +1,3 @@
-// js/utils/error-handler.js
 class ErrorHandler {
     static init() {
         window.addEventListener('error', this.handleGlobalError.bind(this));
