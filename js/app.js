@@ -1,3 +1,18 @@
+// Глобальный обработчик ошибок
+window.addEventListener('error', (e) => {
+  console.error('Global error:', e.error);
+});
+
+// Обработка ошибок Service Worker
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js')
+    .then(registration => {
+      console.log('SW registered successfully');
+    })
+    .catch(error => {
+      console.log('SW registration failed:', error);
+    });
+}
 // js/app.js - Доработанная и улучшенная версия
 class TexnoEdemApp {
     constructor() {
