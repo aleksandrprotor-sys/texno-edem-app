@@ -3,7 +3,36 @@ class SettingsComponent {
     constructor(app) {
         this.app = app;
         this.unsavedChanges = false;
-        this.currentSettings = this.loadCurrentSettings();
+        
+        // Защищенная инициализация
+        try {
+            this.currentSettings = this.loadCurrentSettings();
+        } catch (error) {
+            console.error('Settings initialization error:', error);
+            this.currentSettings = this.getDefaultSettings();
+        }
+    }
+
+    getDefaultSettings() {
+        return {
+            autoSync: true,
+            syncInterval: 300000,
+            notificationSound: true,
+            themeMode: 'light',
+            accentColor: '#3498DB',
+            cdekEnabled: true,
+            megamarketEnabled: true,
+            cdekClientId: '',
+            cdekClientSecret: '',
+            megamarketApiKey: '',
+            megamarketSecretKey: '',
+            megamarketCampaignId: '',
+            userName: 'Пользователь',
+            userEmail: '',
+            userPhone: '',
+            emailReports: false,
+            pushNotifications: true
+        };
     }
 
     render() {
