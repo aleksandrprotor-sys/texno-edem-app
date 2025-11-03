@@ -1,193 +1,257 @@
 <!DOCTYPE html>
-<html lang="ru" data-theme="light">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TEXNO EDEM - Управление заказами</title>
+    <title>TEXNO EDEM - Business Intelligence</title>
     
-    <!-- Оптимизированные мета-теги -->
-    <meta name="description" content="TEXNO EDEM - система управления заказами CDEK и Мегамаркет">
-    <meta name="keywords" content="CDEK, Мегамаркет, заказы, логистика">
-    <meta name="author" content="TEXNO EDEM">
+    <!-- Telegram Web App -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     
-    <!-- Иконки -->
-    <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
-    <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
-    
-    <!-- Шрифты и иконки -->
+    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
-    <!-- Стили -->
-    <link rel="stylesheet" href="css/styles.css">
-    <link rel="stylesheet" href="css/components.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Основные стили -->
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/emergency.css">
+    <link rel="stylesheet" href="css/enhanced-styles.css">
     <link rel="stylesheet" href="css/responsive.css">
+    
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚀</text></svg>">
 </head>
 <body>
-    <!-- Экран загрузки -->
-    <div id="loading-screen" class="loading-screen">
-        <div class="loading-content">
-            <div class="loading-spinner"></div>
-            <div class="loading-text">Загрузка TEXNO EDEM...</div>
-            <div class="loading-progress">
-                <div class="progress-bar">
-                    <div class="progress-fill"></div>
-                </div>
-            </div>
-        </div>
-    </div>
+    <div class="app">
+        <!-- Header -->
+        <header class="header" id="header">
+            <!-- Header content will be loaded by JavaScript -->
+        </header>
 
-    <!-- Основной контейнер -->
-    <div id="app" class="app-container" style="display: none;">
-        <!-- Шапка -->
-        <header class="app-header" id="app-header">
-            <div class="header-content">
-                <div class="header-left">
-                    <div class="logo">
-                        <i class="fas fa-rocket"></i>
-                        <span>TEXNO EDEM</span>
+        <!-- Navigation -->
+        <nav class="main-nav" id="main-nav">
+            <!-- Navigation will be loaded by JavaScript -->
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Dashboard Section -->
+            <section class="section active" id="dashboard-section">
+                <div class="container">
+                    <div class="dashboard-header">
+                        <h1 class="dashboard-title">Business Intelligence Dashboard</h1>
+                        <div class="dashboard-subtitle">Реальная аналитика вашего бизнеса</div>
                     </div>
-                </div>
-                
-                <div class="header-center">
-                    <div class="sync-status" id="sync-status">
-                        <i class="fas fa-sync-alt"></i>
-                        <span>Синхронизация...</span>
+
+                    <!-- Quick Stats -->
+                    <div class="quick-stats" id="quick-stats">
+                        <div class="stat-card orders">
+                            <div class="stat-icon">
+                                <i class="fas fa-boxes"></i>
+                            </div>
+                            <div class="stat-value" id="total-orders">0</div>
+                            <div class="stat-label">Всего заказов</div>
+                            <div class="stat-change positive" id="orders-change">
+                                <i class="fas fa-arrow-up"></i> 12%
+                            </div>
+                        </div>
+                        <div class="stat-card revenue">
+                            <div class="stat-icon">
+                                <i class="fas fa-chart-line"></i>
+                            </div>
+                            <div class="stat-value" id="total-revenue">0 ₽</div>
+                            <div class="stat-label">Общая выручка</div>
+                            <div class="stat-change positive" id="revenue-change">
+                                <i class="fas fa-arrow-up"></i> 8%
+                            </div>
+                        </div>
+                        <div class="stat-card success">
+                            <div class="stat-icon">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                            <div class="stat-value" id="success-rate">0%</div>
+                            <div class="stat-label">Успешные доставки</div>
+                            <div class="stat-change positive" id="success-change">
+                                <i class="fas fa-arrow-up"></i> 3%
+                            </div>
+                        </div>
+                        <div class="stat-card problems">
+                            <div class="stat-icon">
+                                <i class="fas fa-exclamation-triangle"></i>
+                            </div>
+                            <div class="stat-value" id="problem-orders">0</div>
+                            <div class="stat-label">Проблемные заказы</div>
+                            <div class="stat-change negative" id="problems-change">
+                                <i class="fas fa-arrow-down"></i> 5%
+                            </div>
+                        </div>
                     </div>
-                </div>
-                
-                <div class="header-right">
-                    <div class="user-info">
-                        <span class="user-name" id="user-name">Демо Пользователь</span>
-                        <div class="user-avatar">
-                            <i class="fas fa-user"></i>
+
+                    <!-- Platform Widgets -->
+                    <div class="platform-widgets">
+                        <div class="widget cdek-widget" onclick="app.showSection('orders', 'cdek')">
+                            <div class="widget-icon">
+                                <i class="fas fa-shipping-fast"></i>
+                            </div>
+                            <div class="widget-content">
+                                <h3>CDEK Logistics</h3>
+                                <div class="widget-stats">
+                                    <span class="stat-value" id="cdek-active">0</span>
+                                    <span class="stat-label">активных отправлений</span>
+                                </div>
+                                <div class="widget-trend positive">
+                                    <i class="fas fa-arrow-up"></i> 15% за неделю
+                                </div>
+                                <div class="widget-action">
+                                    <span>Управлять отправлениями</span>
+                                    <i class="fas fa-arrow-right"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="widget megamarket-widget" onclick="app.showSection('orders', 'megamarket')">
+                            <div class="widget-icon">
+                                <i class="fas fa-store"></i>
+                            </div>
+                            <div class="widget-content">
+                                <h3>Мегамаркет</h3>
+                                <div class="widget-stats">
+                                    <span class="stat-value" id="megamarket-new">0</span>
+                                    <span class="stat-label">новых заказов</span>
+                                </div>
+                                <div class="widget-trend positive">
+                                    <i class="fas fa-arrow-up"></i> 22% за неделю
+                                </div>
+                                <div class="widget-action">
+                                    <span>Обработать заказы</span>
+                                    <i class="fas fa-arrow-right"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Analytics Preview -->
+                    <div class="analytics-preview">
+                        <div class="preview-header">
+                            <h3>Ключевые метрики</h3>
+                            <button class="btn btn-outline" onclick="app.showSection('analytics')">
+                                <i class="fas fa-chart-bar"></i> Вся аналитика
+                            </button>
+                        </div>
+                        <div class="preview-grid" id="analytics-preview">
+                            <!-- Analytics preview will be loaded here -->
+                        </div>
+                    </div>
+
+                    <!-- Recent Activity -->
+                    <div class="recent-activity">
+                        <div class="recent-activity-card">
+                            <div class="card-header">
+                                <h3>Последние заказы</h3>
+                                <div class="card-actions">
+                                    <button class="btn btn-sm btn-outline" onclick="app.showSection('orders')">
+                                        Все заказы
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="activity-list" id="recent-orders-list">
+                                <!-- Loaded by JavaScript -->
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-        </header>
-
-        <!-- Навигация -->
-        <nav class="app-navigation" id="app-navigation">
-            <div class="nav-items">
-                <button class="nav-item active" data-section="dashboard">
-                    <i class="fas fa-chart-line"></i>
-                    <span>Дашборд</span>
-                </button>
-                
-                <button class="nav-item" data-section="orders-cdek">
-                    <i class="fas fa-shipping-fast"></i>
-                    <span>CDEK</span>
-                    <span class="nav-badge" id="cdek-badge">0</span>
-                </button>
-                
-                <button class="nav-item" data-section="orders-megamarket">
-                    <i class="fas fa-store"></i>
-                    <span>Мегамаркет</span>
-                    <span class="nav-badge" id="megamarket-badge">0</span>
-                </button>
-                
-                <button class="nav-item" data-section="analytics">
-                    <i class="fas fa-chart-bar"></i>
-                    <span>Аналитика</span>
-                </button>
-                
-                <button class="nav-item" data-section="settings">
-                    <i class="fas fa-cog"></i>
-                    <span>Настройки</span>
-                </button>
-            </div>
-        </nav>
-
-        <!-- Основной контент -->
-        <main class="app-main" id="app-main">
-            <!-- Дашборд -->
-            <section id="dashboard" class="content-section active">
-                <div class="section-header">
-                    <h1>Дашборд</h1>
-                    <div class="header-actions">
-                        <button class="btn btn-primary" onclick="app.manualSync()">
-                            <i class="fas fa-sync-alt"></i> Обновить
-                        </button>
-                    </div>
-                </div>
-                <div id="dashboard-container"></div>
             </section>
 
-            <!-- Заказы CDEK -->
-            <section id="orders-cdek" class="content-section">
-                <div class="section-header">
-                    <h1>Заказы CDEK</h1>
-                    <div class="header-actions">
-                        <button class="btn btn-primary" onclick="app.manualSync()">
-                            <i class="fas fa-sync-alt"></i> Обновить
-                        </button>
+            <!-- Orders Section -->
+            <section class="section" id="orders-section">
+                <div class="container">
+                    <div class="section-header">
+                        <div class="section-title-container">
+                            <h2 class="section-title" id="orders-title">Заказы</h2>
+                            <div class="section-subtitle" id="orders-subtitle">Управление заказами и отправлениями</div>
+                        </div>
+                        <div class="section-actions">
+                            <button class="btn btn-primary" onclick="app.manualSync()">
+                                <i class="fas fa-sync-alt"></i> Обновить
+                            </button>
+                        </div>
+                    </div>
+                    <div class="orders-container" id="orders-container">
+                        <!-- Orders loaded by JavaScript -->
                     </div>
                 </div>
-                <div id="orders-container"></div>
             </section>
 
-            <!-- Заказы Мегамаркет -->
-            <section id="orders-megamarket" class="content-section">
-                <div class="section-header">
-                    <h1>Заказы Мегамаркет</h1>
-                    <div class="header-actions">
-                        <button class="btn btn-primary" onclick="app.manualSync()">
-                            <i class="fas fa-sync-alt"></i> Обновить
-                        </button>
+            <!-- Analytics Section -->
+            <section class="section" id="analytics-section">
+                <div class="container">
+                    <div class="section-header">
+                        <div class="section-title-container">
+                            <h2 class="section-title">Аналитика и отчеты</h2>
+                            <div class="section-subtitle">Детальная аналитика по платформам и метрикам</div>
+                        </div>
+                        <div class="section-actions">
+                            <div class="time-filter">
+                                <select id="analytics-period">
+                                    <option value="week">Неделя</option>
+                                    <option value="month" selected>Месяц</option>
+                                    <option value="quarter">Квартал</option>
+                                    <option value="year">Год</option>
+                                </select>
+                            </div>
+                            <button class="btn btn-primary" onclick="app.analyticsComponent?.exportReport?.()">
+                                <i class="fas fa-download"></i> Экспорт отчета
+                            </button>
+                        </div>
+                    </div>
+                    <div class="analytics-container" id="analytics-container">
+                        <!-- Analytics loaded by JavaScript -->
                     </div>
                 </div>
-                <div id="orders-container"></div>
             </section>
 
-            <!-- Аналитика -->
-            <section id="analytics" class="content-section">
-                <div class="section-header">
-                    <h1>Аналитика</h1>
-                    <div class="header-actions">
-                        <button class="btn btn-primary" onclick="app.exportAnalytics()">
-                            <i class="fas fa-download"></i> Экспорт
-                        </button>
+            <!-- Settings Section -->
+            <section class="section" id="settings-section">
+                <div class="container">
+                    <div class="section-header">
+                        <div class="section-title-container">
+                            <h2 class="section-title">Настройки</h2>
+                            <div class="section-subtitle">Настройка приложения и интеграций</div>
+                        </div>
+                    </div>
+                    <div class="settings-container" id="settings-container">
+                        <!-- Settings loaded by JavaScript -->
                     </div>
                 </div>
-                <div id="analytics-container"></div>
-            </section>
-
-            <!-- Настройки -->
-            <section id="settings" class="content-section">
-                <div class="section-header">
-                    <h1>Настройки</h1>
-                </div>
-                <div id="settings-container"></div>
             </section>
         </main>
 
-        <!-- Уведомления -->
-        <div id="notifications" class="notifications-container"></div>
-    </div>
+        <!-- Modals -->
+        <div class="modals-container" id="modals-container"></div>
 
-    <!-- Модальные окна -->
-    <div id="modal-overlay" class="modal-overlay" style="display: none;"></div>
-    <div id="modal-container" class="modal-container" style="display: none;"></div>
+        <!-- Notifications Container -->
+        <div class="notifications-container" id="notifications-container"></div>
 
-    <!-- Экстренный интерфейс -->
-    <div id="emergency-ui" class="emergency-ui" style="display: none;">
-        <div class="emergency-content">
-            <div class="emergency-icon">
-                <i class="fas fa-exclamation-triangle"></i>
+        <!-- Loading Overlay -->
+        <div class="loading-overlay" id="loading-overlay">
+            <div class="loading-content">
+                <div class="loading-spinner"></div>
+                <p id="loading-message">Загрузка данных...</p>
             </div>
-            <h2>Режим восстановления</h2>
-            <p>Приложение работает в ограниченном режиме. Попробуйте перезагрузить страницу.</p>
-            <button class="btn btn-primary" onclick="location.reload()">
-                <i class="fas fa-redo"></i> Перезагрузить
-            </button>
         </div>
     </div>
 
-    <!-- Скрипты -->
-    <script src="js/utils/storage.js"></script>
-    <script src="js/utils/helpers.js"></script>
-    <script src="js/utils/mockData.js"></script>
+    <!-- JavaScript Files (ВАЖНО: правильный порядок!) -->
+    <script src="js/config.js"></script>
+    <script src="js/utils/error-handler.js"></script>
+    <script src="js/utils/logger.js"></script>
+    <script src="js/utils/cache-manager.js"></script>
+    <script src="js/utils/notifications.js"></script>
+    <script src="js/utils/formatters.js"></script>
+    
+    <script src="data/mock-data.js"></script>
     
     <script src="js/components/modal.js"></script>
     <script src="js/components/orders.js"></script>
@@ -198,15 +262,16 @@
 
     <!-- Инициализация -->
     <script>
+        // Инициализация обработчика ошибок
+        if (typeof ErrorHandler !== 'undefined') {
+            ErrorHandler.init();
+        }
+        
         // Глобальная обработка ошибок
         window.addEventListener('error', (event) => {
             console.error('Global error:', event.error);
-            if (window.app && window.app.showNotification) {
-                window.app.showNotification('Произошла ошибка приложения', 'error');
-            }
         });
 
-        // Обработка необработанных промисов
         window.addEventListener('unhandledrejection', (event) => {
             console.error('Unhandled promise rejection:', event.reason);
             event.preventDefault();
