@@ -1,4 +1,4 @@
-// js/app.js - Полностью исправленный и доработанный
+// js/app.js - Полностью доработанный и исправленный
 class TexnoEdemApp {
     constructor() {
         this.currentSection = 'dashboard';
@@ -59,6 +59,9 @@ class TexnoEdemApp {
             
             // 5. Запуск автосинхронизации
             this.startAutoSync();
+            
+            // 6. Применяем настройки пользователя
+            this.applyUserSettings();
             
             this.isInitialized = true;
             clearTimeout(this.initTimeout);
@@ -212,7 +215,9 @@ class TexnoEdemApp {
             lastName: 'Пользователь', 
             username: 'demo_user',
             language: 'ru',
-            isPremium: true
+            isPremium: true,
+            email: 'demo@texno-edem.ru',
+            phone: '+7 999 123-45-67'
         };
     }
 
@@ -243,21 +248,33 @@ class TexnoEdemApp {
                 case 'orders':
                     if (typeof OrdersComponent !== 'undefined') {
                         this.ordersComponent = new OrdersComponent(this);
+                        console.log('✅ OrdersComponent loaded');
+                    } else {
+                        console.warn('❌ OrdersComponent not available');
                     }
                     break;
                 case 'analytics':
                     if (typeof AnalyticsComponent !== 'undefined') {
                         this.analyticsComponent = new AnalyticsComponent(this);
+                        console.log('✅ AnalyticsComponent loaded');
+                    } else {
+                        console.warn('❌ AnalyticsComponent not available');
                     }
                     break;
                 case 'settings':
                     if (typeof SettingsComponent !== 'undefined') {
                         this.settingsComponent = new SettingsComponent(this);
+                        console.log('✅ SettingsComponent loaded');
+                    } else {
+                        console.warn('❌ SettingsComponent not available');
                     }
                     break;
                 case 'modal':
                     if (typeof ModalComponent !== 'undefined') {
                         this.modal = new ModalComponent(this);
+                        console.log('✅ ModalComponent loaded');
+                    } else {
+                        console.warn('❌ ModalComponent not available');
                     }
                     break;
             }
@@ -267,54 +284,294 @@ class TexnoEdemApp {
     }
 
     createFallbackComponents() {
+        console.log('🔄 Creating fallback components...');
+        
         // Создаем минимальные реализации компонентов
         this.ordersComponent = {
             render: (platform) => {
+                console.log(`🎨 Rendering orders for platform: ${platform}`);
                 const container = document.getElementById('orders-container');
                 if (container) {
-                    container.innerHTML = `<div class="empty-state">
-                        <i class="fas fa-exclamation-triangle"></i>
-                        <h3>Компонент заказов недоступен</h3>
-                        <p>Попробуйте перезагрузить страницу</p>
-                    </div>`;
+                    const orders = this.getPlatformOrders(platform);
+                    console.log(`📦 Found ${orders.length} orders for ${platform}`);
+                    
+                    if (orders.length === 0) {
+                        container.innerHTML = this.createEmptyOrdersState(platform);
+                    } else {
+                        container.innerHTML = this.createOrdersFallbackHTML(platform, orders);
+                    }
+                }
+            },
+            showOrderDetails: (platform, orderId) => {
+                const order = this.getOrderById(platform, orderId);
+                if (order && this.modal) {
+                    this.modal.showOrderDetails(order);
+                } else {
+                    this.showNotification('Заказ не найден', 'error');
                 }
             }
         };
 
         this.analyticsComponent = {
             render: () => {
+                console.log('🎨 Rendering analytics fallback');
                 const container = document.getElementById('analytics-container');
                 if (container) {
-                    container.innerHTML = `<div class="empty-state">
-                        <i class="fas fa-chart-bar"></i>
-                        <h3>Аналитика временно недоступна</h3>
-                        <p>Основные функции работают в обычном режиме</p>
-                    </div>`;
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-chart-bar"></i>
+                            <h3>Аналитика временно недоступна</h3>
+                            <p>Основные функции работают в обычном режиме</p>
+                            <button class="btn btn-primary" onclick="app.manualSync()">
+                                <i class="fas fa-sync-alt"></i> Обновить данные
+                            </button>
+                        </div>
+                    `;
                 }
             }
         };
 
         this.settingsComponent = {
             render: () => {
+                console.log('🎨 Rendering settings fallback');
                 const container = document.getElementById('settings-container');
                 if (container) {
-                    container.innerHTML = `<div class="empty-state">
-                        <i class="fas fa-cog"></i>
-                        <h3>Настройки временно недоступны</h3>
-                        <p>Используются настройки по умолчанию</p>
-                    </div>`;
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-cog"></i>
+                            <h3>Настройки временно недоступны</h3>
+                            <p>Используются настройки по умолчанию</p>
+                            <button class="btn btn-primary" onclick="location.reload()">
+                                <i class="fas fa-redo"></i> Перезагрузить
+                            </button>
+                        </div>
+                    `;
                 }
             },
             hasUnsavedChanges: () => false,
-            forceSave: () => false
+            forceSave: () => false,
+            discardChanges: () => {}
         };
 
         this.modal = {
             showOrderDetails: (order) => {
-                alert(`Детали заказа: ${order.platform === 'cdek' ? order.trackingNumber : order.orderNumber}`);
+                const modalId = 'order-details-modal';
+                let modal = document.getElementById(modalId);
+                
+                if (!modal) {
+                    modal = this.createBasicModal(modalId, 'Детали заказа');
+                    document.getElementById('modals-container').appendChild(modal);
+                }
+
+                const content = this.createBasicOrderDetails(order);
+                modal.querySelector('.modal-body').innerHTML = content;
+                this.showModal(modalId);
             },
-            close: () => {}
+            close: () => {
+                this.hideModal();
+            }
         };
+    }
+
+    createBasicModal(id, title) {
+        const modal = document.createElement('div');
+        modal.className = 'modal';
+        modal.id = id;
+        modal.innerHTML = `
+            <div class="modal-backdrop" onclick="app.modal.close()"></div>
+            <div class="modal-dialog">
+                <div class="modal-header">
+                    <h3 class="modal-title">${title}</h3>
+                    <button class="modal-close" onclick="app.modal.close()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <!-- Content will be inserted here -->
+                </div>
+            </div>
+        `;
+        return modal;
+    }
+
+    createBasicOrderDetails(order) {
+        const statusConfig = this.getStatusConfig(order);
+        
+        return `
+            <div class="order-details-header">
+                <div class="order-main-info">
+                    <div class="order-title">
+                        <i class="fas fa-${order.platform === 'cdek' ? 'shipping-fast' : 'store'}"></i>
+                        ${order.platform === 'cdek' ? 'Отправление CDEK' : 'Заказ Мегамаркет'}
+                    </div>
+                    <div class="order-tracking">${order.trackingNumber || order.orderNumber}</div>
+                </div>
+                <div class="order-status-badge" style="--status-color: ${statusConfig.color}">
+                    ${statusConfig.text}
+                </div>
+            </div>
+
+            <div class="details-grid">
+                <div class="detail-section">
+                    <h4 class="section-title">Основная информация</h4>
+                    <div class="detail-item">
+                        <span class="detail-label">Номер</span>
+                        <span class="detail-value">${order.trackingNumber || order.orderNumber}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Статус</span>
+                        <span class="detail-value">${statusConfig.text}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Клиент</span>
+                        <span class="detail-value">${order.recipient || order.customerName}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Сумма</span>
+                        <span class="detail-value">${this.formatCurrency(order.cost || order.totalAmount)}</span>
+                    </div>
+                </div>
+
+                <div class="detail-section">
+                    <h4 class="section-title">Детали доставки</h4>
+                    <div class="detail-item">
+                        <span class="detail-label">Дата создания</span>
+                        <span class="detail-value">${this.formatDateTime(order.createdDate)}</span>
+                    </div>
+                    ${order.estimatedDelivery ? `
+                        <div class="detail-item">
+                            <span class="detail-label">Ожидаемая доставка</span>
+                            <span class="detail-value">${this.formatDate(order.estimatedDelivery)}</span>
+                        </div>
+                    ` : ''}
+                    ${order.deliveryAddress ? `
+                        <div class="detail-item">
+                            <span class="detail-label">Адрес</span>
+                            <span class="detail-value">${order.deliveryAddress}</span>
+                        </div>
+                    ` : ''}
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="app.modal.close()">Закрыть</button>
+                <button class="btn btn-primary" onclick="app.modal.printOrderDetails()">
+                    <i class="fas fa-print"></i> Печать
+                </button>
+            </div>
+        `;
+    }
+
+    createOrdersFallbackHTML(platform, orders) {
+        return `
+            <div class="orders-content">
+                <!-- Заголовок и фильтры -->
+                <div class="orders-toolbar">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" placeholder="Поиск по заказам..." id="orders-search">
+                    </div>
+                    
+                    <div class="filter-group">
+                        <select id="status-filter" class="form-control">
+                            <option value="all">Все статусы</option>
+                            <option value="new">Новые</option>
+                            <option value="processing">В обработке</option>
+                            <option value="active">Активные</option>
+                            <option value="delivered">Доставленные</option>
+                            <option value="problem">Проблемные</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Статистика -->
+                <div class="platform-stats-bar">
+                    <div class="stat-item">
+                        <span class="stat-value">${orders.length}</span>
+                        <span class="stat-label">Всего заказов</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value">${orders.filter(o => o.status === 'new').length}</span>
+                        <span class="stat-label">Новые</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value">${orders.filter(o => o.status === 'problem').length}</span>
+                        <span class="stat-label">Проблемные</span>
+                    </div>
+                </div>
+
+                <!-- Список заказов -->
+                <div class="orders-list">
+                    ${orders.map(order => `
+                        <div class="order-card" onclick="showOrderDetails('${order.platform}', '${order.id}')">
+                            <div class="order-header">
+                                <div class="order-title">
+                                    <div class="order-number">
+                                        <i class="fas fa-${order.platform === 'cdek' ? 'shipping-fast' : 'store'}"></i>
+                                        ${order.platform === 'cdek' ? order.trackingNumber : order.orderNumber}
+                                    </div>
+                                    <div class="order-customer">
+                                        ${order.recipient || order.customerName}
+                                    </div>
+                                </div>
+                                <div class="order-status">
+                                    <span class="status-badge status-${order.status}">
+                                        ${this.getStatusConfig(order).text}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="order-details">
+                                <div class="order-info">
+                                    <div class="info-item">
+                                        <i class="fas fa-map-marker-alt"></i>
+                                        <span>${order.platform === 'cdek' ? 
+                                            `${order.fromCity} → ${order.toCity}` : 
+                                            (order.deliveryAddress || 'Адрес не указан')
+                                        }</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <i class="fas fa-ruble-sign"></i>
+                                        <span>${this.formatCurrency(order.cost || order.totalAmount)}</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="order-meta">
+                                    <span class="order-date">${this.formatRelativeTime(order.createdDate)}</span>
+                                    <div class="order-actions">
+                                        <button class="btn-action btn-info" 
+                                                onclick="event.stopPropagation(); showOrderDetails('${order.platform}', '${order.id}')"
+                                                title="Подробности">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    }
+
+    createEmptyOrdersState(platform) {
+        return `
+            <div class="empty-orders">
+                <div class="empty-icon">
+                    <i class="fas fa-${platform === 'cdek' ? 'shipping-fast' : 'store'}"></i>
+                </div>
+                <h3>Заказы не найдены</h3>
+                <p>Нет заказов для платформы ${platform === 'cdek' ? 'CDEK' : 'Мегамаркет'}</p>
+                <div class="empty-actions">
+                    <button class="btn btn-primary" onclick="app.manualSync()">
+                        <i class="fas fa-sync-alt"></i> Обновить данные
+                    </button>
+                    <button class="btn btn-outline" onclick="app.useDemoData()">
+                        <i class="fas fa-magic"></i> Загрузить демо-данные
+                    </button>
+                </div>
+            </div>
+        `;
     }
 
     async loadInitialData() {
@@ -336,10 +593,12 @@ class TexnoEdemApp {
         try {
             // Используем mock данные
             if (typeof mockDataGenerator !== 'undefined') {
-                this.orders.cdek = mockDataGenerator.generateCDEKOrders(8);
-                this.orders.megamarket = mockDataGenerator.generateMegamarketOrders(12);
+                console.log('📦 Generating mock orders...');
+                this.orders.cdek = mockDataGenerator.generateCDEKOrders(12);
+                this.orders.megamarket = mockDataGenerator.generateMegamarketOrders(8);
             } else {
                 // Fallback данные
+                console.log('📦 Generating fallback orders...');
                 this.orders.cdek = this.generateDemoCDEKOrders();
                 this.orders.megamarket = this.generateDemoMegamarketOrders();
             }
@@ -356,66 +615,91 @@ class TexnoEdemApp {
     }
 
     generateDemoCDEKOrders() {
-        return [
-            {
-                id: 'cdek-demo-1',
+        const statuses = ['new', 'processing', 'active', 'delivered', 'problem'];
+        const cities = ['Москва', 'Санкт-Петербург', 'Екатеринбург', 'Новосибирск', 'Казань'];
+        const names = ['Иван Иванов', 'Мария Петрова', 'Алексей Смирнов', 'Елена Козлова', 'Дмитрий Попов'];
+        
+        return Array.from({ length: 8 }, (_, i) => {
+            const status = statuses[Math.floor(Math.random() * statuses.length)];
+            const fromCity = 'Москва';
+            let toCity;
+            do {
+                toCity = cities[Math.floor(Math.random() * cities.length)];
+            } while (toCity === fromCity);
+
+            return {
+                id: `cdek-demo-${i + 1}`,
                 platform: 'cdek',
-                trackingNumber: 'CDEK12345678',
-                status: 'delivered',
-                statusCode: 'DELIVERED',
-                fromCity: 'Москва',
-                toCity: 'Санкт-Петербург',
-                weight: 2.5,
-                cost: 1500,
+                trackingNumber: `CDEK${1000000000 + i}`,
+                status: status,
+                statusCode: status.toUpperCase(),
+                fromCity: fromCity,
+                toCity: toCity,
+                weight: (Math.random() * 5 + 0.5).toFixed(1),
+                cost: Math.floor(Math.random() * 5000) + 300,
                 sender: 'ООО "ТЕХНО ЭДЕМ"',
-                recipient: 'Иван Иванов',
-                createdDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-                deliveredDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString()
-            },
-            {
-                id: 'cdek-demo-2',
-                platform: 'cdek',
-                trackingNumber: 'CDEK87654321',
-                status: 'active',
-                statusCode: 'IN_PROGRESS',
-                fromCity: 'Москва',
-                toCity: 'Екатеринбург',
-                weight: 1.8,
-                cost: 1200,
-                sender: 'ООО "ТЕХНО ЭДЕМ"',
-                recipient: 'Петр Сидоров',
-                createdDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-                estimatedDelivery: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-            }
-        ];
+                recipient: names[Math.floor(Math.random() * names.length)],
+                createdDate: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString(),
+                estimatedDelivery: status === 'delivered' ? null : 
+                    new Date(Date.now() + Math.random() * 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+                deliveredDate: status === 'delivered' ? 
+                    new Date(Date.now() - Math.random() * 2 * 24 * 60 * 60 * 1000).toISOString() : null
+            };
+        });
     }
 
     generateDemoMegamarketOrders() {
-        return [
-            {
-                id: 'mm-demo-1',
+        const statuses = ['new', 'processing', 'shipped', 'delivered'];
+        const products = [
+            { name: 'Смартфон Samsung Galaxy S21', price: 15670 },
+            { name: 'Наушники Sony WH-1000XM4', price: 8920 },
+            { name: 'Ноутбук ASUS VivoBook 15', price: 23950 },
+            { name: 'Телевизор LG 55NANO866', price: 45680 }
+        ];
+        const names = ['Анна Петрова', 'Сергей Кузнецов', 'Ольга Новикова', 'Михаил Семенов'];
+        const addresses = [
+            'г. Москва, ул. Примерная, д. 1',
+            'г. Санкт-Петербург, пр. Невский, д. 25',
+            'г. Екатеринбург, ул. Ленина, д. 50',
+            'г. Новосибирск, ул. Кирова, д. 12'
+        ];
+
+        return Array.from({ length: 6 }, (_, i) => {
+            const status = statuses[Math.floor(Math.random() * statuses.length)];
+            const product = products[Math.floor(Math.random() * products.length)];
+            const quantity = Math.floor(Math.random() * 2) + 1;
+
+            return {
+                id: `mm-demo-${i + 1}`,
                 platform: 'megamarket', 
-                orderNumber: 'MM123456',
-                status: 'new',
-                statusCode: 'NEW',
-                totalAmount: 15670,
-                itemsTotal: 15670,
+                orderNumber: `MM${100000 + i}`,
+                status: status,
+                statusCode: status.toUpperCase(),
+                totalAmount: product.price * quantity,
+                itemsTotal: product.price * quantity,
                 deliveryCost: 0,
-                customerName: 'Мария Петрова',
-                customerPhone: '+7 912 345-67-89',
-                deliveryAddress: 'г. Москва, ул. Примерная, д. 1',
-                createdDate: new Date().toISOString(),
+                discount: Math.random() > 0.7 ? 500 : 0,
+                customerName: names[Math.floor(Math.random() * names.length)],
+                customerPhone: `+7 9${Math.floor(Math.random() * 90) + 10} ${Math.floor(Math.random() * 900) + 100}-${Math.floor(Math.random() * 90) + 10}-${Math.floor(Math.random() * 90) + 10}`,
+                deliveryAddress: addresses[Math.floor(Math.random() * addresses.length)],
+                deliveryType: 'COURIER',
+                createdDate: new Date(Date.now() - Math.random() * 5 * 24 * 60 * 60 * 1000).toISOString(),
                 items: [
                     {
-                        id: 'item-1',
-                        name: 'Смартфон Samsung Galaxy',
-                        quantity: 1,
-                        price: 15670,
-                        total: 15670
+                        id: `item-${i}`,
+                        name: product.name,
+                        quantity: quantity,
+                        price: product.price,
+                        total: product.price * quantity
                     }
-                ]
-            }
-        ];
+                ],
+                payment: {
+                    method: 'CARD',
+                    status: 'PAID',
+                    paidAt: new Date(Date.now() - Math.random() * 4 * 24 * 60 * 60 * 1000).toISOString()
+                }
+            };
+        });
     }
 
     useDemoData() {
@@ -428,6 +712,23 @@ class TexnoEdemApp {
         this.updateNavigationBadges();
         
         this.showNotification('Используются демо-данные', 'warning');
+    }
+
+    applyUserSettings() {
+        // Загружаем настройки пользователя
+        const userSettings = JSON.parse(localStorage.getItem('texno_edem_user_settings') || '{}');
+        
+        if (userSettings.userName && this.user) {
+            this.user.firstName = userSettings.userName;
+        }
+        if (userSettings.userEmail && this.user) {
+            this.user.email = userSettings.userEmail;
+        }
+        if (userSettings.userPhone && this.user) {
+            this.user.phone = userSettings.userPhone;
+        }
+        
+        this.renderHeader();
     }
 
     renderBasicUI() {
@@ -461,29 +762,51 @@ class TexnoEdemApp {
             nav.innerHTML = `
                 <div class="nav-container">
                     <div class="nav-items">
-                        <button class="nav-item active" onclick="app.showSection('dashboard')">
+                        <button class="nav-item active" data-section="dashboard">
                             <i class="fas fa-chart-line"></i>
                             <span>Дашборд</span>
                         </button>
-                        <button class="nav-item" onclick="app.showSection('orders', 'cdek')">
+                        <button class="nav-item" data-section="orders" data-platform="cdek">
                             <i class="fas fa-shipping-fast"></i>
                             <span>CDEK</span>
                         </button>
-                        <button class="nav-item" onclick="app.showSection('orders', 'megamarket')">
+                        <button class="nav-item" data-section="orders" data-platform="megamarket">
                             <i class="fas fa-store"></i>
                             <span>Мегамаркет</span>
                         </button>
-                        <button class="nav-item" onclick="app.showSection('settings')">
+                        <button class="nav-item" data-section="settings">
                             <i class="fas fa-cog"></i>
                             <span>Настройки</span>
                         </button>
                     </div>
                 </div>
             `;
+
+            // ✅ ИСПРАВЛЕНИЕ: Добавляем обработчики событий для навигации
+            this.attachNavigationEvents();
         }
 
         // Показываем дашборд
         this.showSection('dashboard');
+    }
+
+    attachNavigationEvents() {
+        const navItems = document.querySelectorAll('.nav-item');
+        navItems.forEach(item => {
+            item.addEventListener('click', (e) => {
+                e.preventDefault();
+                const section = item.getAttribute('data-section');
+                const platform = item.getAttribute('data-platform');
+                
+                console.log(`📱 Navigation: ${section}, platform: ${platform}`);
+                
+                if (section === 'orders' && platform) {
+                    this.showSection('orders', platform);
+                } else {
+                    this.showSection(section);
+                }
+            });
+        });
     }
 
     renderHeader() {
@@ -536,33 +859,33 @@ class TexnoEdemApp {
             <div class="nav-container">
                 <div class="nav-items">
                     <button class="nav-item ${this.currentSection === 'dashboard' ? 'active' : ''}" 
-                            onclick="app.showSection('dashboard')">
+                            data-section="dashboard">
                         <i class="fas fa-chart-line"></i>
                         <span>Дашборд</span>
                     </button>
                     
                     <button class="nav-item ${this.currentSection === 'orders' && this.currentPlatform === 'cdek' ? 'active' : ''}" 
-                            onclick="app.showSection('orders', 'cdek')">
+                            data-section="orders" data-platform="cdek">
                         <i class="fas fa-shipping-fast"></i>
                         <span>CDEK</span>
                         <span class="nav-badge" id="cdek-badge">0</span>
                     </button>
                     
                     <button class="nav-item ${this.currentSection === 'orders' && this.currentPlatform === 'megamarket' ? 'active' : ''}" 
-                            onclick="app.showSection('orders', 'megamarket')">
+                            data-section="orders" data-platform="megamarket">
                         <i class="fas fa-store"></i>
                         <span>Мегамаркет</span>
                         <span class="nav-badge" id="megamarket-badge">0</span>
                     </button>
                     
                     <button class="nav-item ${this.currentSection === 'analytics' ? 'active' : ''}" 
-                            onclick="app.showSection('analytics')">
+                            data-section="analytics">
                         <i class="fas fa-chart-bar"></i>
                         <span>Аналитика</span>
                     </button>
                     
                     <button class="nav-item ${this.currentSection === 'settings' ? 'active' : ''}" 
-                            onclick="app.showSection('settings')">
+                            data-section="settings">
                         <i class="fas fa-cog"></i>
                         <span>Настройки</span>
                     </button>
@@ -570,6 +893,8 @@ class TexnoEdemApp {
             </div>
         `;
 
+        // ✅ ИСПРАВЛЕНИЕ: Добавляем обработчики событий
+        this.attachNavigationEvents();
         this.updateNavigationBadges();
     }
 
@@ -680,6 +1005,9 @@ class TexnoEdemApp {
             
             // Загружаем данные для секции
             this.loadSectionData(sectionId, platform);
+        } else {
+            console.error(`❌ Section not found: ${sectionId}-section`);
+            this.showNotification(`Раздел "${sectionId}" недоступен`, 'error');
         }
 
         // Обновляем кнопки Telegram
@@ -715,9 +1043,9 @@ class TexnoEdemApp {
         
         let activeNav;
         if (sectionId === 'orders' && platform) {
-            activeNav = document.querySelector(`[onclick="app.showSection('orders', '${platform}')"]`);
+            activeNav = document.querySelector(`[data-section="orders"][data-platform="${platform}"]`);
         } else {
-            activeNav = document.querySelector(`[onclick="app.showSection('${sectionId}')"]`);
+            activeNav = document.querySelector(`[data-section="${sectionId}"]`);
         }
         
         if (activeNav) {
@@ -726,6 +1054,8 @@ class TexnoEdemApp {
     }
 
     loadSectionData(sectionId, platform) {
+        console.log(`📊 Loading data for section: ${sectionId}, platform: ${platform}`);
+        
         switch (sectionId) {
             case 'dashboard':
                 this.updateDashboard();
@@ -733,6 +1063,17 @@ class TexnoEdemApp {
             case 'orders':
                 if (this.ordersComponent && this.ordersComponent.render) {
                     this.ordersComponent.render(platform);
+                } else {
+                    // Fallback
+                    const container = document.getElementById('orders-container');
+                    if (container) {
+                        const orders = this.getPlatformOrders(platform);
+                        if (orders.length === 0) {
+                            container.innerHTML = this.createEmptyOrdersState(platform);
+                        } else {
+                            container.innerHTML = this.createOrdersFallbackHTML(platform, orders);
+                        }
+                    }
                 }
                 break;
             case 'analytics':
@@ -784,6 +1125,22 @@ class TexnoEdemApp {
         }
     }
 
+    showModal(modalId) {
+        const modal = document.getElementById(modalId);
+        if (modal) {
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+    }
+
+    hideModal() {
+        const modals = document.querySelectorAll('.modal');
+        modals.forEach(modal => {
+            modal.classList.remove('active');
+        });
+        document.body.style.overflow = '';
+    }
+
     updateDashboard() {
         this.updateQuickStats();
         this.updateRecentActivity();
@@ -820,6 +1177,28 @@ class TexnoEdemApp {
             minimumFractionDigits: 0,
             maximumFractionDigits: 0
         }).format(amount);
+    }
+
+    formatDate(dateString) {
+        if (!dateString) return '-';
+        try {
+            const date = new Date(dateString);
+            if (isNaN(date.getTime())) return '-';
+            return date.toLocaleDateString('ru-RU');
+        } catch (error) {
+            return '-';
+        }
+    }
+
+    formatDateTime(dateString) {
+        if (!dateString) return '-';
+        try {
+            const date = new Date(dateString);
+            if (isNaN(date.getTime())) return '-';
+            return date.toLocaleString('ru-RU');
+        } catch (error) {
+            return '-';
+        }
     }
 
     updateAnalyticsPreview() {
@@ -930,7 +1309,8 @@ class TexnoEdemApp {
             'active': { text: 'Активный', color: '#8b5cf6' },
             'delivered': { text: 'Доставлен', color: '#10b981' },
             'problem': { text: 'Проблема', color: '#ef4444' },
-            'cancelled': { text: 'Отменен', color: '#6b7280' }
+            'cancelled': { text: 'Отменен', color: '#6b7280' },
+            'shipped': { text: 'Отправлен', color: '#6366f1' }
         };
         
         return fallbackStatuses[order.status] || { text: order.status, color: '#6b7280' };
@@ -1106,6 +1486,8 @@ window.showOrderDetails = (platform, orderId) => {
         const order = app.getOrderById(platform, orderId);
         if (order) {
             app.modal.showOrderDetails(order);
+        } else {
+            app.showNotification('Заказ не найден', 'error');
         }
     }
 };
