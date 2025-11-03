@@ -1,129 +1,173 @@
-// js/utils/storage.js - Улучшенное управление хранилищем
+// js/utils/storage.js - Улучшенный менеджер хранилища
 class StorageManager {
     constructor() {
         this.prefix = 'texno_edem_';
-        this.encryptionKey = null;
+        this.cache = new Map();
+        this.init();
+    }
+
+    init() {
+        // Проверяем доступность localStorage
+        this.isAvailable = this.testStorage();
+        console.log(`📦 Storage available: ${this.isAvailable}`);
+    }
+
+    testStorage() {
+        try {
+            const test = 'test';
+            localStorage.setItem(test, test);
+            localStorage.removeItem(test);
+            return true;
+        } catch (e) {
+            console.warn('⚠️ localStorage not available, using memory storage');
+            return false;
+        }
     }
 
     set(key, value, ttl = null) {
-        try {
-            const item = {
-                value,
-                timestamp: Date.now(),
-                ttl
-            };
-            
-            const storageKey = this.prefix + key;
-            localStorage.setItem(storageKey, JSON.stringify(item));
-            return true;
-        } catch (error) {
-            console.error('Storage set error:', error);
-            return false;
+        const storageKey = this.prefix + key;
+        const item = {
+            value: value,
+            timestamp: Date.now(),
+            ttl: ttl
+        };
+
+        // Кэшируем в памяти
+        this.cache.set(storageKey, item);
+
+        // Сохраняем в localStorage если доступно
+        if (this.isAvailable) {
+            try {
+                localStorage.setItem(storageKey, JSON.stringify(item));
+            } catch (error) {
+                console.warn('⚠️ localStorage set failed:', error);
+                this.isAvailable = false;
+            }
         }
     }
 
     get(key, defaultValue = null) {
-        try {
-            const storageKey = this.prefix + key;
-            const item = localStorage.getItem(storageKey);
-            
-            if (!item) return defaultValue;
-            
-            const parsed = JSON.parse(item);
-            
-            // Проверяем TTL
-            if (parsed.ttl && Date.now() - parsed.timestamp > parsed.ttl) {
-                this.remove(key);
-                return defaultValue;
+        const storageKey = this.prefix + key;
+
+        // Проверяем кэш памяти
+        if (this.cache.has(storageKey)) {
+            const item = this.cache.get(storageKey);
+            if (!this.isExpired(item)) {
+                return item.value;
             }
-            
-            return parsed.value;
-        } catch (error) {
-            console.error('Storage get error:', error);
-            return defaultValue;
+            this.cache.delete(storageKey);
         }
+
+        // Пробуем получить из localStorage
+        if (this.isAvailable) {
+            try {
+                const stored = localStorage.getItem(storageKey);
+                if (stored) {
+                    const item = JSON.parse(stored);
+                    if (!this.isExpired(item)) {
+                        // Кэшируем в памяти
+                        this.cache.set(storageKey, item);
+                        return item.value;
+                    } else {
+                        this.remove(key);
+                    }
+                }
+            } catch (error) {
+                console.warn('⚠️ localStorage get failed:', error);
+                this.isAvailable = false;
+            }
+        }
+
+        return defaultValue;
     }
 
     remove(key) {
-        try {
-            const storageKey = this.prefix + key;
-            localStorage.removeItem(storageKey);
-            return true;
-        } catch (error) {
-            console.error('Storage remove error:', error);
-            return false;
+        const storageKey = this.prefix + key;
+        
+        this.cache.delete(storageKey);
+        
+        if (this.isAvailable) {
+            try {
+                localStorage.removeItem(storageKey);
+            } catch (error) {
+                console.warn('⚠️ localStorage remove failed:', error);
+            }
         }
     }
 
     clear() {
-        try {
-            const keysToRemove = [];
-            
-            for (let i = 0; i < localStorage.length; i++) {
-                const key = localStorage.key(i);
-                if (key.startsWith(this.prefix)) {
-                    keysToRemove.push(key);
+        this.cache.clear();
+        
+        if (this.isAvailable) {
+            try {
+                // Удаляем только ключи с нашим префиксом
+                for (let i = localStorage.length - 1; i >= 0; i--) {
+                    const key = localStorage.key(i);
+                    if (key && key.startsWith(this.prefix)) {
+                        localStorage.removeItem(key);
+                    }
                 }
+            } catch (error) {
+                console.warn('⚠️ localStorage clear failed:', error);
             }
-            
-            keysToRemove.forEach(key => {
-                localStorage.removeItem(key);
-            });
-            
-            return true;
-        } catch (error) {
-            console.error('Storage clear error:', error);
-            return false;
         }
+    }
+
+    isExpired(item) {
+        if (!item.ttl) return false;
+        return Date.now() - item.timestamp > item.ttl;
     }
 
     getSize() {
-        let total = 0;
+        let size = 0;
         
-        for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            if (key.startsWith(this.prefix)) {
-                const value = localStorage.getItem(key);
-                total += key.length + value.length;
+        // Размер в памяти
+        this.cache.forEach((value, key) => {
+            size += key.length + JSON.stringify(value).length;
+        });
+
+        return size;
+    }
+
+    // Методы для работы с сессиями
+    setSession(key, value) {
+        this.set(key, value, 30 * 60 * 1000); // 30 минут
+    }
+
+    // Методы для работы с пользовательскими данными
+    setUserData(key, value) {
+        this.set(`user_${key}`, value);
+    }
+
+    getUserData(key, defaultValue = null) {
+        return this.get(`user_${key}`, defaultValue);
+    }
+
+    // Экспорт/импорт данных
+    exportData() {
+        const data = {};
+        
+        if (this.isAvailable) {
+            try {
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key && key.startsWith(this.prefix)) {
+                        const value = localStorage.getItem(key);
+                        data[key] = value;
+                    }
+                }
+            } catch (error) {
+                console.warn('⚠️ Export from localStorage failed:', error);
             }
         }
-        
-        return total;
+
+        // Добавляем данные из кэша памяти
+        this.cache.forEach((value, key) => {
+            data[key] = JSON.stringify(value);
+        });
+
+        return JSON.stringify(data, null, 2);
     }
 
-    // Методы для работы с разными типами данных
-    setObject(key, value, ttl = null) {
-        return this.set(key, value, ttl);
-    }
-
-    getObject(key, defaultValue = null) {
-        return this.get(key, defaultValue);
-    }
-
-    setArray(key, value, ttl = null) {
-        return this.set(key, value, ttl);
-    }
-
-    getArray(key, defaultValue = []) {
-        return this.get(key, defaultValue);
-    }
-
-    // Миграция данных
-    migrate(fromKey, toKey) {
-        const value = this.get(fromKey);
-        if (value !== null) {
-            this.set(toKey, value);
-            this.remove(fromKey);
-            return true;
-        }
-        return false;
-    }
-}
-
-// Создаем глобальный экземпляр
-const Storage = new StorageManager();
-
-// Экспорт для использования в других модулях
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { StorageManager, Storage };
-}
+    importData(jsonData) {
+        try
