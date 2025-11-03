@@ -1,4 +1,4 @@
-// js/app.js - Полностью исправленный
+// js/app.js - Полностью исправленный и доработанный
 class TexnoEdemApp {
     constructor() {
         this.currentSection = 'dashboard';
@@ -105,9 +105,11 @@ class TexnoEdemApp {
             if (window.Telegram && Telegram.WebApp) {
                 this.tg = Telegram.WebApp;
                 this.tg.expand();
-                this.tg.enableClosingConfirmation();
                 
-                // Настройка кнопок
+                // ✅ ИСПРАВЛЕНИЕ: Правильная настройка подтверждения закрытия
+                this.setupTelegramCloseHandler();
+                
+                // Настройка кнопки "Назад"
                 this.tg.BackButton.onClick(() => this.handleBackButton());
                 
                 // Получение данных пользователя
@@ -131,6 +133,75 @@ class TexnoEdemApp {
         } catch (error) {
             console.warn('⚠️ Telegram init failed, using desktop mode:', error);
             this.initDesktopMode();
+        }
+    }
+
+    setupTelegramCloseHandler() {
+        if (!this.tg) return;
+
+        // ✅ ИСПРАВЛЕНИЕ: Отключаем стандартное подтверждение закрытия
+        this.tg.disableClosingConfirmation();
+
+        // Вместо этого обрабатываем закрытие самостоятельно
+        this.tg.onEvent('viewportChanged', (params) => {
+            if (!params.is_expanded) {
+                // При сворачивании приложения проверяем несохраненные данные
+                this.handleAppMinimize();
+            }
+        });
+
+        // Обработка попытки закрытия
+        window.addEventListener('beforeunload', (event) => {
+            if (this.hasUnsavedChanges()) {
+                event.preventDefault();
+                event.returnValue = 'У вас есть несохраненные изменения. Вы уверены, что хотите уйти?';
+                return event.returnValue;
+            }
+        });
+    }
+
+    // Проверяем наличие несохраненных изменений
+    hasUnsavedChanges() {
+        let hasChanges = false;
+
+        // Проверяем настройки
+        if (this.settingsComponent && this.settingsComponent.hasUnsavedChanges) {
+            hasChanges = hasChanges || this.settingsComponent.hasUnsavedChanges();
+        }
+
+        // Можно добавить проверку других компонентов
+        // if (this.ordersComponent && this.ordersComponent.hasUnsavedChanges) {
+        //     hasChanges = hasChanges || this.ordersComponent.hasUnsavedChanges();
+        // }
+
+        return hasChanges;
+    }
+
+    // Обработка сворачивания приложения
+    handleAppMinimize() {
+        if (this.hasUnsavedChanges()) {
+            console.log('⚠️ App minimized with unsaved changes');
+            // Можно показать уведомление
+            this.showNotification('Несохраненные изменения будут сохранены автоматически', 'warning');
+            
+            // Автоматически сохраняем изменения
+            this.forceSaveChanges();
+        }
+    }
+
+    // Принудительное сохранение всех изменений
+    forceSaveChanges() {
+        let saved = false;
+
+        // Сохраняем настройки
+        if (this.settingsComponent && this.settingsComponent.forceSave) {
+            saved = this.settingsComponent.forceSave() || saved;
+        }
+
+        // Можно добавить сохранение других компонентов
+
+        if (saved) {
+            console.log('✅ Changes saved automatically');
         }
     }
 
@@ -208,6 +279,34 @@ class TexnoEdemApp {
                     </div>`;
                 }
             }
+        };
+
+        this.analyticsComponent = {
+            render: () => {
+                const container = document.getElementById('analytics-container');
+                if (container) {
+                    container.innerHTML = `<div class="empty-state">
+                        <i class="fas fa-chart-bar"></i>
+                        <h3>Аналитика временно недоступна</h3>
+                        <p>Основные функции работают в обычном режиме</p>
+                    </div>`;
+                }
+            }
+        };
+
+        this.settingsComponent = {
+            render: () => {
+                const container = document.getElementById('settings-container');
+                if (container) {
+                    container.innerHTML = `<div class="empty-state">
+                        <i class="fas fa-cog"></i>
+                        <h3>Настройки временно недоступны</h3>
+                        <p>Используются настройки по умолчанию</p>
+                    </div>`;
+                }
+            },
+            hasUnsavedChanges: () => false,
+            forceSave: () => false
         };
 
         this.modal = {
@@ -374,6 +473,10 @@ class TexnoEdemApp {
                             <i class="fas fa-store"></i>
                             <span>Мегамаркет</span>
                         </button>
+                        <button class="nav-item" onclick="app.showSection('settings')">
+                            <i class="fas fa-cog"></i>
+                            <span>Настройки</span>
+                        </button>
                     </div>
                 </div>
             `;
@@ -381,6 +484,93 @@ class TexnoEdemApp {
 
         // Показываем дашборд
         this.showSection('dashboard');
+    }
+
+    renderHeader() {
+        const header = document.getElementById('header');
+        if (!header) return;
+
+        header.innerHTML = `
+            <div class="header-content">
+                <div class="logo" onclick="app.showSection('dashboard')">
+                    <div class="logo-icon">
+                        <i class="fas fa-rocket"></i>
+                    </div>
+                    <div class="logo-text">
+                        <div class="logo-title">${CONFIG.get('APP.NAME', 'TEXNO EDEM')}</div>
+                        <div class="logo-subtitle">Business Intelligence v${CONFIG.get('APP.VERSION', '1.2.0')}</div>
+                    </div>
+                </div>
+                
+                <div class="header-actions">
+                    <div class="sync-status ${this.isSyncing ? 'syncing' : ''}">
+                        <div class="sync-indicator"></div>
+                        <span class="sync-text">${this.getSyncText()}</span>
+                    </div>
+                    
+                    <div class="user-info" onclick="app.showSection('settings')">
+                        <div class="user-avatar">
+                            ${this.getUserAvatar()}
+                        </div>
+                        <div class="user-details">
+                            <div class="user-name">${this.getUserName()}</div>
+                            <div class="user-role">${this.user?.isPremium ? 'Premium' : 'Менеджер'}</div>
+                        </div>
+                    </div>
+                    
+                    <button class="btn btn-icon" onclick="app.manualSync()" 
+                            ${this.isSyncing ? 'disabled' : ''} 
+                            title="Обновить данные">
+                        <i class="fas fa-sync-alt ${this.isSyncing ? 'fa-spin' : ''}"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+
+    renderNavigation() {
+        const nav = document.getElementById('main-nav');
+        if (!nav) return;
+
+        nav.innerHTML = `
+            <div class="nav-container">
+                <div class="nav-items">
+                    <button class="nav-item ${this.currentSection === 'dashboard' ? 'active' : ''}" 
+                            onclick="app.showSection('dashboard')">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Дашборд</span>
+                    </button>
+                    
+                    <button class="nav-item ${this.currentSection === 'orders' && this.currentPlatform === 'cdek' ? 'active' : ''}" 
+                            onclick="app.showSection('orders', 'cdek')">
+                        <i class="fas fa-shipping-fast"></i>
+                        <span>CDEK</span>
+                        <span class="nav-badge" id="cdek-badge">0</span>
+                    </button>
+                    
+                    <button class="nav-item ${this.currentSection === 'orders' && this.currentPlatform === 'megamarket' ? 'active' : ''}" 
+                            onclick="app.showSection('orders', 'megamarket')">
+                        <i class="fas fa-store"></i>
+                        <span>Мегамаркет</span>
+                        <span class="nav-badge" id="megamarket-badge">0</span>
+                    </button>
+                    
+                    <button class="nav-item ${this.currentSection === 'analytics' ? 'active' : ''}" 
+                            onclick="app.showSection('analytics')">
+                        <i class="fas fa-chart-bar"></i>
+                        <span>Аналитика</span>
+                    </button>
+                    
+                    <button class="nav-item ${this.currentSection === 'settings' ? 'active' : ''}" 
+                            onclick="app.showSection('settings')">
+                        <i class="fas fa-cog"></i>
+                        <span>Настройки</span>
+                    </button>
+                </div>
+            </div>
+        `;
+
+        this.updateNavigationBadges();
     }
 
     emergencyInit() {
@@ -399,8 +589,6 @@ class TexnoEdemApp {
         
         this.showNotification('Приложение запущено в безопасном режиме', 'warning');
     }
-
-    // ... остальные методы (showLoading, hideLoading, showNotification и т.д.)
 
     showLoading(message = 'Загрузка...') {
         this.isLoading = true;
@@ -461,6 +649,18 @@ class TexnoEdemApp {
     showSection(sectionId, platform = null) {
         console.log(`📱 Showing section: ${sectionId}, platform: ${platform}`);
         
+        // ✅ ИСПРАВЛЕНИЕ: Проверяем несохраненные изменения перед навигацией
+        if (this.hasUnsavedChanges() && sectionId !== this.currentSection) {
+            this.showUnsavedChangesAlert(() => {
+                this.performNavigation(sectionId, platform);
+            });
+            return;
+        }
+
+        this.performNavigation(sectionId, platform);
+    }
+
+    performNavigation(sectionId, platform) {
         // Сохраняем текущее состояние
         this.currentSection = sectionId;
         this.currentPlatform = platform;
@@ -484,6 +684,28 @@ class TexnoEdemApp {
 
         // Обновляем кнопки Telegram
         this.updateTelegramButtons(sectionId);
+    }
+
+    showUnsavedChangesAlert(callback) {
+        // Показываем кастомное подтверждение вместо стандартного браузерного
+        if (confirm('У вас есть несохраненные изменения. Сохранить перед переходом?')) {
+            this.forceSaveChanges();
+            // После сохранения продолжаем навигацию
+            setTimeout(() => {
+                callback();
+            }, 100);
+        } else {
+            // Отменяем изменения и продолжаем
+            this.discardChanges();
+            callback();
+        }
+    }
+
+    discardChanges() {
+        // Сбрасываем несохраненные изменения в компонентах
+        if (this.settingsComponent && this.settingsComponent.discardChanges) {
+            this.settingsComponent.discardChanges();
+        }
     }
 
     updateActiveNavigation(sectionId, platform = null) {
@@ -523,6 +745,42 @@ class TexnoEdemApp {
                     this.settingsComponent.render();
                 }
                 break;
+        }
+    }
+
+    handleBackButton() {
+        // ✅ ИСПРАВЛЕНИЕ: Проверяем несохраненные изменения перед навигацией
+        if (this.hasUnsavedChanges()) {
+            this.showUnsavedChangesAlert(() => {
+                this.performBackNavigation();
+            });
+            return;
+        }
+
+        this.performBackNavigation();
+    }
+
+    performBackNavigation() {
+        if (this.currentSection !== 'dashboard') {
+            this.showSection('dashboard');
+        } else {
+            if (this.tg) {
+                this.tg.close();
+            }
+        }
+    }
+
+    updateTelegramButtons(sectionId) {
+        if (!this.tg) return;
+
+        if (sectionId === 'dashboard') {
+            this.tg.MainButton.setText('Обновить данные');
+            this.tg.MainButton.onClick(() => this.manualSync());
+            this.tg.MainButton.show();
+            this.tg.BackButton.hide();
+        } else {
+            this.tg.MainButton.hide();
+            this.tg.BackButton.show();
         }
     }
 
@@ -717,6 +975,26 @@ class TexnoEdemApp {
         });
     }
 
+    getSyncText() {
+        if (this.isSyncing) return 'Синхронизация...';
+        if (this.lastSyncTime) return `Обновлено ${this.formatRelativeTime(this.lastSyncTime)}`;
+        return 'Не синхронизировано';
+    }
+
+    getUserAvatar() {
+        if (this.user?.firstName) {
+            return this.user.firstName.charAt(0).toUpperCase();
+        }
+        return 'U';
+    }
+
+    getUserName() {
+        if (this.user) {
+            return `${this.user.firstName || ''} ${this.user.lastName || ''}`.trim() || 'Пользователь';
+        }
+        return 'Гость';
+    }
+
     startAutoSync() {
         if (this.syncInterval) {
             clearInterval(this.syncInterval);
@@ -745,6 +1023,7 @@ class TexnoEdemApp {
         
         this.isSyncing = true;
         this.showLoading('Синхронизация с платформами...');
+        this.renderHeader();
         
         try {
             await this.loadOrders();
@@ -760,29 +1039,7 @@ class TexnoEdemApp {
         } finally {
             this.isSyncing = false;
             this.hideLoading();
-        }
-    }
-
-    handleBackButton() {
-        if (this.currentSection !== 'dashboard') {
-            this.showSection('dashboard');
-        } else {
-            if (this.tg) {
-                this.tg.close();
-            }
-        }
-    }
-
-    updateTelegramButtons(sectionId) {
-        if (!this.tg) return;
-
-        if (sectionId === 'dashboard') {
-            this.tg.MainButton.setText('Обновить данные');
-            this.tg.MainButton.show();
-            this.tg.BackButton.hide();
-        } else {
-            this.tg.MainButton.hide();
-            this.tg.BackButton.show();
+            this.renderHeader();
         }
     }
 
@@ -797,10 +1054,18 @@ class TexnoEdemApp {
 
     destroy() {
         this.stopAutoSync();
+        
+        // ✅ ИСПРАВЛЕНИЕ: Правильно отключаем обработчики Telegram
         if (this.tg) {
             this.tg.disableClosingConfirmation();
-            if (this.tg.BackButton.offClick) {
+            this.tg.offEvent('viewportChanged');
+            
+            if (this.tg.BackButton && this.tg.BackButton.offClick) {
                 this.tg.BackButton.offClick();
+            }
+            
+            if (this.tg.MainButton && this.tg.MainButton.offClick) {
+                this.tg.MainButton.offClick();
             }
         }
     }
