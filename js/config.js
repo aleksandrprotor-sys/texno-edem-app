@@ -1,12 +1,12 @@
-// js/config.js - Улучшенная конфигурация с сохранением
+// js/config.js - Полностью исправленный
 class ConfigManager {
     constructor() {
         this.defaultConfig = {
             APP: {
                 NAME: 'TEXNO EDEM',
-                VERSION: '1.0.0',
+                VERSION: '1.2.0',
                 COMPANY: 'TEXNO EDEM LLC',
-                BUILD: '2024.01.15'
+                BUILD: '2024.01.20'
             },
             
             API: {
@@ -28,6 +28,25 @@ class ConfigManager {
                     ENABLED: true,
                     SYNC_INTERVAL: 300000,
                     TIMEOUT: 30000
+                }
+            },
+            
+            STATUSES: {
+                CDEK: {
+                    'CREATED': { text: 'Создан', color: '#3B82F6' },
+                    'ACCEPTED': { text: 'Принят', color: '#F59E0B' },
+                    'IN_PROGRESS': { text: 'В пути', color: '#8B5CF6' },
+                    'DELIVERED': { text: 'Доставлен', color: '#10B981' },
+                    'PROBLEM': { text: 'Проблема', color: '#EF4444' },
+                    'CANCELLED': { text: 'Отменен', color: '#6B7280' }
+                },
+                MEGAMARKET: {
+                    'NEW': { text: 'Новый', color: '#3B82F6' },
+                    'CONFIRMED': { text: 'Подтвержден', color: '#F59E0B' },
+                    'PACKAGING': { text: 'Упаковка', color: '#8B5CF6' },
+                    'SHIPPED': { text: 'Отправлен', color: '#6366F1' },
+                    'DELIVERED': { text: 'Доставлен', color: '#10B981' },
+                    'CANCELLED': { text: 'Отменен', color: '#6B7280' }
                 }
             },
             
@@ -62,6 +81,7 @@ class ConfigManager {
             }
         };
         
+        this.config = { ...this.defaultConfig };
         this.loadConfig();
     }
 
@@ -71,59 +91,60 @@ class ConfigManager {
             if (saved) {
                 const parsed = JSON.parse(saved);
                 this.config = this.deepMerge(this.defaultConfig, parsed);
-            } else {
-                this.config = this.defaultConfig;
             }
-            this.saveConfig(); // Сохраняем для инициализации
         } catch (error) {
             console.error('Error loading config:', error);
-            this.config = this.defaultConfig;
+            this.config = { ...this.defaultConfig };
         }
     }
 
     saveConfig() {
         try {
             localStorage.setItem('texno_edem_config', JSON.stringify(this.config));
-            console.log('✅ Config saved successfully');
         } catch (error) {
             console.error('Error saving config:', error);
         }
     }
 
     get(keyPath, defaultValue = null) {
-        const keys = keyPath.split('.');
-        let value = this.config;
-        
-        for (const key of keys) {
-            if (value && typeof value === 'object' && key in value) {
-                value = value[key];
-            } else {
-                return defaultValue;
+        try {
+            const keys = keyPath.split('.');
+            let value = this.config;
+            
+            for (const key of keys) {
+                if (value && typeof value === 'object' && key in value) {
+                    value = value[key];
+                } else {
+                    return defaultValue;
+                }
             }
+            
+            return value !== undefined ? value : defaultValue;
+        } catch (error) {
+            console.warn('Config get error:', error);
+            return defaultValue;
         }
-        
-        return value !== undefined ? value : defaultValue;
     }
 
     set(keyPath, value) {
-        const keys = keyPath.split('.');
-        let current = this.config;
-        
-        for (let i = 0; i < keys.length - 1; i++) {
-            const key = keys[i];
-            if (!(key in current)) {
-                current[key] = {};
+        try {
+            const keys = keyPath.split('.');
+            let current = this.config;
+            
+            for (let i = 0; i < keys.length - 1; i++) {
+                const key = keys[i];
+                if (!(key in current)) {
+                    current[key] = {};
+                }
+                current = current[key];
             }
-            current = current[key];
+            
+            current[keys[keys.length - 1]] = value;
+            this.saveConfig();
+            
+        } catch (error) {
+            console.error('Config set error:', error);
         }
-        
-        current[keys[keys.length - 1]] = value;
-        this.saveConfig();
-        
-        // Генерируем событие об изменении конфигурации
-        window.dispatchEvent(new CustomEvent('configChanged', {
-            detail: { keyPath, value }
-        }));
     }
 
     reset() {
@@ -155,62 +176,17 @@ class ConfigManager {
         return item && typeof item === 'object' && !Array.isArray(item);
     }
 
-    // Методы для работы с настройками платформ
-    isPlatformEnabled(platform) {
-        return this.get(`API.${platform.toUpperCase()}.ENABLED`, false);
-    }
-
-    setPlatformEnabled(platform, enabled) {
-        this.set(`API.${platform.toUpperCase()}.ENABLED`, enabled);
-    }
-
-    getPlatformConfig(platform) {
-        return this.get(`API.${platform.toUpperCase()}`, {});
-    }
-
-    // Методы для работы с настройками UI
-    getTheme() {
-        return this.get('SETTINGS.THEME', 'auto');
-    }
-
-    setTheme(theme) {
-        this.set('SETTINGS.THEME', theme);
-        this.applyTheme();
-    }
-
     applyTheme() {
-        const theme = this.getTheme();
-        const html = document.documentElement;
-        
+        const theme = this.get('SETTINGS.THEME', 'auto');
+        let actualTheme = theme;
+
         if (theme === 'auto') {
-            html.removeAttribute('data-theme');
-        } else {
-            html.setAttribute('data-theme', theme);
+            actualTheme = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
         }
-    }
 
-    // Экспорт/импорт настроек
-    exportConfig() {
-        return JSON.stringify(this.config, null, 2);
-    }
-
-    importConfig(configString) {
-        try {
-            const imported = JSON.parse(configString);
-            this.config = this.deepMerge(this.defaultConfig, imported);
-            this.saveConfig();
-            return true;
-        } catch (error) {
-            console.error('Error importing config:', error);
-            return false;
-        }
+        document.documentElement.setAttribute('data-theme', actualTheme);
     }
 }
 
-// Создаем глобальный экземпляр
+// Создаем глобальный экземпляр ДО его использования
 const CONFIG = new ConfigManager();
-
-// Экспорт для использования в других модулях
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { ConfigManager, CONFIG };
-}
