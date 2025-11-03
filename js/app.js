@@ -1,8 +1,8 @@
-// js/app.js - Полностью исправленная версия
+// js/app.js - Полностью исправленный
 class TexnoEdemApp {
     constructor() {
         this.currentSection = 'dashboard';
-        this.currentPlatform = null;
+        this.currentPlatform = 'cdek';
         this.orders = {
             cdek: [],
             megamarket: [],
@@ -18,30 +18,13 @@ class TexnoEdemApp {
         this.initTimeout = null;
         this.syncInterval = null;
         
-        // Компоненты
+        // Компоненты (инициализируем позже)
         this.ordersComponent = null;
         this.analyticsComponent = null;
         this.settingsComponent = null;
         this.modal = null;
-        
-        this.safeInit();
-    }
 
-    async safeInit() {
-        try {
-            this.initTimeout = setTimeout(() => {
-                if (!this.isInitialized) {
-                    console.error('❌ Init timeout reached');
-                    this.emergencyInit();
-                }
-            }, 10000);
-
-            await this.init();
-            
-        } catch (error) {
-            console.error('❌ Safe init failed:', error);
-            this.emergencyInit();
-        }
+        console.log('🚀 TEXNO EDEM App constructor called');
     }
 
     async init() {
@@ -51,19 +34,30 @@ class TexnoEdemApp {
         }
 
         try {
+            console.log('🔧 Starting initialization...');
             this.showLoading('Инициализация TEXNO EDEM...');
-            console.log('🚀 Starting initialization...');
+
+            // Таймаут на инициализацию
+            this.initTimeout = setTimeout(() => {
+                if (!this.isInitialized) {
+                    console.error('❌ Init timeout reached');
+                    this.emergencyInit();
+                }
+            }, 10000);
 
             // 1. Базовая инициализация
             await this.initBasic();
             
-            // 2. Инициализация компонентов
+            // 2. Инициализация Telegram
+            await this.initTelegram();
+            
+            // 3. Инициализация компонентов
             await this.initComponents();
             
-            // 3. Загрузка данных
+            // 4. Загрузка данных
             await this.loadInitialData();
             
-            // 4. Запуск автосинхронизации
+            // 5. Запуск автосинхронизации
             this.startAutoSync();
             
             this.isInitialized = true;
@@ -75,7 +69,6 @@ class TexnoEdemApp {
         } catch (error) {
             console.error('❌ App initialization failed:', error);
             this.emergencyInit();
-            throw error;
         } finally {
             this.hideLoading();
         }
@@ -84,33 +77,26 @@ class TexnoEdemApp {
     async initBasic() {
         console.log('🔧 Basic initialization...');
         
-        // Применяем базовые стили
-        document.documentElement.setAttribute('data-theme', 'light');
+        // Применяем тему
+        CONFIG.applyTheme();
         
-        // Создаем минимальный UI
+        // Создаем базовый UI
         this.renderBasicUI();
+        
+        // Инициализируем утилиты
+        await this.initUtils();
         
         await new Promise(resolve => setTimeout(resolve, 100));
     }
 
-    async initComponents() {
-        try {
-            // Инициализация Telegram
-            await this.initTelegram();
-            
-            // Инициализация компонентов
-            this.ordersComponent = new OrdersComponent(this);
-            this.analyticsComponent = new AnalyticsComponent(this);
-            this.settingsComponent = new SettingsComponent(this);
-            this.modal = new ModalComponent(this);
-            
-            this.renderHeader();
-            this.renderNavigation();
-            
-            console.log('✅ Components initialized');
-        } catch (error) {
-            console.warn('⚠️ Components init failed:', error);
-            throw error;
+    async initUtils() {
+        // Инициализируем необходимые утилиты
+        if (typeof ErrorHandler !== 'undefined') {
+            ErrorHandler.init();
+        }
+        
+        if (typeof Logger !== 'undefined') {
+            window.logger = new Logger('INFO');
         }
     }
 
@@ -159,8 +145,82 @@ class TexnoEdemApp {
         };
     }
 
+    async initComponents() {
+        try {
+            console.log('🔧 Initializing components...');
+            
+            // Загружаем компоненты динамически
+            await this.loadComponent('orders');
+            await this.loadComponent('analytics');
+            await this.loadComponent('settings');
+            await this.loadComponent('modal');
+            
+            this.renderHeader();
+            this.renderNavigation();
+            
+            console.log('✅ Components initialized');
+        } catch (error) {
+            console.warn('⚠️ Components init failed:', error);
+            // Создаем заглушки для компонентов
+            this.createFallbackComponents();
+        }
+    }
+
+    async loadComponent(name) {
+        try {
+            switch (name) {
+                case 'orders':
+                    if (typeof OrdersComponent !== 'undefined') {
+                        this.ordersComponent = new OrdersComponent(this);
+                    }
+                    break;
+                case 'analytics':
+                    if (typeof AnalyticsComponent !== 'undefined') {
+                        this.analyticsComponent = new AnalyticsComponent(this);
+                    }
+                    break;
+                case 'settings':
+                    if (typeof SettingsComponent !== 'undefined') {
+                        this.settingsComponent = new SettingsComponent(this);
+                    }
+                    break;
+                case 'modal':
+                    if (typeof ModalComponent !== 'undefined') {
+                        this.modal = new ModalComponent(this);
+                    }
+                    break;
+            }
+        } catch (error) {
+            console.warn(`⚠️ Failed to load component ${name}:`, error);
+        }
+    }
+
+    createFallbackComponents() {
+        // Создаем минимальные реализации компонентов
+        this.ordersComponent = {
+            render: (platform) => {
+                const container = document.getElementById('orders-container');
+                if (container) {
+                    container.innerHTML = `<div class="empty-state">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <h3>Компонент заказов недоступен</h3>
+                        <p>Попробуйте перезагрузить страницу</p>
+                    </div>`;
+                }
+            }
+        };
+
+        this.modal = {
+            showOrderDetails: (order) => {
+                alert(`Детали заказа: ${order.platform === 'cdek' ? order.trackingNumber : order.orderNumber}`);
+            },
+            close: () => {}
+        };
+    }
+
     async loadInitialData() {
         try {
+            console.log('📦 Loading initial data...');
             await this.loadOrders();
             this.updateDashboard();
             this.updateNavigationBadges();
@@ -175,9 +235,16 @@ class TexnoEdemApp {
 
     async loadOrders() {
         try {
-            // Используем mock данные для демонстрации
-            this.orders.cdek = mockDataGenerator.generateCDEKOrders(8);
-            this.orders.megamarket = mockDataGenerator.generateMegamarketOrders(12);
+            // Используем mock данные
+            if (typeof mockDataGenerator !== 'undefined') {
+                this.orders.cdek = mockDataGenerator.generateCDEKOrders(8);
+                this.orders.megamarket = mockDataGenerator.generateMegamarketOrders(12);
+            } else {
+                // Fallback данные
+                this.orders.cdek = this.generateDemoCDEKOrders();
+                this.orders.megamarket = this.generateDemoMegamarketOrders();
+            }
+            
             this.orders.all = [...this.orders.cdek, ...this.orders.megamarket]
                 .sort((a, b) => new Date(b.createdDate) - new Date(a.createdDate));
 
@@ -189,7 +256,71 @@ class TexnoEdemApp {
         }
     }
 
+    generateDemoCDEKOrders() {
+        return [
+            {
+                id: 'cdek-demo-1',
+                platform: 'cdek',
+                trackingNumber: 'CDEK12345678',
+                status: 'delivered',
+                statusCode: 'DELIVERED',
+                fromCity: 'Москва',
+                toCity: 'Санкт-Петербург',
+                weight: 2.5,
+                cost: 1500,
+                sender: 'ООО "ТЕХНО ЭДЕМ"',
+                recipient: 'Иван Иванов',
+                createdDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+                deliveredDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString()
+            },
+            {
+                id: 'cdek-demo-2',
+                platform: 'cdek',
+                trackingNumber: 'CDEK87654321',
+                status: 'active',
+                statusCode: 'IN_PROGRESS',
+                fromCity: 'Москва',
+                toCity: 'Екатеринбург',
+                weight: 1.8,
+                cost: 1200,
+                sender: 'ООО "ТЕХНО ЭДЕМ"',
+                recipient: 'Петр Сидоров',
+                createdDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+                estimatedDelivery: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+            }
+        ];
+    }
+
+    generateDemoMegamarketOrders() {
+        return [
+            {
+                id: 'mm-demo-1',
+                platform: 'megamarket', 
+                orderNumber: 'MM123456',
+                status: 'new',
+                statusCode: 'NEW',
+                totalAmount: 15670,
+                itemsTotal: 15670,
+                deliveryCost: 0,
+                customerName: 'Мария Петрова',
+                customerPhone: '+7 912 345-67-89',
+                deliveryAddress: 'г. Москва, ул. Примерная, д. 1',
+                createdDate: new Date().toISOString(),
+                items: [
+                    {
+                        id: 'item-1',
+                        name: 'Смартфон Samsung Galaxy',
+                        quantity: 1,
+                        price: 15670,
+                        total: 15670
+                    }
+                ]
+            }
+        ];
+    }
+
     useDemoData() {
+        console.log('🔄 Using demo data');
         this.orders.cdek = this.generateDemoCDEKOrders();
         this.orders.megamarket = this.generateDemoMegamarketOrders();
         this.orders.all = [...this.orders.cdek, ...this.orders.megamarket];
@@ -200,7 +331,391 @@ class TexnoEdemApp {
         this.showNotification('Используются демо-данные', 'warning');
     }
 
-    // ... остальные методы без изменений ...
+    renderBasicUI() {
+        console.log('🎨 Rendering basic UI...');
+        
+        // Создаем минимальный UI который всегда работает
+        const header = document.getElementById('header');
+        if (header) {
+            header.innerHTML = `
+                <div class="header-content">
+                    <div class="logo" onclick="app.showSection('dashboard')">
+                        <div class="logo-icon">
+                            <i class="fas fa-rocket"></i>
+                        </div>
+                        <div class="logo-text">
+                            <div class="logo-title">TEXNO EDEM</div>
+                            <div class="logo-subtitle">Business Intelligence</div>
+                        </div>
+                    </div>
+                    <div class="header-actions">
+                        <button class="btn btn-icon" onclick="location.reload()">
+                            <i class="fas fa-redo"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        const nav = document.getElementById('main-nav');
+        if (nav) {
+            nav.innerHTML = `
+                <div class="nav-container">
+                    <div class="nav-items">
+                        <button class="nav-item active" onclick="app.showSection('dashboard')">
+                            <i class="fas fa-chart-line"></i>
+                            <span>Дашборд</span>
+                        </button>
+                        <button class="nav-item" onclick="app.showSection('orders', 'cdek')">
+                            <i class="fas fa-shipping-fast"></i>
+                            <span>CDEK</span>
+                        </button>
+                        <button class="nav-item" onclick="app.showSection('orders', 'megamarket')">
+                            <i class="fas fa-store"></i>
+                            <span>Мегамаркет</span>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Показываем дашборд
+        this.showSection('dashboard');
+    }
+
+    emergencyInit() {
+        console.log('🚨 Emergency initialization');
+        
+        // Останавливаем таймаут
+        clearTimeout(this.initTimeout);
+        
+        // Показываем базовый интерфейс
+        this.renderBasicUI();
+        this.useDemoData();
+        
+        // Помечаем как инициализированное
+        this.isInitialized = true;
+        this.hideLoading();
+        
+        this.showNotification('Приложение запущено в безопасном режиме', 'warning');
+    }
+
+    // ... остальные методы (showLoading, hideLoading, showNotification и т.д.)
+
+    showLoading(message = 'Загрузка...') {
+        this.isLoading = true;
+        const overlay = document.getElementById('loading-overlay');
+        const messageEl = document.getElementById('loading-message');
+        
+        if (overlay) overlay.classList.add('active');
+        if (messageEl) messageEl.textContent = message;
+    }
+
+    hideLoading() {
+        this.isLoading = false;
+        const overlay = document.getElementById('loading-overlay');
+        if (overlay) overlay.classList.remove('active');
+    }
+
+    showNotification(message, type = 'info', duration = 5000) {
+        console.log(`📢 ${type.toUpperCase()}: ${message}`);
+        
+        // Используем улучшенный менеджер уведомлений если доступен
+        if (window.NotificationManager) {
+            NotificationManager.show(message, type, { duration });
+        } else {
+            // Fallback для простых уведомлений
+            this.showSimpleNotification(message, type, duration);
+        }
+    }
+
+    showSimpleNotification(message, type, duration) {
+        const notification = document.createElement('div');
+        notification.className = `simple-notification simple-notification-${type}`;
+        notification.innerHTML = `
+            <div class="simple-notification-content">
+                <i class="fas fa-${this.getNotificationIcon(type)}"></i>
+                <span>${message}</span>
+            </div>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
+        }, duration);
+    }
+
+    getNotificationIcon(type) {
+        const icons = {
+            success: 'check-circle',
+            error: 'exclamation-circle',
+            warning: 'exclamation-triangle',
+            info: 'info-circle'
+        };
+        return icons[type] || 'info-circle';
+    }
+
+    showSection(sectionId, platform = null) {
+        console.log(`📱 Showing section: ${sectionId}, platform: ${platform}`);
+        
+        // Сохраняем текущее состояние
+        this.currentSection = sectionId;
+        this.currentPlatform = platform;
+
+        // Скрываем все секции
+        document.querySelectorAll('.section').forEach(section => {
+            section.classList.remove('active');
+        });
+
+        // Показываем активную секцию
+        const targetSection = document.getElementById(`${sectionId}-section`);
+        if (targetSection) {
+            targetSection.classList.add('active');
+            
+            // Обновляем навигацию
+            this.updateActiveNavigation(sectionId, platform);
+            
+            // Загружаем данные для секции
+            this.loadSectionData(sectionId, platform);
+        }
+
+        // Обновляем кнопки Telegram
+        this.updateTelegramButtons(sectionId);
+    }
+
+    updateActiveNavigation(sectionId, platform = null) {
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.classList.remove('active');
+        });
+        
+        let activeNav;
+        if (sectionId === 'orders' && platform) {
+            activeNav = document.querySelector(`[onclick="app.showSection('orders', '${platform}')"]`);
+        } else {
+            activeNav = document.querySelector(`[onclick="app.showSection('${sectionId}')"]`);
+        }
+        
+        if (activeNav) {
+            activeNav.classList.add('active');
+        }
+    }
+
+    loadSectionData(sectionId, platform) {
+        switch (sectionId) {
+            case 'dashboard':
+                this.updateDashboard();
+                break;
+            case 'orders':
+                if (this.ordersComponent && this.ordersComponent.render) {
+                    this.ordersComponent.render(platform);
+                }
+                break;
+            case 'analytics':
+                if (this.analyticsComponent && this.analyticsComponent.render) {
+                    this.analyticsComponent.render();
+                }
+                break;
+            case 'settings':
+                if (this.settingsComponent && this.settingsComponent.render) {
+                    this.settingsComponent.render();
+                }
+                break;
+        }
+    }
+
+    updateDashboard() {
+        this.updateQuickStats();
+        this.updateRecentActivity();
+        this.updatePlatformWidgets();
+        this.updateAnalyticsPreview();
+    }
+
+    updateQuickStats() {
+        const totalOrders = this.orders.all.length;
+        const totalRevenue = this.orders.all.reduce((sum, order) => sum + (order.cost || order.totalAmount || 0), 0);
+        const problemOrders = this.orders.all.filter(order => order.status === 'problem').length;
+        const successRate = totalOrders > 0 ? Math.round((totalOrders - problemOrders) / totalOrders * 100) : 0;
+
+        const elements = {
+            'total-orders': totalOrders.toString(),
+            'total-revenue': this.formatCurrency(totalRevenue),
+            'success-rate': `${successRate}%`,
+            'problem-orders': problemOrders.toString()
+        };
+
+        Object.entries(elements).forEach(([id, value]) => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.textContent = value;
+            }
+        });
+    }
+
+    formatCurrency(amount, currency = 'RUB') {
+        if (amount === null || amount === undefined || isNaN(amount)) return '-';
+        return new Intl.NumberFormat('ru-RU', {
+            style: 'currency',
+            currency: currency,
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
+        }).format(amount);
+    }
+
+    updateAnalyticsPreview() {
+        const container = document.getElementById('analytics-preview');
+        if (!container) return;
+
+        const metrics = [
+            { icon: 'trending-up', label: 'Рост заказов', value: '+15%', change: 'positive' },
+            { icon: 'clock', label: 'Среднее время', value: '2.3 ч', change: 'negative' },
+            { icon: 'users', label: 'Новые клиенты', value: '24', change: 'positive' },
+            { icon: 'repeat', label: 'Повторные заказы', value: '68%', change: 'positive' }
+        ];
+
+        container.innerHTML = metrics.map(metric => `
+            <div class="preview-card">
+                <div class="preview-icon">
+                    <i class="fas fa-${metric.icon}"></i>
+                </div>
+                <div class="preview-content">
+                    <div class="preview-value ${metric.change}">${metric.value}</div>
+                    <div class="preview-label">${metric.label}</div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    updateRecentActivity() {
+        const container = document.getElementById('recent-orders-list');
+        if (!container) return;
+
+        const recentOrders = this.orders.all.slice(0, 5);
+        
+        if (recentOrders.length === 0) {
+            container.innerHTML = `
+                <div class="empty-activity">
+                    <i class="fas fa-inbox"></i>
+                    <p>Нет недавних заказов</p>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = recentOrders.map(order => {
+            const platformIcon = order.platform === 'cdek' ? 'shipping-fast' : 'store';
+            const statusConfig = this.getStatusConfig(order);
+            
+            return `
+                <div class="activity-item" onclick="app.showSection('orders', '${order.platform}')">
+                    <div class="activity-icon platform-${order.platform}">
+                        <i class="fas fa-${platformIcon}"></i>
+                    </div>
+                    <div class="activity-content">
+                        <div class="activity-title">
+                            ${order.platform === 'cdek' ? order.trackingNumber : order.orderNumber}
+                        </div>
+                        <div class="activity-description">
+                            ${order.recipient || order.customerName} • ${this.formatCurrency(order.cost || order.totalAmount)}
+                        </div>
+                        <div class="activity-meta">
+                            <span class="activity-time">${this.formatRelativeTime(order.createdDate)}</span>
+                            <span class="activity-platform">${order.platform === 'cdek' ? 'CDEK' : 'Мегамаркет'}</span>
+                        </div>
+                    </div>
+                    <div class="activity-status status-${order.status}">
+                        ${statusConfig.text}
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    formatRelativeTime(dateString) {
+        if (!dateString) return '-';
+        try {
+            const date = new Date(dateString);
+            if (isNaN(date.getTime())) return '-';
+            
+            const now = new Date();
+            const diffMs = now - date;
+            const diffMins = Math.floor(diffMs / (1000 * 60));
+            const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+            const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+            
+            if (diffMins < 1) return 'только что';
+            if (diffMins < 60) return `${diffMins} мин. назад`;
+            if (diffHours < 24) return `${diffHours} ч. назад`;
+            if (diffDays === 1) return 'вчера';
+            if (diffDays < 7) return `${diffDays} дн. назад`;
+            
+            return date.toLocaleDateString('ru-RU');
+        } catch (error) {
+            return '-';
+        }
+    }
+
+    getStatusConfig(order) {
+        const platform = order.platform.toUpperCase();
+        const statusConfig = CONFIG.get(`STATUSES.${platform}.${order.statusCode}`);
+        
+        if (statusConfig) {
+            return statusConfig;
+        }
+        
+        // Fallback для неизвестных статусов
+        const fallbackStatuses = {
+            'new': { text: 'Новый', color: '#3b82f6' },
+            'processing': { text: 'В обработке', color: '#f59e0b' },
+            'active': { text: 'Активный', color: '#8b5cf6' },
+            'delivered': { text: 'Доставлен', color: '#10b981' },
+            'problem': { text: 'Проблема', color: '#ef4444' },
+            'cancelled': { text: 'Отменен', color: '#6b7280' }
+        };
+        
+        return fallbackStatuses[order.status] || { text: order.status, color: '#6b7280' };
+    }
+
+    updatePlatformWidgets() {
+        const cdekActive = this.orders.cdek.filter(order => 
+            order.status === 'active' || order.status === 'processing'
+        ).length;
+        
+        const megamarketNew = this.orders.megamarket.filter(order => 
+            order.status === 'new'
+        ).length;
+
+        const cdekElement = document.getElementById('cdek-active');
+        const megamarketElement = document.getElementById('megamarket-new');
+        
+        if (cdekElement) cdekElement.textContent = cdekActive;
+        if (megamarketElement) megamarketElement.textContent = megamarketNew;
+    }
+
+    updateNavigationBadges() {
+        const cdekActive = this.orders.cdek.filter(order => 
+            ['active', 'processing', 'new'].includes(order.status)
+        ).length;
+        
+        const megamarketNew = this.orders.megamarket.filter(order => 
+            order.status === 'new'
+        ).length;
+
+        const badges = {
+            'cdek-badge': cdekActive,
+            'megamarket-badge': megamarketNew
+        };
+
+        Object.entries(badges).forEach(([id, count]) => {
+            const badge = document.getElementById(id);
+            if (badge) {
+                badge.textContent = count;
+                badge.style.display = count > 0 ? 'flex' : 'none';
+            }
+        });
+    }
 
     startAutoSync() {
         if (this.syncInterval) {
@@ -222,22 +737,93 @@ class TexnoEdemApp {
         }
     }
 
+    async manualSync() {
+        if (this.isSyncing) {
+            this.showNotification('Синхронизация уже выполняется', 'warning');
+            return;
+        }
+        
+        this.isSyncing = true;
+        this.showLoading('Синхронизация с платформами...');
+        
+        try {
+            await this.loadOrders();
+            this.updateDashboard();
+            this.updateNavigationBadges();
+            this.lastSyncTime = new Date();
+            
+            this.showNotification('Данные успешно обновлены', 'success');
+            
+        } catch (error) {
+            console.error('Sync error:', error);
+            this.showNotification('Ошибка синхронизации', 'error');
+        } finally {
+            this.isSyncing = false;
+            this.hideLoading();
+        }
+    }
+
+    handleBackButton() {
+        if (this.currentSection !== 'dashboard') {
+            this.showSection('dashboard');
+        } else {
+            if (this.tg) {
+                this.tg.close();
+            }
+        }
+    }
+
+    updateTelegramButtons(sectionId) {
+        if (!this.tg) return;
+
+        if (sectionId === 'dashboard') {
+            this.tg.MainButton.setText('Обновить данные');
+            this.tg.MainButton.show();
+            this.tg.BackButton.hide();
+        } else {
+            this.tg.MainButton.hide();
+            this.tg.BackButton.show();
+        }
+    }
+
+    getPlatformOrders(platform) {
+        return this.orders[platform] || [];
+    }
+
+    getOrderById(platform, orderId) {
+        const orders = this.getPlatformOrders(platform);
+        return orders.find(order => order.id === orderId) || null;
+    }
+
     destroy() {
         this.stopAutoSync();
         if (this.tg) {
             this.tg.disableClosingConfirmation();
-            this.tg.BackButton.offClick();
+            if (this.tg.BackButton.offClick) {
+                this.tg.BackButton.offClick();
+            }
         }
     }
 }
 
-// Безопасная инициализация
+// Безопасная инициализация приложения
 let app;
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+    console.log('📄 DOM Content Loaded');
+    
     try {
         app = new TexnoEdemApp();
         window.app = app; // Делаем глобально доступным
+        
+        // Даем время на загрузку остальных скриптов
+        setTimeout(() => {
+            app.init().catch(error => {
+                console.error('❌ App init failed:', error);
+                app.emergencyInit();
+            });
+        }, 100);
+        
     } catch (error) {
         console.error('❌ Failed to create app instance:', error);
         // Экстренная инициализация
@@ -249,17 +835,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Глобальные функции
 window.showOrderDetails = (platform, orderId) => {
-    if (app && app.ordersComponent) {
+    if (app && app.ordersComponent && app.ordersComponent.showOrderDetails) {
         app.ordersComponent.showOrderDetails(platform, orderId);
+    } else if (app && app.modal && app.modal.showOrderDetails) {
+        const order = app.getOrderById(platform, orderId);
+        if (order) {
+            app.modal.showOrderDetails(order);
+        }
     }
 };
 
 window.closeModal = () => {
-    if (app && app.modal) {
+    if (app && app.modal && app.modal.close) {
         app.modal.close();
     }
 };
 
+// Глобальные утилиты
 window.formatCurrency = (amount, currency = 'RUB') => {
     if (amount === null || amount === undefined || isNaN(amount)) return '-';
     return new Intl.NumberFormat('ru-RU', {
@@ -293,3 +885,10 @@ window.formatRelativeTime = (dateString) => {
         return '-';
     }
 };
+
+// Обработка закрытия приложения
+window.addEventListener('beforeunload', () => {
+    if (app) {
+        app.destroy();
+    }
+});
