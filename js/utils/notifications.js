@@ -1,5 +1,5 @@
-// Компонент уведомлений для TEXNO EDEM
-class NotificationComponent {
+// js/utils/notifications.js - Красивые уведомления
+class NotificationManager {
     constructor() {
         this.container = null;
         this.notifications = new Map();
@@ -29,28 +29,27 @@ class NotificationComponent {
                     position: fixed;
                     top: 20px;
                     right: 20px;
-                    z-index: 1200;
+                    z-index: 10000;
                     display: flex;
                     flex-direction: column;
                     gap: 10px;
                     max-width: 400px;
-                    pointer-events: none;
                 }
 
                 .notification {
                     background: var(--white);
-                    border-radius: var(--border-radius);
+                    border-radius: 12px;
                     padding: 16px;
-                    box-shadow: var(--shadow-lg);
-                    border-left: 4px solid var(--gray-400);
+                    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+                    border-left: 4px solid;
                     display: flex;
                     align-items: flex-start;
                     gap: 12px;
-                    pointer-events: all;
-                    animation: notificationSlideIn 0.3s ease-out;
+                    animation: notificationSlideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
                     max-width: 400px;
                     position: relative;
                     overflow: hidden;
+                    backdrop-filter: blur(10px);
                 }
 
                 .notification::before {
@@ -59,9 +58,9 @@ class NotificationComponent {
                     top: 0;
                     left: 0;
                     right: 0;
-                    height: 3px;
+                    height: 100%;
                     background: currentColor;
-                    opacity: 0.3;
+                    opacity: 0.05;
                 }
 
                 .notification.success {
@@ -92,11 +91,13 @@ class NotificationComponent {
                     align-items: center;
                     justify-content: center;
                     font-size: 16px;
+                    z-index: 1;
                 }
 
                 .notification-content {
                     flex: 1;
                     min-width: 0;
+                    z-index: 1;
                 }
 
                 .notification-title {
@@ -113,52 +114,69 @@ class NotificationComponent {
                 }
 
                 .notification-close {
-                    background: none;
+                    background: rgba(0, 0, 0, 0.1);
                     border: none;
-                    color: var(--gray-500);
+                    color: currentColor;
                     cursor: pointer;
                     padding: 4px;
-                    border-radius: 4px;
+                    border-radius: 6px;
                     flex-shrink: 0;
                     width: 24px;
                     height: 24px;
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    transition: var(--transition);
+                    transition: all 0.2s ease;
+                    z-index: 1;
                 }
 
                 .notification-close:hover {
-                    background: var(--gray-100);
-                    color: var(--gray-700);
+                    background: rgba(0, 0, 0, 0.2);
+                    transform: scale(1.1);
+                }
+
+                .notification.progress::after {
+                    content: '';
+                    position: absolute;
+                    bottom: 0;
+                    left: 0;
+                    height: 3px;
+                    background: currentColor;
+                    animation: progressBar linear forwards;
                 }
 
                 @keyframes notificationSlideIn {
                     from {
                         opacity: 0;
-                        transform: translateX(100%);
+                        transform: translateX(100%) scale(0.9);
                     }
                     to {
                         opacity: 1;
-                        transform: translateX(0);
+                        transform: translateX(0) scale(1);
                     }
                 }
 
                 @keyframes notificationSlideOut {
                     from {
                         opacity: 1;
-                        transform: translateX(0);
+                        transform: translateX(0) scale(1);
                     }
                     to {
                         opacity: 0;
-                        transform: translateX(100%);
+                        transform: translateX(100%) scale(0.9);
                     }
                 }
 
-                .notification.exiting {
-                    animation: notificationSlideOut 0.3s ease-in forwards;
+                @keyframes progressBar {
+                    from { width: 100%; }
+                    to { width: 0%; }
                 }
 
+                .notification.exiting {
+                    animation: notificationSlideOut 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+                }
+
+                /* Адаптивность */
                 @media (max-width: 768px) {
                     .notifications-container {
                         top: 10px;
@@ -169,7 +187,51 @@ class NotificationComponent {
 
                     .notification {
                         max-width: none;
+                        margin: 0 10px;
                     }
+                }
+
+                @media (max-width: 480px) {
+                    .notifications-container {
+                        top: 5px;
+                        right: 5px;
+                        left: 5px;
+                    }
+
+                    .notification {
+                        padding: 12px;
+                        margin: 0 5px;
+                    }
+
+                    .notification-title {
+                        font-size: 13px;
+                    }
+
+                    .notification-message {
+                        font-size: 13px;
+                    }
+                }
+
+                /* Темная тема */
+                [data-theme="dark"] .notification {
+                    background: var(--gray-800);
+                    color: var(--gray-100);
+                }
+
+                [data-theme="dark"] .notification-title {
+                    color: var(--gray-100);
+                }
+
+                [data-theme="dark"] .notification-message {
+                    color: var(--gray-300);
+                }
+
+                [data-theme="dark"] .notification-close {
+                    background: rgba(255, 255, 255, 0.1);
+                }
+
+                [data-theme="dark"] .notification-close:hover {
+                    background: rgba(255, 255, 255, 0.2);
                 }
             `;
 
@@ -193,6 +255,12 @@ class NotificationComponent {
             notification.timeout = setTimeout(() => {
                 this.hide(id);
             }, duration);
+
+            // Прогресс бар
+            if (options.progressBar !== false) {
+                notification.element.classList.add('progress');
+                notification.element.style.setProperty('--duration', `${duration}ms`);
+            }
         }
 
         return id;
@@ -203,15 +271,15 @@ class NotificationComponent {
         element.className = `notification ${type}`;
         
         const icon = this.getIcon(type);
-        const title = this.getTitle(type);
+        const title = options.title || this.getTitle(type);
 
         element.innerHTML = `
             <div class="notification-icon">${icon}</div>
             <div class="notification-content">
-                <div class="notification-title">${title}</div>
+                ${title ? `<div class="notification-title">${title}</div>` : ''}
                 <div class="notification-message">${message}</div>
             </div>
-            <button class="notification-close" onclick="app.notifications.hide(${id})">
+            <button class="notification-close" onclick="NotificationManager.hide(${id})">
                 <i class="fas fa-times"></i>
             </button>
         `;
@@ -275,36 +343,47 @@ class NotificationComponent {
 
     getDefaultDuration(type) {
         const durations = {
-            success: 5000,
-            error: 8000,
-            warning: 6000,
-            info: 4000
+            success: 4000,
+            error: 6000,
+            warning: 5000,
+            info: 3000
         };
         return durations[type] || 4000;
     }
 
     // Статические методы для быстрого доступа
-    static success(message, options) {
-        return app.notifications.show(message, 'success', options);
+    static success(message, options = {}) {
+        return instance.show(message, 'success', options);
     }
 
-    static error(message, options) {
-        return app.notifications.show(message, 'error', options);
+    static error(message, options = {}) {
+        return instance.show(message, 'error', options);
     }
 
-    static warning(message, options) {
-        return app.notifications.show(message, 'warning', options);
+    static warning(message, options = {}) {
+        return instance.show(message, 'warning', options);
     }
 
-    static info(message, options) {
-        return app.notifications.show(message, 'info', options);
+    static info(message, options = {}) {
+        return instance.show(message, 'info', options);
+    }
+
+    static hide(id) {
+        instance.hide(id);
+    }
+
+    static hideAll() {
+        instance.hideAll();
     }
 }
 
 // Создаем глобальный экземпляр
-const notificationManager = new NotificationComponent();
+const instance = new NotificationManager();
+
+// Делаем доступным глобально
+window.NotificationManager = NotificationManager;
 
 // Экспорт для использования в других модулях
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { NotificationComponent, notificationManager };
+    module.exports = { NotificationManager };
 }
