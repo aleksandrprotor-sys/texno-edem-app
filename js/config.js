@@ -147,6 +147,7 @@ class ConfigManager {
         
         this.config = { ...this.defaultConfig };
         this.loadConfig();
+        this.applyTheme(); // Применяем тему сразу после загрузки
     }
 
     loadConfig() {
@@ -155,9 +156,10 @@ class ConfigManager {
             if (saved) {
                 const parsed = JSON.parse(saved);
                 this.config = this.deepMerge(this.defaultConfig, parsed);
+                console.log('✅ Config loaded successfully');
             }
         } catch (error) {
-            console.error('Error loading config:', error);
+            console.error('❌ Error loading config:', error);
             this.config = { ...this.defaultConfig };
         }
     }
@@ -165,8 +167,11 @@ class ConfigManager {
     saveConfig() {
         try {
             localStorage.setItem('texno_edem_config', JSON.stringify(this.config));
+            console.log('💾 Config saved');
+            return true;
         } catch (error) {
-            console.error('Error saving config:', error);
+            console.error('❌ Error saving config:', error);
+            return false;
         }
     }
 
@@ -185,7 +190,7 @@ class ConfigManager {
             
             return value !== undefined ? value : defaultValue;
         } catch (error) {
-            console.warn('Config get error:', error);
+            console.warn('⚠️ Config get error:', error);
             return defaultValue;
         }
     }
@@ -197,23 +202,33 @@ class ConfigManager {
             
             for (let i = 0; i < keys.length - 1; i++) {
                 const key = keys[i];
-                if (!(key in current)) {
+                if (!(key in current) || typeof current[key] !== 'object') {
                     current[key] = {};
                 }
                 current = current[key];
             }
             
             current[keys[keys.length - 1]] = value;
-            this.saveConfig();
+            const success = this.saveConfig();
+            
+            // Автоматически применяем изменения темы
+            if (keyPath.includes('THEME') || keyPath.includes('ACCENT_COLOR')) {
+                this.applyTheme();
+            }
+            
+            return success;
             
         } catch (error) {
-            console.error('Config set error:', error);
+            console.error('❌ Config set error:', error);
+            return false;
         }
     }
 
     reset() {
         this.config = { ...this.defaultConfig };
-        this.saveConfig();
+        const success = this.saveConfig();
+        this.applyTheme(); // Применяем тему по умолчанию
+        return success;
     }
 
     deepMerge(target, source) {
@@ -241,21 +256,27 @@ class ConfigManager {
     }
 
     applyTheme() {
-        const themeMode = this.get('SETTINGS.THEME_MODE', 'light');
-        let actualTheme = themeMode;
+        try {
+            const themeMode = this.get('SETTINGS.THEME_MODE', 'light');
+            let actualTheme = themeMode;
 
-        if (themeMode === 'auto') {
-            actualTheme = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+            if (themeMode === 'auto') {
+                actualTheme = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+            }
+
+            // Применяем выбранную тему
+            const themeVars = this.get(`THEMES.${actualTheme}`, this.defaultConfig.THEMES.light);
+            this.applyThemeVariables(themeVars);
+            
+            // Применяем акцентный цвет
+            this.applyAccentColor();
+            
+            document.documentElement.setAttribute('data-theme', actualTheme);
+            console.log(`🎨 Theme applied: ${actualTheme}`);
+            
+        } catch (error) {
+            console.error('❌ Error applying theme:', error);
         }
-
-        // Применяем выбранную тему
-        const themeVars = this.get(`THEMES.${actualTheme}`, this.defaultConfig.THEMES.light);
-        this.applyThemeVariables(themeVars);
-        
-        // Применяем акцентный цвет
-        this.applyAccentColor();
-        
-        document.documentElement.setAttribute('data-theme', actualTheme);
     }
 
     applyThemeVariables(themeVars) {
@@ -268,8 +289,130 @@ class ConfigManager {
     applyAccentColor() {
         const accentColor = this.get('SETTINGS.ACCENT_COLOR', '#3498DB');
         document.documentElement.style.setProperty('--accent', accentColor);
+        document.documentElement.style.setProperty('--secondary', this.adjustColor(accentColor, 20));
+    }
+
+    adjustColor(color, amount) {
+        try {
+            let usePound = false;
+            if (color[0] === "#") {
+                color = color.slice(1);
+                usePound = true;
+            }
+            const num = parseInt(color, 16);
+            let r = (num >> 16) + amount;
+            if (r > 255) r = 255;
+            else if (r < 0) r = 0;
+            let b = ((num >> 8) & 0x00FF) + amount;
+            if (b > 255) b = 255;
+            else if (b < 0) b = 0;
+            let g = (num & 0x0000FF) + amount;
+            if (g > 255) g = 255;
+            else if (g < 0) g = 0;
+            return (usePound ? "#" : "") + (g | (b << 8) | (r << 16)).toString(16).padStart(6, '0');
+        } catch (error) {
+            return '#3498DB';
+        }
+    }
+
+    // Новые методы для работы с API
+    getApiConfig(platform) {
+        return this.get(`API.${platform.toUpperCase()}`, {});
+    }
+
+    isPlatformEnabled(platform) {
+        return this.get(`API.${platform.toUpperCase()}.ENABLED`, false);
+    }
+
+    setApiCredentials(platform, credentials) {
+        const platformKey = platform.toUpperCase();
+        Object.entries(credentials).forEach(([key, value]) => {
+            this.set(`API.${platformKey}.${key.toUpperCase()}`, value);
+        });
+        return this.saveConfig();
+    }
+
+    // Методы для работы с настройками пользователя
+    getUserSettings() {
+        return {
+            userName: this.get('USER.NAME', 'Пользователь'),
+            userEmail: this.get('USER.EMAIL', ''),
+            userPhone: this.get('USER.PHONE', ''),
+            emailReports: this.get('USER.EMAIL_REPORTS', false),
+            pushNotifications: this.get('USER.PUSH_NOTIFICATIONS', true)
+        };
+    }
+
+    setUserSettings(settings) {
+        Object.entries(settings).forEach(([key, value]) => {
+            this.set(`USER.${key.toUpperCase()}`, value);
+        });
+        return this.saveConfig();
+    }
+
+    // Валидация конфигурации
+    validateConfig() {
+        const errors = [];
+        
+        // Проверка обязательных полей API
+        if (this.get('API.CDEK.ENABLED') && (!this.get('API.CDEK.CLIENT_ID') || !this.get('API.CDEK.CLIENT_SECRET'))) {
+            errors.push('CDEK: Не заполнены Client ID или Client Secret');
+        }
+        
+        if (this.get('API.MEGAMARKET.ENABLED') && (!this.get('API.MEGAMARKET.API_KEY') || !this.get('API.MEGAMARKET.SECRET_KEY'))) {
+            errors.push('Megamarket: Не заполнены API Key или Secret Key');
+        }
+        
+        return {
+            isValid: errors.length === 0,
+            errors: errors
+        };
+    }
+
+    // Экспорт/импорт настроек
+    exportSettings() {
+        return JSON.stringify(this.config, null, 2);
+    }
+
+    importSettings(jsonString) {
+        try {
+            const imported = JSON.parse(jsonString);
+            this.config = this.deepMerge(this.defaultConfig, imported);
+            return this.saveConfig();
+        } catch (error) {
+            console.error('❌ Error importing settings:', error);
+            return false;
+        }
     }
 }
 
-// Создаем глобальный экземпляр ДО его использования
-const CONFIG = new ConfigManager();
+// Создаем глобальный экземпляр с обработкой ошибок
+let CONFIG;
+
+try {
+    CONFIG = new ConfigManager();
+    console.log('✅ ConfigManager initialized successfully');
+    
+    // Экспортируем для использования в других модулях
+    if (typeof module !== 'undefined' && module.exports) {
+        module.exports = { ConfigManager, CONFIG };
+    }
+    
+} catch (error) {
+    console.error('❌ Failed to initialize ConfigManager:', error);
+    // Fallback конфиг
+    CONFIG = {
+        get: (key, defaultValue) => defaultValue,
+        set: () => false,
+        applyTheme: () => {}
+    };
+}
+
+// Автоматическое применение темы при изменении системных предпочтений
+if (window.matchMedia) {
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+        if (CONFIG && CONFIG.get('SETTINGS.THEME_MODE') === 'auto') {
+            CONFIG.applyTheme();
+        }
+    });
+}
