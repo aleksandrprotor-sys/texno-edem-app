@@ -27,12 +27,45 @@
     <div class="app">
         <!-- Header -->
         <header class="header" id="header">
-            <!-- Header content will be loaded by JavaScript -->
+            <div class="header-content">
+                <div class="header-brand">
+                    <div class="logo">🚀</div>
+                    <div class="brand-text">
+                        <h1>TEXNO EDEM</h1>
+                        <span class="brand-subtitle">Business Intelligence</span>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <button class="btn btn-icon" onclick="app.toggleTheme()">
+                        <i class="fas fa-moon"></i>
+                    </button>
+                    <button class="btn btn-icon" onclick="app.showNotifications()">
+                        <i class="fas fa-bell"></i>
+                    </button>
+                </div>
+            </div>
         </header>
 
         <!-- Navigation -->
         <nav class="main-nav" id="main-nav">
-            <!-- Navigation will be loaded by JavaScript -->
+            <div class="nav-items">
+                <button class="nav-item active" data-section="dashboard" onclick="app.showSection('dashboard')">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Дашборд</span>
+                </button>
+                <button class="nav-item" data-section="orders" onclick="app.showSection('orders')">
+                    <i class="fas fa-boxes"></i>
+                    <span>Заказы</span>
+                </button>
+                <button class="nav-item" data-section="analytics" onclick="app.showSection('analytics')">
+                    <i class="fas fa-chart-bar"></i>
+                    <span>Аналитика</span>
+                </button>
+                <button class="nav-item" data-section="settings" onclick="app.showSection('settings')">
+                    <i class="fas fa-cog"></i>
+                    <span>Настройки</span>
+                </button>
+            </div>
         </nav>
 
         <!-- Main Content -->
@@ -91,7 +124,7 @@
 
                     <!-- Platform Widgets -->
                     <div class="platform-widgets">
-                        <div class="widget cdek-widget" onclick="app.showSection('orders', 'cdek')">
+                        <div class="widget cdek-widget" onclick="app.showPlatformOrders('cdek')">
                             <div class="widget-icon">
                                 <i class="fas fa-shipping-fast"></i>
                             </div>
@@ -111,7 +144,7 @@
                             </div>
                         </div>
 
-                        <div class="widget megamarket-widget" onclick="app.showSection('orders', 'megamarket')">
+                        <div class="widget megamarket-widget" onclick="app.showPlatformOrders('megamarket')">
                             <div class="widget-icon">
                                 <i class="fas fa-store"></i>
                             </div>
@@ -141,7 +174,21 @@
                             </button>
                         </div>
                         <div class="preview-grid" id="analytics-preview">
-                            <!-- Analytics preview will be loaded here -->
+                            <div class="metric-card">
+                                <div class="metric-value">0</div>
+                                <div class="metric-label">Заказов сегодня</div>
+                                <div class="metric-trend positive">+0%</div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-value">0 ₽</div>
+                                <div class="metric-label">Выручка за день</div>
+                                <div class="metric-trend positive">+0%</div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-value">0%</div>
+                                <div class="metric-label">Конверсия</div>
+                                <div class="metric-trend negative">-0%</div>
+                            </div>
                         </div>
                     </div>
 
@@ -154,10 +201,19 @@
                                     <button class="btn btn-sm btn-outline" onclick="app.showSection('orders')">
                                         Все заказы
                                     </button>
+                                    <button class="btn btn-sm btn-primary" onclick="app.syncData()">
+                                        <i class="fas fa-sync"></i> Синхронизировать
+                                    </button>
                                 </div>
                             </div>
                             <div class="activity-list" id="recent-orders-list">
-                                <!-- Loaded by JavaScript -->
+                                <div class="empty-state">
+                                    <i class="fas fa-inbox"></i>
+                                    <p>Нет данных о заказах</p>
+                                    <button class="btn btn-primary" onclick="app.syncData()">
+                                        Загрузить данные
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -173,13 +229,23 @@
                             <div class="section-subtitle" id="orders-subtitle">Управление заказами и отправлениями</div>
                         </div>
                         <div class="section-actions">
-                            <button class="btn btn-primary" onclick="app.manualSync()">
-                                <i class="fas fa-sync-alt"></i> Обновить
+                            <div class="platform-filter">
+                                <select id="platform-filter" class="form-control" onchange="app.filterOrders()">
+                                    <option value="all">Все платформы</option>
+                                    <option value="cdek">CDEK</option>
+                                    <option value="megamarket">Мегамаркет</option>
+                                </select>
+                            </div>
+                            <button class="btn btn-primary" onclick="app.syncData()">
+                                <i class="fas fa-sync-alt"></i> Синхронизировать
                             </button>
                         </div>
                     </div>
                     <div class="orders-container" id="orders-container">
-                        <!-- Orders loaded by JavaScript -->
+                        <div class="loading-state">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            <p>Загрузка заказов...</p>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -194,20 +260,37 @@
                         </div>
                         <div class="section-actions">
                             <div class="time-filter">
-                                <select id="analytics-period">
+                                <select id="analytics-period" onchange="app.updateAnalytics()">
                                     <option value="week">Неделя</option>
                                     <option value="month" selected>Месяц</option>
                                     <option value="quarter">Квартал</option>
                                     <option value="year">Год</option>
                                 </select>
                             </div>
-                            <button class="btn btn-primary" onclick="app.analyticsComponent?.exportReport?.()">
+                            <button class="btn btn-primary" onclick="app.exportReport()">
                                 <i class="fas fa-download"></i> Экспорт отчета
                             </button>
                         </div>
                     </div>
                     <div class="analytics-container" id="analytics-container">
-                        <!-- Analytics loaded by JavaScript -->
+                        <div class="analytics-grid">
+                            <div class="analytics-card">
+                                <h4>Динамика заказов</h4>
+                                <canvas id="orders-chart" width="400" height="200"></canvas>
+                            </div>
+                            <div class="analytics-card">
+                                <h4>Распределение по платформам</h4>
+                                <canvas id="platforms-chart" width="400" height="200"></canvas>
+                            </div>
+                            <div class="analytics-card">
+                                <h4>Статусы заказов</h4>
+                                <canvas id="status-chart" width="400" height="200"></canvas>
+                            </div>
+                            <div class="analytics-card">
+                                <h4>Выручка по дням</h4>
+                                <canvas id="revenue-chart" width="400" height="200"></canvas>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -243,7 +326,7 @@
         </div>
     </div>
 
-    <!-- JavaScript Files (ВАЖНО: правильный порядок!) -->
+    <!-- JavaScript Files (ИСПРАВЛЕННЫЙ ПОРЯДОК!) -->
     <script src="js/config.js"></script>
     <script src="js/utils/error-handler.js"></script>
     <script src="js/utils/logger.js"></script>
@@ -251,29 +334,71 @@
     <script src="js/utils/notifications.js"></script>
     <script src="js/utils/formatters.js"></script>
     
-    <script src="data/mock-data.js"></script>
-    
-    <script src="js/components/modal.js"></script>
+    <!-- Сначала основные компоненты -->
+    <script src="js/components/dashboard.js"></script>
     <script src="js/components/orders.js"></script>
     <script src="js/components/analytics.js"></script>
     <script src="js/components/settings.js"></script>
+    <script src="js/components/modal.js"></script>
     
+    <!-- Затем менеджеры -->
+    <script src="js/core/sync-manager.js"></script>
+    
+    <!-- И только потом основное приложение -->
     <script src="js/app.js"></script>
 
     <!-- Инициализация -->
     <script>
-        // Инициализация обработчика ошибок
-        if (typeof ErrorHandler !== 'undefined') {
-            ErrorHandler.init();
-        }
-        
-        // Глобальная обработка ошибок
+        let app;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Starting TEXNO EDEM App...');
+            
+            try {
+                // Создаем экземпляр приложения
+                app = new TexnoEdemApp();
+                window.app = app;
+                
+                // Инициализируем с небольшой задержкой для полной загрузки
+                setTimeout(() => {
+                    app.initialize().catch(error => {
+                        console.error('❌ App initialization failed:', error);
+                        document.body.innerHTML = `
+                            <div class="error-container">
+                                <h1>⚠️ Ошибка загрузки приложения</h1>
+                                <p>${error.message}</p>
+                                <button onclick="window.location.reload()" class="btn btn-primary">
+                                    Обновить страницу
+                                </button>
+                            </div>
+                        `;
+                    });
+                }, 100);
+                
+            } catch (error) {
+                console.error('❌ Failed to create app:', error);
+                document.body.innerHTML = `
+                    <div class="error-container">
+                        <h1>⚠️ Критическая ошибка</h1>
+                        <p>${error.message}</p>
+                        <button onclick="window.location.reload()" class="btn btn-primary">
+                            Перезагрузить
+                        </button>
+                    </div>
+                `;
+            }
+        });
+
+        // Глобальные обработчики ошибок
         window.addEventListener('error', (event) => {
-            console.error('Global error:', event.error);
+            console.error('🌐 Global error:', event.error);
+            if (window.app) {
+                window.app.showNotification('Произошла ошибка в приложении', 'error');
+            }
         });
 
         window.addEventListener('unhandledrejection', (event) => {
-            console.error('Unhandled promise rejection:', event.reason);
+            console.error('⏰ Unhandled promise rejection:', event.reason);
             event.preventDefault();
         });
     </script>
