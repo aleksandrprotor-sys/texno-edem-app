@@ -1,29 +1,76 @@
 // js/app.js - Полностью обновленный с исправлением бесконечной инициализации
 class TexnoEdemApp {
-    constructor() {
-        this.currentSection = 'dashboard';
-        this.currentPlatform = null;
-        this.orders = {
-            cdek: [],
-            megamarket: [],
-            all: []
-        };
-        this.analytics = {};
-        this.user = null;
-        
-        this.isLoading = false;
-        this.isSyncing = false;
-        this.isInitialized = false;
-        this.lastSyncTime = null;
-        this.initTimeout = null;
-        
-        // Безопасная инициализация с таймаутом
-        this.safeInit();
-        // Внутри конструктора
-constructor() {
-  this.isInitialized = false;
-  this.safeInit(); // запуск безопасной инициализации
+  constructor() {
+    this.currentSection = 'dashboard';
+    this.currentPlatform = null;
+    this.orders = { cdek: [], megamarket: [], all: [] };
+    this.analytics = {};
+    this.user = null;
+
+    this.isLoading = false;
+    this.isSyncing = false;
+    this.isInitialized = false;
+    this.lastSyncTime = null;
+
+    this.safeInit();
+  }
+
+  async safeInit() {
+    // Таймаут на инициализацию
+    this.initTimeout = setTimeout(() => {
+      if (!this.isInitialized) {
+        console.error('❌ Init timeout reached');
+        this.emergencyInit();
+      }
+    }, 10000);
+    try {
+      await this.init();
+    } catch (error) {
+      console.error('❌ Safe init failed:', error);
+      this.emergencyInit();
+    }
+  }
+
+  async init() {
+    if (this.isInitialized) return;
+    this.showLoading('Инициализация TEXNO EDEM...');
+    try {
+      await this.initBasic();
+      await this.initTelegram();
+      await this.loadConfig();
+      await this.initComponentsFast();
+
+      // Загрузка данных
+      await this.loadData();
+
+      this.isInitialized = true; 
+      clearTimeout(this.initTimeout);
+      this.hideLoading();
+
+      this.showNotification('Система готова к работе', 'success', 3000);
+    } catch (error) {
+      console.error('❌ App initialization failed:', error);
+      this.emergencyInit();
+    }
+  }
+
+  // Загружаем все данные и перерисовываем
+  async loadData() {
+    try {
+      await this.loadOrders(); // формирует orders
+      this.updateDashboard();
+      this.updateNavigationBadges();
+      this.lastSyncTime = new Date();
+      this.showNotification('Данные успешно обновлены', 'success');
+    } catch (error) {
+      console.warn('⚠️ Ошибка загрузки данных:', error);
+    }
+  }
+
+  // Методы loadOrders, updateDashboard, updateNavigationBadges — в оригинале, убедитесь, что они есть.
+  // Остальной класс — без изменений (скопируйте из вашего файла или исправьте по аналогии).
 }
+
 
     }
 
