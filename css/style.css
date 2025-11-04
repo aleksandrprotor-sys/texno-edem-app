@@ -1422,3 +1422,12 @@ body {
         gap: 4px;
     }
 }
+
+/* В style.css добавить */
+.util-flex { display: flex; }
+.util-flex-center { 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+}
+.util-grid { display: grid; }
