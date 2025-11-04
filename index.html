@@ -4,17 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TEXNO EDEM - Business Intelligence</title>
-    
-    <!-- Telegram Web App SDK -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    
-    <!-- External Dependencies -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chart.js">
     
-    <!-- Optimized CSS Loading -->
+    <!-- Main CSS -->
     <link rel="stylesheet" href="css/style.css">
-    <link rel="stylesheet" href="css/telegram.css">
     <link rel="stylesheet" href="css/emergency.css">
     <link rel="stylesheet" href="css/components/header.css">
     <link rel="stylesheet" href="css/components/dashboard.css">
@@ -25,123 +20,75 @@
     <link rel="stylesheet" href="css/analytics/metrics.css">
     <link rel="stylesheet" href="css/enhanced-styles.css">
     <link rel="stylesheet" href="css/responsive.css">
+    <link rel="stylesheet" href="css/telegram.css">
     
     <!-- Favicon -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚀</text></svg>">
-    
-    <style>
-        /* Critical CSS for initial load */
-        .app-loading {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: var(--tg-theme-bg-color, var(--primary));
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 9999;
-            color: var(--tg-theme-text-color, white);
-            font-family: var(--font-family);
-        }
-        
-        .tg-theme-aware {
-            background: var(--tg-theme-bg-color, var(--white));
-            color: var(--tg-theme-text-color, var(--gray-900));
-        }
-    </style>
 </head>
-<body class="tg-theme-aware tg-viewport">
-    <!-- Initial Loading Screen -->
-    <div class="app-loading" id="app-loading">
-        <div class="loading-content">
-            <div class="loading-spinner"></div>
-            <h2>TEXNO EDEM</h2>
-            <p>Загрузка приложения...</p>
-        </div>
-    </div>
-
-    <!-- Main App -->
-    <div class="app tg-viewport-optimized" id="main-app" style="display: none;">
+<body>
+    <div class="app">
         <!-- Header -->
-        <header class="header tg-header" id="header">
-            <div class="header-content tg-safe-area">
-                <div class="logo tg-no-select" onclick="app.showSection('dashboard')">
-                    <div class="logo-icon">
+        <header class="header" id="header">
+            <div class="header-container">
+                <div class="header-brand">
+                    <div class="logo">
                         <i class="fas fa-rocket"></i>
+                        <span>TEXNO EDEM</span>
                     </div>
-                    <div class="logo-text">
-                        <div class="logo-title">TEXNO EDEM</div>
-                        <div class="logo-subtitle">Business Intelligence</div>
-                    </div>
+                    <div class="header-title">Business Intelligence</div>
                 </div>
-                
                 <div class="header-actions">
-                    <div class="sync-status tg-no-select" id="sync-status">
-                        <div class="sync-indicator" id="sync-indicator"></div>
-                        <span class="sync-text" id="sync-text">Синхронизация</span>
+                    <div class="sync-status" id="sync-status">
+                        <i class="fas fa-check-circle"></i>
+                        <span>Данные актуальны</span>
                     </div>
-                    
-                    <div class="user-info tg-no-select" onclick="app.showSection('settings')">
-                        <div class="user-avatar">
-                            <i class="fas fa-user"></i>
-                        </div>
-                        <div class="user-details">
-                            <div class="user-name" id="user-name">Пользователь</div>
-                            <div class="user-role">Владелец</div>
-                        </div>
-                    </div>
-                    
-                    <button class="btn-icon tg-tap-effect" onclick="app.manualSync()" title="Обновить данные">
-                        <i class="fas fa-sync-alt"></i>
+                    <button class="btn btn-icon" onclick="app.showNotifications()">
+                        <i class="fas fa-bell"></i>
+                        <span class="notification-badge" id="notification-badge">0</span>
+                    </button>
+                    <button class="btn btn-icon" onclick="app.toggleTheme()">
+                        <i class="fas fa-moon" id="theme-icon"></i>
                     </button>
                 </div>
             </div>
         </header>
 
         <!-- Navigation -->
-        <nav class="main-nav tg-nav" id="main-nav">
-            <div class="nav-container tg-safe-area">
-                <div class="nav-items">
-                    <button class="nav-item active tg-nav-item tg-tap-effect" data-section="dashboard">
-                        <i class="fas fa-chart-line"></i>
-                        <span>Дашборд</span>
-                        <span class="nav-badge" id="nav-badge-dashboard">0</span>
-                    </button>
-                    
-                    <button class="nav-item tg-nav-item tg-tap-effect" data-section="orders">
-                        <i class="fas fa-boxes"></i>
-                        <span>Заказы</span>
-                        <span class="nav-badge" id="nav-badge-orders">0</span>
-                    </button>
-                    
-                    <button class="nav-item tg-nav-item tg-tap-effect" data-section="analytics">
-                        <i class="fas fa-chart-bar"></i>
-                        <span>Аналитика</span>
-                    </button>
-                    
-                    <button class="nav-item tg-nav-item tg-tap-effect" data-section="settings">
-                        <i class="fas fa-cog"></i>
-                        <span>Настройки</span>
-                    </button>
-                </div>
+        <nav class="main-nav" id="main-nav">
+            <div class="nav-container">
+                <a href="#" class="nav-item active" onclick="app.showSection('dashboard')">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Дашборд</span>
+                </a>
+                <a href="#" class="nav-item" onclick="app.showSection('orders')">
+                    <i class="fas fa-boxes"></i>
+                    <span>Заказы</span>
+                    <span class="nav-badge" id="orders-badge">0</span>
+                </a>
+                <a href="#" class="nav-item" onclick="app.showSection('analytics')">
+                    <i class="fas fa-chart-bar"></i>
+                    <span>Аналитика</span>
+                </a>
+                <a href="#" class="nav-item" onclick="app.showSection('settings')">
+                    <i class="fas fa-cog"></i>
+                    <span>Настройки</span>
+                </a>
             </div>
         </nav>
 
         <!-- Main Content -->
-        <main class="main-content tg-scroll">
+        <main class="main-content">
             <!-- Dashboard Section -->
-            <section class="section active tg-theme-aware" id="dashboard-section">
-                <div class="container tg-safe-area">
-                    <div class="dashboard-header tg-card">
+            <section class="section active" id="dashboard-section">
+                <div class="container">
+                    <div class="dashboard-header">
                         <h1 class="dashboard-title">Business Intelligence Dashboard</h1>
                         <div class="dashboard-subtitle">Реальная аналитика вашего бизнеса</div>
                     </div>
 
                     <!-- Quick Stats -->
                     <div class="quick-stats" id="quick-stats">
-                        <div class="stat-card orders tg-card tg-tap-effect" onclick="app.showSection('orders')">
+                        <div class="stat-card orders">
                             <div class="stat-icon">
                                 <i class="fas fa-boxes"></i>
                             </div>
@@ -151,8 +98,7 @@
                                 <i class="fas fa-arrow-up"></i> 12%
                             </div>
                         </div>
-                        
-                        <div class="stat-card revenue tg-card tg-tap-effect" onclick="app.showSection('analytics')">
+                        <div class="stat-card revenue">
                             <div class="stat-icon">
                                 <i class="fas fa-chart-line"></i>
                             </div>
@@ -162,8 +108,7 @@
                                 <i class="fas fa-arrow-up"></i> 8%
                             </div>
                         </div>
-                        
-                        <div class="stat-card success tg-card tg-tap-effect">
+                        <div class="stat-card success">
                             <div class="stat-icon">
                                 <i class="fas fa-check-circle"></i>
                             </div>
@@ -173,8 +118,7 @@
                                 <i class="fas fa-arrow-up"></i> 3%
                             </div>
                         </div>
-                        
-                        <div class="stat-card problems tg-card tg-tap-effect" onclick="app.showSection('orders', {filter: 'problems'})">
+                        <div class="stat-card problems">
                             <div class="stat-icon">
                                 <i class="fas fa-exclamation-triangle"></i>
                             </div>
@@ -188,7 +132,7 @@
 
                     <!-- Platform Widgets -->
                     <div class="platform-widgets">
-                        <div class="widget cdek-widget tg-card tg-tap-effect" onclick="app.showSection('orders', {platform: 'cdek'})">
+                        <div class="widget cdek-widget" onclick="app.showSection('orders', 'cdek')">
                             <div class="widget-icon">
                                 <i class="fas fa-shipping-fast"></i>
                             </div>
@@ -208,7 +152,7 @@
                             </div>
                         </div>
 
-                        <div class="widget megamarket-widget tg-card tg-tap-effect" onclick="app.showSection('orders', {platform: 'megamarket'})">
+                        <div class="widget megamarket-widget" onclick="app.showSection('orders', 'megamarket')">
                             <div class="widget-icon">
                                 <i class="fas fa-store"></i>
                             </div>
@@ -230,10 +174,10 @@
                     </div>
 
                     <!-- Analytics Preview -->
-                    <div class="analytics-preview tg-card">
+                    <div class="analytics-preview">
                         <div class="preview-header">
                             <h3>Ключевые метрики</h3>
-                            <button class="btn btn-outline tg-button tg-tap-effect" onclick="app.showSection('analytics')">
+                            <button class="btn btn-outline" onclick="app.showSection('analytics')">
                                 <i class="fas fa-chart-bar"></i> Вся аналитика
                             </button>
                         </div>
@@ -244,11 +188,11 @@
 
                     <!-- Recent Activity -->
                     <div class="recent-activity">
-                        <div class="recent-activity-card tg-card">
+                        <div class="recent-activity-card">
                             <div class="card-header">
                                 <h3>Последние заказы</h3>
                                 <div class="card-actions">
-                                    <button class="btn btn-sm btn-outline tg-button tg-tap-effect" onclick="app.showSection('orders')">
+                                    <button class="btn btn-sm btn-outline" onclick="app.showSection('orders')">
                                         Все заказы
                                     </button>
                                 </div>
@@ -262,15 +206,30 @@
             </section>
 
             <!-- Orders Section -->
-            <section class="section tg-theme-aware" id="orders-section">
-                <div class="container tg-safe-area">
+            <section class="section" id="orders-section">
+                <div class="container">
                     <div class="section-header">
                         <div class="section-title-container">
                             <h2 class="section-title" id="orders-title">Заказы</h2>
                             <div class="section-subtitle" id="orders-subtitle">Управление заказами и отправлениями</div>
                         </div>
                         <div class="section-actions">
-                            <button class="btn btn-primary tg-main-button tg-tap-effect" onclick="app.manualSync()">
+                            <div class="platform-filter">
+                                <select id="platform-filter" onchange="app.ordersComponent.filterByPlatform(this.value)">
+                                    <option value="all">Все платформы</option>
+                                    <option value="cdek">CDEK</option>
+                                    <option value="megamarket">Мегамаркет</option>
+                                </select>
+                                <select id="status-filter" onchange="app.ordersComponent.filterByStatus(this.value)">
+                                    <option value="all">Все статусы</option>
+                                    <option value="new">Новые</option>
+                                    <option value="processing">В обработке</option>
+                                    <option value="active">Активные</option>
+                                    <option value="delivered">Доставленные</option>
+                                    <option value="problem">Проблемные</option>
+                                </select>
+                            </div>
+                            <button class="btn btn-primary" onclick="app.manualSync()">
                                 <i class="fas fa-sync-alt"></i> Обновить
                             </button>
                         </div>
@@ -282,8 +241,8 @@
             </section>
 
             <!-- Analytics Section -->
-            <section class="section tg-theme-aware" id="analytics-section">
-                <div class="container tg-safe-area">
+            <section class="section" id="analytics-section">
+                <div class="container">
                     <div class="section-header">
                         <div class="section-title-container">
                             <h2 class="section-title">Аналитика и отчеты</h2>
@@ -291,14 +250,14 @@
                         </div>
                         <div class="section-actions">
                             <div class="time-filter">
-                                <select id="analytics-period" class="tg-input" onchange="app.analyticsComponent.changePeriod(this.value)">
+                                <select id="analytics-period" onchange="app.analyticsComponent.changePeriod(this.value)">
                                     <option value="week">Неделя</option>
                                     <option value="month" selected>Месяц</option>
                                     <option value="quarter">Квартал</option>
                                     <option value="year">Год</option>
                                 </select>
                             </div>
-                            <button class="btn btn-primary tg-main-button tg-tap-effect" onclick="app.analyticsComponent.exportReport()">
+                            <button class="btn btn-primary" onclick="app.analyticsComponent.exportReport()">
                                 <i class="fas fa-download"></i> Экспорт отчета
                             </button>
                         </div>
@@ -310,8 +269,8 @@
             </section>
 
             <!-- Settings Section -->
-            <section class="section tg-theme-aware" id="settings-section">
-                <div class="container tg-safe-area">
+            <section class="section" id="settings-section">
+                <div class="container">
                     <div class="section-header">
                         <div class="section-title-container">
                             <h2 class="section-title">Настройки</h2>
@@ -329,12 +288,12 @@
         <div class="modals-container" id="modals-container"></div>
 
         <!-- Notifications Container -->
-        <div class="notifications-container tg-notification" id="notifications-container"></div>
+        <div class="notifications-container" id="notifications-container"></div>
 
         <!-- Loading Overlay -->
         <div class="loading-overlay" id="loading-overlay">
-            <div class="loading-content tg-card">
-                <div class="loading-spinner tg-loading"></div>
+            <div class="loading-content">
+                <div class="loading-spinner"></div>
                 <p id="loading-message">Загрузка данных...</p>
             </div>
         </div>
@@ -354,36 +313,5 @@
     <script src="js/components/settings.js"></script>
     <script src="data/mock-data.js"></script>
     <script src="js/app.js"></script>
-    
-    <script>
-        // Initialize Telegram Web App
-        document.addEventListener('DOMContentLoaded', function() {
-            // Check if we're in Telegram
-            if (window.Telegram && Telegram.WebApp) {
-                Telegram.WebApp.ready();
-                Telegram.WebApp.expand();
-                
-                // Apply Telegram theme
-                document.body.classList.add('tg-theme');
-                
-                // Set safe area insets
-                document.documentElement.style.setProperty('--tg-safe-area-top', 'env(safe-area-inset-top)');
-                document.documentElement.style.setProperty('--tg-safe-area-bottom', 'env(safe-area-inset-bottom)');
-                
-                // Initialize user data from Telegram
-                const user = Telegram.WebApp.initDataUnsafe?.user;
-                if (user) {
-                    const userName = user.first_name || 'Пользователь';
-                    document.getElementById('user-name').textContent = userName;
-                }
-            }
-            
-            // Hide loading screen and show app
-            setTimeout(() => {
-                document.getElementById('app-loading').style.display = 'none';
-                document.getElementById('main-app').style.display = 'block';
-            }, 1000);
-        });
-    </script>
 </body>
 </html>
