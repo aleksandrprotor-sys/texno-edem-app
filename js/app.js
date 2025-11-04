@@ -1,4 +1,4 @@
-// app.js - ПОЛНЫЙ КОД TEXNO EDEM BUSINESS INTELLIGENCE
+// app.js - ПОЛНЫЙ КОД TEXNO EDEM BUSINESS INTELLIGENCE (ЗАВЕРШЕННЫЙ)
 class TexnoEdemApp {
     constructor() {
         this.currentSection = 'dashboard';
@@ -19,6 +19,7 @@ class TexnoEdemApp {
 
         this.syncManager = null;
         this.tg = null;
+        this.errorHandler = null;
 
         this.init();
     }
@@ -29,6 +30,9 @@ class TexnoEdemApp {
         try {
             // Инициализация Telegram WebApp
             await this.initTelegram();
+            
+            // Инициализация обработчика ошибок
+            this.errorHandler = new ErrorHandler(this);
             
             // Загрузка конфигурации
             await this.loadConfig();
@@ -44,6 +48,9 @@ class TexnoEdemApp {
             
             // Показ начального раздела
             this.showSection('dashboard');
+            
+            // Запуск фоновых процессов
+            this.startBackgroundProcesses();
             
             console.log('✅ Приложение успешно инициализировано');
             
@@ -130,7 +137,12 @@ class TexnoEdemApp {
                 sound: true,
                 vibration: true
             },
-            theme: 'auto'
+            theme: 'auto',
+            performance: {
+                lazyLoading: true,
+                cacheEnabled: true,
+                animations: true
+            }
         };
     }
 
@@ -185,6 +197,15 @@ class TexnoEdemApp {
         window.addEventListener('online', () => this.handleOnlineStatus());
         window.addEventListener('offline', () => this.handleOfflineStatus());
 
+        // Обработчик изменения видимости страницы
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                this.onPageHidden();
+            } else {
+                this.onPageVisible();
+            }
+        });
+
         console.log('✅ Обработчики событий настроены');
     }
 
@@ -200,47 +221,47 @@ class TexnoEdemApp {
             if (typeof OrdersComponent !== 'undefined') {
                 this.components.orders = new OrdersComponent(this);
             } else {
-                console.warn('OrdersComponent не найден');
+                console.warn('OrdersComponent не найден, создаем заглушку');
+                this.components.orders = new MockOrdersComponent(this);
             }
 
             // Инициализация компонента аналитики
             if (typeof AnalyticsComponent !== 'undefined') {
                 this.components.analytics = new AnalyticsComponent(this);
             } else {
-                console.warn('AnalyticsComponent не найден');
+                console.warn('AnalyticsComponent не найден, создаем заглушку');
+                this.components.analytics = new MockAnalyticsComponent(this);
             }
 
             // Инициализация компонента настроек
             if (typeof SettingsComponent !== 'undefined') {
                 this.components.settings = new SettingsComponent(this);
             } else {
-                console.warn('SettingsComponent не найден');
+                console.warn('SettingsComponent не найден, создаем заглушку');
+                this.components.settings = new MockSettingsComponent(this);
             }
 
             // Инициализация компонента модальных окон
-            if (typeof ModalComponent !== 'undefined') {
-                this.components.modal = new ModalComponent(this);
-            } else {
-                console.warn('ModalComponent не найден');
-            }
+            this.components.modal = new ModalComponent(this);
 
             // Инициализация компонента уведомлений
-            if (typeof NotificationsComponent !== 'undefined') {
-                this.components.notifications = new NotificationsComponent(this);
-            } else {
-                console.warn('NotificationsComponent не найден');
-            }
+            this.components.notifications = new NotificationsComponent(this);
 
             // Инициализация менеджера синхронизации
             if (typeof SyncManager !== 'undefined') {
                 this.syncManager = new SyncManager(this);
             } else {
-                console.warn('SyncManager не найден');
+                console.warn('SyncManager не найден, создаем заглушку');
+                this.syncManager = new MockSyncManager(this);
             }
+
+            // Инициализация оптимизатора производительности
+            this.performanceOptimizer = new PerformanceOptimizer();
 
             console.log('✅ Все компоненты инициализированы');
         } catch (error) {
             console.error('Ошибка инициализации компонентов:', error);
+            throw error;
         }
     }
 
@@ -773,6 +794,49 @@ class TexnoEdemApp {
         }
     }
 
+    // ФОНОВЫЕ ПРОЦЕССЫ
+
+    startBackgroundProcesses() {
+        // Запуск авто-синхронизации
+        if (this.config.sync.autoSync && this.syncManager) {
+            this.syncManager.startAutoSync();
+        }
+
+        // Запуск мониторинга производительности
+        this.startPerformanceMonitoring();
+
+        // Периодическая очистка кэша
+        this.startCacheCleanup();
+    }
+
+    startPerformanceMonitoring() {
+        setInterval(() => {
+            this.performanceOptimizer.cleanupMemory();
+        }, 60000); // Каждую минуту
+    }
+
+    startCacheCleanup() {
+        setInterval(() => {
+            if (this.components.orders) {
+                this.components.orders.clearOldCache();
+            }
+        }, 300000); // Каждые 5 минут
+    }
+
+    onPageHidden() {
+        // Страница скрыта - экономим ресурсы
+        if (this.syncManager) {
+            this.syncManager.pauseAutoSync();
+        }
+    }
+
+    onPageVisible() {
+        // Страница снова видна - восстанавливаем процессы
+        if (this.syncManager) {
+            this.syncManager.resumeAutoSync();
+        }
+    }
+
     // УТИЛИТЫ
 
     showLoading(message = 'Загрузка...') {
@@ -938,6 +1002,14 @@ class TexnoEdemApp {
         }
     }
 
+    async saveConfig() {
+        try {
+            localStorage.setItem('texno_edem_config', JSON.stringify(this.config));
+        } catch (error) {
+            console.error('Ошибка сохранения конфигурации:', error);
+        }
+    }
+
     delay(ms) {
         return new Promise(resolve => setTimeout(resolve, ms));
     }
@@ -966,6 +1038,11 @@ class TexnoEdemApp {
 
     getNotificationsComponent() {
         return this.components.notifications;
+    }
+
+    // ЭКСПОРТ ДЛЯ ТЕСТИРОВАНИЯ
+    static getInstance() {
+        return app;
     }
 }
 
@@ -1003,48 +1080,60 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
 });
 
-// ГЛОБАЛЬНЫЙ ОБРАБОТЧИК ОШИБОК
+// ГЛОБАЛЬНЫЕ ОБРАБОТЧИКИ
 
-window.addEventListener('error', function(e) {
-    console.error('Глобальная ошибка:', e.error);
-    
-    if (app) {
+window.addEventListener('error', (event) => {
+    console.error('Глобальная ошибка:', event.error);
+    if (app && app.showNotification) {
         app.showNotification('Произошла непредвиденная ошибка', 'error');
     }
 });
 
-// ОБРАБОТЧИКИ ДЛЯ HTML АТРИБУТОВ
+window.addEventListener('unhandledrejection', (event) => {
+    console.error('Необработанный Promise rejection:', event.reason);
+    event.preventDefault();
+});
 
-window.showSection = function(section, platform) {
-    if (app) {
-        app.showSection(section, platform);
-    }
-};
-
-window.toggleTheme = function() {
-    if (app) {
-        app.toggleTheme();
-    }
-};
-
-window.manualSync = function() {
-    if (app) {
-        app.manualSync();
-    }
-};
-
-window.showOrderDetails = function(orderId) {
-    if (app) {
-        app.showOrderDetails(orderId);
-    }
-};
-
-// Fallback для совместимости
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = TexnoEdemApp;
+// SERVICE WORKER РЕГИСТРАЦИЯ
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', async () => {
+        try {
+            const registration = await navigator.serviceWorker.register('/sw.js');
+            console.log('ServiceWorker зарегистрирован:', registration);
+        } catch (error) {
+            console.log('ServiceWorker регистрация не удалась:', error);
+        }
+    });
 }
 
-// CSS анимации для fallback уведомлений
+// ОБРАБОТКА КЛАВИАТУРЫ
+document.addEventListener('keydown', (e) => {
+    if (!app) return;
+    
+    // ESC для закрытия модальных окон
+    if (e.key === 'Escape') {
+        if (app.components.modal) {
+            app.components.modal.closeAll();
+        }
+    }
+    
+    // Ctrl+S для быстрой синхронизации
+    if (e.ctrlKey && e.key === 's') {
+        e.preventDefault();
+        app.manualSync();
+    }
+});
+
+// ВИБРАЦИЯ ДЛЯ МОБИЛЬНЫХ УСТРОЙСТВ
+if ('vibrate' in navigator) {
+    window.vibrate = (pattern = 100) => {
+        if (app && app.config.notifications.vibration) {
+            navigator.vibrate(pattern);
+        }
+    };
+}
+
+// CSS АНИМАЦИИ ДЛЯ FALLBACK УВЕДОМЛЕНИЙ
 const style = document.createElement('style');
 style.textContent = `
     @keyframes slideInRight {
@@ -1069,66 +1158,6 @@ style.textContent = `
     }
 `;
 document.head.appendChild(style);
-
-// ГЛОБАЛЬНЫЙ ОБРАБОТЧИК ОШИБОК
-window.addEventListener('error', (event) => {
-    console.error('Глобальная ошибка:', event.error);
-    if (app && app.showNotification) {
-        app.showNotification('Произошла непредвиденная ошибка', 'error');
-    }
-});
-
-// ОБРАБОТЧИК UNHANDLED PROMISE REJECTIONS
-window.addEventListener('unhandledrejection', (event) => {
-    console.error('Необработанный Promise rejection:', event.reason);
-    event.preventDefault();
-});
-
-// SERVICE WORKER РЕГИСТРАЦИЯ (для PWA)
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', async () => {
-        try {
-            const registration = await navigator.serviceWorker.register('/sw.js');
-            console.log('ServiceWorker зарегистрирован:', registration);
-        } catch (error) {
-            console.log('ServiceWorker регистрация не удалась:', error);
-        }
-    });
-}
-
-// ОБРАБОТКА КЛАВИАТУРЫ
-document.addEventListener('keydown', (e) => {
-    // ESC для закрытия модальных окон
-    if (e.key === 'Escape') {
-        if (app.components.modal) {
-            app.components.modal.closeAll();
-        }
-    }
-    
-    // Ctrl+S для быстрой синхронизации
-    if (e.ctrlKey && e.key === 's') {
-        e.preventDefault();
-        app.manualSync();
-    }
-});
-
-// ВИБРАЦИЯ ДЛЯ МОБИЛЬНЫХ УСТРОЙСТВ (если доступно)
-if ('vibrate' in navigator) {
-    window.vibrate = (pattern = 100) => {
-        if (app.config.notifications.vibration) {
-            navigator.vibrate(pattern);
-        }
-    };
-}
-
-// АНАЛИТИКА И МОНИТОРИНГ ПРОИЗВОДИТЕЛЬНОСТИ
-const perfObserver = new PerformanceObserver((list) => {
-    list.getEntries().forEach((entry) => {
-        console.log(`${entry.name}: ${entry.duration}ms`);
-    });
-});
-
-perfObserver.observe({ entryTypes: ['measure', 'navigation'] });
 
 // ЭКСПОРТ ДЛЯ ТЕСТИРОВАНИЯ
 if (typeof module !== 'undefined' && module.exports) {
