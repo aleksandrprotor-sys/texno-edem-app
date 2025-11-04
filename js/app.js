@@ -1069,3 +1069,68 @@ style.textContent = `
     }
 `;
 document.head.appendChild(style);
+
+// ГЛОБАЛЬНЫЙ ОБРАБОТЧИК ОШИБОК
+window.addEventListener('error', (event) => {
+    console.error('Глобальная ошибка:', event.error);
+    if (app && app.showNotification) {
+        app.showNotification('Произошла непредвиденная ошибка', 'error');
+    }
+});
+
+// ОБРАБОТЧИК UNHANDLED PROMISE REJECTIONS
+window.addEventListener('unhandledrejection', (event) => {
+    console.error('Необработанный Promise rejection:', event.reason);
+    event.preventDefault();
+});
+
+// SERVICE WORKER РЕГИСТРАЦИЯ (для PWA)
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', async () => {
+        try {
+            const registration = await navigator.serviceWorker.register('/sw.js');
+            console.log('ServiceWorker зарегистрирован:', registration);
+        } catch (error) {
+            console.log('ServiceWorker регистрация не удалась:', error);
+        }
+    });
+}
+
+// ОБРАБОТКА КЛАВИАТУРЫ
+document.addEventListener('keydown', (e) => {
+    // ESC для закрытия модальных окон
+    if (e.key === 'Escape') {
+        if (app.components.modal) {
+            app.components.modal.closeAll();
+        }
+    }
+    
+    // Ctrl+S для быстрой синхронизации
+    if (e.ctrlKey && e.key === 's') {
+        e.preventDefault();
+        app.manualSync();
+    }
+});
+
+// ВИБРАЦИЯ ДЛЯ МОБИЛЬНЫХ УСТРОЙСТВ (если доступно)
+if ('vibrate' in navigator) {
+    window.vibrate = (pattern = 100) => {
+        if (app.config.notifications.vibration) {
+            navigator.vibrate(pattern);
+        }
+    };
+}
+
+// АНАЛИТИКА И МОНИТОРИНГ ПРОИЗВОДИТЕЛЬНОСТИ
+const perfObserver = new PerformanceObserver((list) => {
+    list.getEntries().forEach((entry) => {
+        console.log(`${entry.name}: ${entry.duration}ms`);
+    });
+});
+
+perfObserver.observe({ entryTypes: ['measure', 'navigation'] });
+
+// ЭКСПОРТ ДЛЯ ТЕСТИРОВАНИЯ
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = { TexnoEdemApp, app };
+}
