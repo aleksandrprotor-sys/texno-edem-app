@@ -233,12 +233,8 @@ class TexnoEdemApp {
             } else {
                 console.warn('ModalComponent не найден');
             }
-
-            console.log('✅ Компоненты инициализированы');
-        } catch (error) {
-            console.error('Ошибка инициализации компонентов:', error);
             
-             // Инициализация компонента уведомлений
+// Инициализация компонента уведомлений
         if (typeof NotificationsComponent !== 'undefined') {
             this.components.notifications = new NotificationsComponent(this);
         } else {
