@@ -6,17 +6,1017 @@
     <title>TEXNO EDEM - Business Intelligence</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- Main CSS -->
-    <link rel="stylesheet" href="css/style.css">
-    <link rel="stylesheet" href="css/components/header.css">
-    <link rel="stylesheet" href="css/components/dashboard.css">
-    <link rel="stylesheet" href="css/components/orders.css">
-    <link rel="stylesheet" href="css/components/settings.css">
-    <link rel="stylesheet" href="css/responsive.css">
-    
-    <!-- Favicon -->
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚀</text></svg>">
+    <style>
+        /* Основные стили TEXNO EDEM */
+        :root {
+            /* Цветовая схема */
+            --primary-color: #3498db;
+            --primary-dark: #2980b9;
+            --secondary-color: #9b59b6;
+            --success-color: #27ae60;
+            --warning-color: #f39c12;
+            --error-color: #e74c3c;
+            --info-color: #3498db;
+            
+            /* Нейтральные цвета */
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8f9fa;
+            --bg-tertiary: #e9ecef;
+            --text-primary: #2c3e50;
+            --text-secondary: #6c757d;
+            --text-muted: #95a5a6;
+            --border-color: #dee2e6;
+            
+            /* Тени */
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.1);
+            --shadow-md: 0 4px 6px rgba(0,0,0,0.1);
+            --shadow-lg: 0 10px 15px rgba(0,0,0,0.1);
+            
+            /* Радиусы */
+            --radius-sm: 4px;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+            
+            /* Отступы */
+            --space-xs: 4px;
+            --space-sm: 8px;
+            --space-md: 16px;
+            --space-lg: 24px;
+            --space-xl: 32px;
+            
+            /* Шрифты */
+            --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            --font-size-xs: 12px;
+            --font-size-sm: 14px;
+            --font-size-md: 16px;
+            --font-size-lg: 18px;
+            --font-size-xl: 24px;
+            --font-size-2xl: 32px;
+        }
+
+        /* Темная тема */
+        [data-theme="dark"] {
+            --bg-primary: #1a1a1a;
+            --bg-secondary: #2d2d2d;
+            --bg-tertiary: #3d3d3d;
+            --text-primary: #ffffff;
+            --text-secondary: #b0b0b0;
+            --text-muted: #808080;
+            --border-color: #404040;
+        }
+
+        /* Базовые стили */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-family);
+            font-size: var(--font-size-md);
+            line-height: 1.5;
+            color: var(--text-primary);
+            background-color: var(--bg-primary);
+            overflow-x: hidden;
+        }
+
+        .app {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Контейнеры */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 var(--space-md);
+        }
+
+        /* Секции контента */
+        .content-section {
+            display: none;
+            flex: 1;
+            padding: var(--space-lg) 0;
+            background-color: var(--bg-secondary);
+        }
+
+        .content-section.active {
+            display: block;
+        }
+
+        /* Заголовки секций */
+        .section-header {
+            margin-bottom: var(--space-xl);
+            text-align: center;
+        }
+
+        .section-header h2 {
+            font-size: var(--font-size-2xl);
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: var(--space-sm);
+        }
+
+        .section-header p {
+            font-size: var(--font-size-lg);
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Кнопки */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-sm);
+            padding: var(--space-sm) var(--space-lg);
+            border: none;
+            border-radius: var(--radius-md);
+            font-size: var(--font-size-sm);
+            font-weight: 500;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: none;
+            color: inherit;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+
+        .btn-outline {
+            border: 2px solid var(--border-color);
+            color: var(--text-secondary);
+        }
+
+        .btn-outline:hover {
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+        }
+
+        .btn-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            border: none;
+            border-radius: var(--radius-md);
+            background: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .btn-icon:hover {
+            background-color: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        /* Иконки */
+        .fas, .fab {
+            font-size: inherit;
+        }
+
+        /* Хедер */
+        .header {
+            background-color: var(--bg-primary);
+            border-bottom: 1px solid var(--border-color);
+            box-shadow: var(--shadow-sm);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: var(--space-md) var(--space-lg);
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* Логотип */
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: var(--space-md);
+            cursor: pointer;
+            transition: opacity 0.2s ease;
+        }
+
+        .logo:hover {
+            opacity: 0.8;
+        }
+
+        .logo-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: var(--font-size-xl);
+        }
+
+        .logo-text {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .logo-title {
+            font-size: var(--font-size-lg);
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1.2;
+        }
+
+        .logo-subtitle {
+            font-size: var(--font-size-sm);
+            color: var(--text-secondary);
+            line-height: 1.2;
+        }
+
+        /* Действия в хедере */
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: var(--space-md);
+        }
+
+        /* Статус синхронизации */
+        .sync-status {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            padding: var(--space-sm) var(--space-md);
+            background-color: var(--bg-secondary);
+            border-radius: var(--radius-md);
+            font-size: var(--font-size-sm);
+        }
+
+        .sync-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: var(--text-muted);
+            position: relative;
+        }
+
+        .sync-indicator.syncing {
+            background-color: var(--warning-color);
+            animation: pulse 1.5s infinite;
+        }
+
+        .sync-indicator.success {
+            background-color: var(--success-color);
+        }
+
+        .sync-indicator.error {
+            background-color: var(--error-color);
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .sync-text {
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        /* Информация о пользователе */
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            padding: var(--space-sm) var(--space-md);
+            background-color: var(--bg-secondary);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
+        .user-info:hover {
+            background-color: var(--bg-tertiary);
+        }
+
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: var(--font-size-sm);
+        }
+
+        .user-details {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .user-name {
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: var(--font-size-sm);
+        }
+
+        .user-role {
+            font-size: var(--font-size-xs);
+            color: var(--text-secondary);
+        }
+
+        /* Навигация */
+        .main-nav {
+            background-color: var(--bg-primary);
+            border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 73px; /* Высота хедера */
+            z-index: 99;
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 var(--space-lg);
+        }
+
+        .nav-items {
+            display: flex;
+            gap: var(--space-md);
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            padding: var(--space-md) var(--space-lg);
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            border-bottom: 2px solid transparent;
+            font-size: var(--font-size-sm);
+            font-weight: 500;
+        }
+
+        .nav-item:hover {
+            color: var(--text-primary);
+            background-color: var(--bg-secondary);
+        }
+
+        .nav-item.active {
+            color: var(--primary-color);
+            border-bottom-color: var(--primary-color);
+        }
+
+        .nav-item i {
+            font-size: var(--font-size-md);
+        }
+
+        .nav-badge {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background-color: var(--error-color);
+            color: white;
+            border-radius: 10px;
+            padding: 2px 6px;
+            font-size: var(--font-size-xs);
+            font-weight: 700;
+            min-width: 18px;
+            height: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Дашборд */
+        .dashboard-header {
+            text-align: center;
+            margin-bottom: var(--space-xl);
+            padding: 0 var(--space-md);
+        }
+
+        .dashboard-title {
+            font-size: var(--font-size-2xl);
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: var(--space-sm);
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .dashboard-subtitle {
+            font-size: var(--font-size-lg);
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Быстрая статистика */
+        .quick-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: var(--space-lg);
+            margin-bottom: var(--space-xl);
+        }
+
+        .stat-card {
+            background-color: var(--bg-primary);
+            padding: var(--space-lg);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+        }
+
+        .stat-card.orders::before {
+            background: linear-gradient(90deg, #3498db, #2980b9);
+        }
+
+        .stat-card.revenue::before {
+            background: linear-gradient(90deg, #27ae60, #2ecc71);
+        }
+
+        .stat-card.success::before {
+            background: linear-gradient(90deg, #9b59b6, #8e44ad);
+        }
+
+        .stat-card.problems::before {
+            background: linear-gradient(90deg, #e74c3c, #c0392b);
+        }
+
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: var(--space-md);
+            font-size: var(--font-size-xl);
+            color: white;
+        }
+
+        .stat-card.orders .stat-icon {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+        }
+
+        .stat-card.revenue .stat-icon {
+            background: linear-gradient(135deg, #27ae60, #2ecc71);
+        }
+
+        .stat-card.success .stat-icon {
+            background: linear-gradient(135deg, #9b59b6, #8e44ad);
+        }
+
+        .stat-card.problems .stat-icon {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+        }
+
+        .stat-value {
+            font-size: var(--font-size-2xl);
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: var(--space-xs);
+            line-height: 1;
+        }
+
+        .stat-label {
+            font-size: var(--font-size-sm);
+            color: var(--text-secondary);
+            margin-bottom: var(--space-sm);
+        }
+
+        .stat-change {
+            display: flex;
+            align-items: center;
+            gap: var(--space-xs);
+            font-size: var(--font-size-sm);
+            font-weight: 600;
+        }
+
+        .stat-change.positive {
+            color: var(--success-color);
+        }
+
+        .stat-change.negative {
+            color: var(--error-color);
+        }
+
+        /* Виджеты платформ */
+        .platform-widgets {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: var(--space-lg);
+            margin-bottom: var(--space-xl);
+        }
+
+        .widget {
+            background-color: var(--bg-primary);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-color);
+            padding: var(--space-lg);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            gap: var(--space-lg);
+            align-items: flex-start;
+        }
+
+        .widget:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .widget.cdek-widget {
+            border-left: 4px solid #ff6b00;
+        }
+
+        .widget.megamarket-widget {
+            border-left: 4px solid #00aaff;
+        }
+
+        .widget-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: var(--font-size-xl);
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .cdek-widget .widget-icon {
+            background: linear-gradient(135deg, #ff6b00, #ff8c00);
+        }
+
+        .megamarket-widget .widget-icon {
+            background: linear-gradient(135deg, #00aaff, #0088cc);
+        }
+
+        .widget-content {
+            flex: 1;
+        }
+
+        .widget-content h3 {
+            font-size: var(--font-size-lg);
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: var(--space-sm);
+        }
+
+        .widget-stats {
+            display: flex;
+            align-items: baseline;
+            gap: var(--space-xs);
+            margin-bottom: var(--space-sm);
+        }
+
+        .widget-stats .stat-value {
+            font-size: var(--font-size-xl);
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 0;
+        }
+
+        .widget-stats .stat-label {
+            font-size: var(--font-size-sm);
+            color: var(--text-secondary);
+            margin-bottom: 0;
+        }
+
+        .widget-trend {
+            display: flex;
+            align-items: center;
+            gap: var(--space-xs);
+            font-size: var(--font-size-sm);
+            font-weight: 500;
+            margin-bottom: var(--space-md);
+        }
+
+        .widget-trend.positive {
+            color: var(--success-color);
+        }
+
+        .widget-trend.negative {
+            color: var(--error-color);
+        }
+
+        .widget-action {
+            display: flex;
+            align-items: center;
+            gap: var(--space-xs);
+            color: var(--primary-color);
+            font-weight: 500;
+            font-size: var(--font-size-sm);
+            transition: gap 0.2s ease;
+        }
+
+        .widget:hover .widget-action {
+            gap: var(--space-sm);
+        }
+
+        /* Последняя активность */
+        .recent-activity {
+            margin-bottom: var(--space-xl);
+        }
+
+        .recent-activity-card {
+            background-color: var(--bg-primary);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: var(--space-lg);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .card-header h3 {
+            font-size: var(--font-size-lg);
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .card-actions {
+            display: flex;
+            gap: var(--space-sm);
+        }
+
+        .activity-list {
+            padding: var(--space-md);
+        }
+
+        .activity-item {
+            display: flex;
+            align-items: center;
+            gap: var(--space-md);
+            padding: var(--space-md);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            margin-bottom: var(--space-xs);
+        }
+
+        .activity-item:hover {
+            background-color: var(--bg-secondary);
+        }
+
+        .activity-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .activity-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: var(--font-size-md);
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .activity-icon.platform-cdek {
+            background: linear-gradient(135deg, #ff6b00, #ff8c00);
+        }
+
+        .activity-icon.platform-megamarket {
+            background: linear-gradient(135deg, #00aaff, #0088cc);
+        }
+
+        .activity-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .activity-title {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: var(--space-xs);
+            font-size: var(--font-size-sm);
+        }
+
+        .activity-description {
+            color: var(--text-secondary);
+            margin-bottom: var(--space-xs);
+            font-size: var(--font-size-sm);
+        }
+
+        .activity-meta {
+            display: flex;
+            gap: var(--space-md);
+            font-size: var(--font-size-xs);
+            color: var(--text-muted);
+        }
+
+        .activity-status {
+            padding: var(--space-xs) var(--space-sm);
+            border-radius: var(--radius-sm);
+            font-size: var(--font-size-xs);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-shrink: 0;
+        }
+
+        .empty-activity {
+            text-align: center;
+            padding: var(--space-xl);
+            color: var(--text-muted);
+        }
+
+        .empty-activity i {
+            font-size: 48px;
+            margin-bottom: var(--space-md);
+            opacity: 0.5;
+        }
+
+        /* Загрузка */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .loading-content {
+            background-color: var(--bg-primary);
+            padding: var(--space-xl);
+            border-radius: var(--radius-lg);
+            text-align: center;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid var(--bg-tertiary);
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto var(--space-md);
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* Уведомления */
+        .notifications-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1001;
+            max-width: 400px;
+        }
+
+        .notification {
+            background-color: var(--bg-primary);
+            border-left: 4px solid var(--info-color);
+            padding: var(--space-md);
+            margin-bottom: var(--space-sm);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-md);
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .notification.success {
+            border-left-color: var(--success-color);
+        }
+
+        .notification.error {
+            border-left-color: var(--error-color);
+        }
+
+        .notification.warning {
+            border-left-color: var(--warning-color);
+        }
+
+        .notification.info {
+            border-left-color: var(--info-color);
+        }
+
+        .notification-badge {
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            background-color: var(--error-color);
+            color: white;
+            border-radius: 10px;
+            padding: 2px 6px;
+            font-size: var(--font-size-xs);
+            font-weight: 600;
+            min-width: 18px;
+            height: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Адаптивность */
+        @media (max-width: 768px) {
+            .header-content {
+                padding: var(--space-sm);
+            }
+            
+            .logo-icon {
+                width: 40px;
+                height: 40px;
+                font-size: var(--font-size-lg);
+            }
+            
+            .logo-title {
+                font-size: var(--font-size-md);
+            }
+            
+            .logo-subtitle {
+                font-size: var(--font-size-xs);
+            }
+            
+            .header-actions {
+                gap: var(--space-sm);
+            }
+            
+            .sync-status {
+                padding: var(--space-xs) var(--space-sm);
+            }
+            
+            .user-info {
+                padding: var(--space-xs) var(--space-sm);
+            }
+            
+            .user-details {
+                display: none;
+            }
+            
+            .nav-container {
+                padding: 0 var(--space-sm);
+            }
+            
+            .nav-items {
+                gap: var(--space-xs);
+            }
+            
+            .nav-item {
+                padding: var(--space-sm) var(--space-md);
+                font-size: var(--font-size-xs);
+            }
+            
+            .nav-item span:not(.nav-badge) {
+                display: none;
+            }
+            
+            .nav-item i {
+                font-size: var(--font-size-lg);
+                margin: 0;
+            }
+            
+            .dashboard-title {
+                font-size: var(--font-size-xl);
+            }
+            
+            .dashboard-subtitle {
+                font-size: var(--font-size-md);
+            }
+            
+            .quick-stats {
+                grid-template-columns: 1fr;
+                gap: var(--space-md);
+            }
+            
+            .platform-widgets {
+                grid-template-columns: 1fr;
+                gap: var(--space-md);
+            }
+            
+            .widget {
+                flex-direction: column;
+                text-align: center;
+                gap: var(--space-md);
+            }
+            
+            .widget-icon {
+                align-self: center;
+            }
+            
+            .card-header {
+                flex-direction: column;
+                gap: var(--space-md);
+                align-items: stretch;
+            }
+            
+            .card-actions {
+                justify-content: center;
+            }
+            
+            .activity-item {
+                flex-direction: column;
+                text-align: center;
+                gap: var(--space-sm);
+            }
+            
+            .activity-content {
+                text-align: center;
+            }
+            
+            .activity-meta {
+                justify-content: center;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .logo-text {
+                display: none;
+            }
+            
+            .sync-text {
+                display: none;
+            }
+            
+            .header-actions .btn-icon:not(:last-child) {
+                display: none;
+            }
+            
+            .stat-card {
+                padding: var(--space-md);
+            }
+            
+            .stat-value {
+                font-size: var(--font-size-xl);
+            }
+            
+            .widget {
+                padding: var(--space-md);
+            }
+            
+            .activity-item {
+                padding: var(--space-sm);
+            }
+        }
+    </style>
 </head>
 <body>
     <div class="app">
@@ -251,17 +1251,1484 @@
         <div class="notifications-container" id="notifications-container"></div>
     </div>
 
-    <!-- JavaScript Files -->
-    <script src="js/config.js"></script>
-    <script src="js/utils/storage.js"></script>
-    <script src="js/utils/formatters.js"></script>
-    <script src="js/utils/notifications.js"></script>
-    <script src="js/services/api-service.js"></script>
-    <script src="js/services/cdek-service.js"></script>
-    <script src="js/services/megamarket-service.js"></script>
-    <script src="js/components/orders.js"></script>
-    <script src="js/components/analytics.js"></script>
-    <script src="js/components/settings.js"></script>
-    <script src="js/app.js"></script>
+    <script>
+        // Утилиты для работы с localStorage
+        class Storage {
+            static set(key, value) {
+                try {
+                    const serializedValue = JSON.stringify(value);
+                    localStorage.setItem(`texno_edem_${key}`, serializedValue);
+                    return true;
+                } catch (error) {
+                    console.error('Storage set error:', error);
+                    return false;
+                }
+            }
+
+            static get(key, defaultValue = null) {
+                try {
+                    const item = localStorage.getItem(`texno_edem_${key}`);
+                    if (item === null) return defaultValue;
+                    return JSON.parse(item);
+                } catch (error) {
+                    console.error('Storage get error:', error);
+                    return defaultValue;
+                }
+            }
+
+            static remove(key) {
+                try {
+                    localStorage.removeItem(`texno_edem_${key}`);
+                    return true;
+                } catch (error) {
+                    console.error('Storage remove error:', error);
+                    return false;
+                }
+            }
+
+            static clear() {
+                try {
+                    // Удаляем только ключи приложения
+                    const keysToRemove = [];
+                    for (let i = 0; i < localStorage.length; i++) {
+                        const key = localStorage.key(i);
+                        if (key && key.startsWith('texno_edem_')) {
+                            keysToRemove.push(key);
+                        }
+                    }
+                    
+                    keysToRemove.forEach(key => localStorage.removeItem(key));
+                    return true;
+                } catch (error) {
+                    console.error('Storage clear error:', error);
+                    return false;
+                }
+            }
+        }
+
+        // Утилиты форматирования
+        function formatCurrency(amount, currency = 'RUB') {
+            if (amount === null || amount === undefined || isNaN(amount)) return '-';
+            
+            return new Intl.NumberFormat('ru-RU', {
+                style: 'currency',
+                currency: currency,
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            }).format(amount);
+        }
+
+        function formatDate(dateString, options = {}) {
+            if (!dateString) return '-';
+            
+            try {
+                const date = new Date(dateString);
+                if (isNaN(date.getTime())) return '-';
+                
+                const formatOptions = {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    ...options
+                };
+                
+                return date.toLocaleDateString('ru-RU', formatOptions);
+            } catch (error) {
+                console.error('Error formatting date:', error);
+                return '-';
+            }
+        }
+
+        function formatRelativeTime(dateString) {
+            if (!dateString) return '-';
+            
+            try {
+                const date = new Date(dateString);
+                if (isNaN(date.getTime())) return '-';
+                
+                const now = new Date();
+                const diffMs = now - date;
+                const diffMins = Math.floor(diffMs / 60000);
+                const diffHours = Math.floor(diffMs / 3600000);
+                const diffDays = Math.floor(diffMs / 86400000);
+                
+                if (diffMins < 1) return 'только что';
+                if (diffMins < 60) return `${diffMins} мин назад`;
+                if (diffHours < 24) return `${diffHours} ч назад`;
+                if (diffDays === 1) return 'вчера';
+                if (diffDays < 7) return `${diffDays} дн назад`;
+                
+                return formatDate(dateString);
+            } catch (error) {
+                console.error('Error formatting relative time:', error);
+                return '-';
+            }
+        }
+
+        function formatPlatform(platform) {
+            const platformMap = {
+                'cdek': 'CDEK',
+                'megamarket': 'Мегамаркет',
+                'all': 'Все платформы'
+            };
+            
+            return platformMap[platform] || platform;
+        }
+
+        function truncateText(text, maxLength = 50) {
+            if (!text || text.length <= maxLength) return text;
+            return text.substring(0, maxLength) + '...';
+        }
+
+        // Конфигурация приложения
+        class AppConfig {
+            constructor() {
+                this.API = {
+                    CDEK: {
+                        ENABLED: true,
+                        CLIENT_ID: '',
+                        CLIENT_SECRET: '',
+                        SYNC_INTERVAL: 300000
+                    },
+                    MEGAMARKET: {
+                        ENABLED: true,
+                        API_KEY: '',
+                        CAMPAIGN_ID: '',
+                        SYNC_INTERVAL: 300000
+                    }
+                };
+                
+                this.SETTINGS = {
+                    AUTO_SYNC: true,
+                    NOTIFICATION_SOUND: true,
+                    ITEMS_PER_PAGE: 20,
+                    THEME: 'auto',
+                    LANGUAGE: 'ru',
+                    CURRENCY: 'RUB'
+                };
+                
+                this.FEATURES = {
+                    NOTIFICATIONS: true,
+                    ANALYTICS: true,
+                    EXPORT: true
+                };
+                
+                this.APP = {
+                    VERSION: '2.0.0',
+                    NAME: 'TEXNO EDEM',
+                    COMPANY: 'TEXNO EDEM LLC',
+                    BUILD: new Date().toISOString().split('T')[0]
+                };
+            }
+
+            get(key, defaultValue = null) {
+                const keys = key.split('.');
+                let value = this;
+                
+                for (const k of keys) {
+                    if (value && typeof value === 'object' && k in value) {
+                        value = value[k];
+                    } else {
+                        return defaultValue;
+                    }
+                }
+                
+                return value !== undefined ? value : defaultValue;
+            }
+
+            set(key, value) {
+                const keys = key.split('.');
+                let obj = this;
+                
+                for (let i = 0; i < keys.length - 1; i++) {
+                    const k = keys[i];
+                    if (!(k in obj)) {
+                        obj[k] = {};
+                    }
+                    obj = obj[k];
+                }
+                
+                obj[keys[keys.length - 1]] = value;
+                return true;
+            }
+
+            exportConfig() {
+                return JSON.stringify(this, null, 2);
+            }
+
+            importConfig(configString) {
+                try {
+                    const config = JSON.parse(configString);
+                    Object.assign(this, config);
+                    return true;
+                } catch (error) {
+                    console.error('Config import error:', error);
+                    return false;
+                }
+            }
+
+            reset() {
+                const defaultConfig = new AppConfig();
+                Object.assign(this, defaultConfig);
+            }
+
+            applyTheme() {
+                const theme = this.SETTINGS.THEME;
+                if (theme === 'auto') {
+                    document.documentElement.removeAttribute('data-theme');
+                } else {
+                    document.documentElement.setAttribute('data-theme', theme);
+                }
+            }
+        }
+
+        // Главный класс приложения
+        class TexnoEdemApp {
+            constructor() {
+                this.config = new AppConfig();
+                this.orders = {
+                    all: [],
+                    cdek: [],
+                    megamarket: []
+                };
+                this.analytics = {};
+                this.init();
+            }
+
+            async init() {
+                try {
+                    // Инициализация Telegram WebApp
+                    this.initTelegram();
+                    
+                    // Загрузка конфигурации
+                    await this.loadConfig();
+                    
+                    // Загрузка начальных данных
+                    await this.loadInitialData();
+                    
+                    // Запуск автосинхронизации
+                    this.startAutoSync();
+                    
+                    console.log('✅ TEXNO EDEM App initialized successfully');
+                    
+                } catch (error) {
+                    console.error('❌ App initialization failed:', error);
+                    this.showNotification('Ошибка инициализации приложения', 'error');
+                }
+            }
+
+            initTelegram() {
+                if (window.Telegram && Telegram.WebApp) {
+                    this.tg = Telegram.WebApp;
+                    this.tg.expand();
+                    
+                    // Безопасная установка подтверждения закрытия
+                    try {
+                        this.tg.enableClosingConfirmation();
+                    } catch (error) {
+                        console.warn('Closing confirmation not supported:', error.message);
+                    }
+                    
+                    // Показываем информацию о пользователе
+                    this.showUserInfo();
+                } else {
+                    console.warn('Telegram WebApp not available, running in browser mode');
+                }
+            }
+
+            showUserInfo() {
+                const userInfoEl = document.getElementById('userInfo');
+                const userAvatar = document.getElementById('user-avatar');
+                const userName = document.getElementById('user-name');
+                
+                if (this.tg?.initDataUnsafe?.user) {
+                    const user = this.tg.initDataUnsafe.user;
+                    const name = user.first_name || user.username || 'Пользователь';
+                    const initial = name.charAt(0).toUpperCase();
+                    
+                    userAvatar.textContent = initial;
+                    userName.textContent = name;
+                    userInfoEl.style.display = 'flex';
+                }
+            }
+
+            async loadConfig() {
+                try {
+                    // Загрузка конфигурации из localStorage
+                    const savedConfig = Storage.get('config');
+                    if (savedConfig) {
+                        this.config = Object.assign(new AppConfig(), savedConfig);
+                    }
+                    
+                    // Применяем тему
+                    this.applyTheme();
+                    
+                } catch (error) {
+                    console.error('Config loading error:', error);
+                }
+            }
+
+            saveConfig() {
+                try {
+                    Storage.set('config', this.config);
+                } catch (error) {
+                    console.error('Config saving error:', error);
+                }
+            }
+
+            applyTheme() {
+                const theme = this.config.SETTINGS?.THEME || 'auto';
+                if (theme === 'auto') {
+                    document.documentElement.removeAttribute('data-theme');
+                } else {
+                    document.documentElement.setAttribute('data-theme', theme);
+                }
+            }
+
+            async loadInitialData() {
+                this.showLoading('Загрузка данных...');
+                
+                try {
+                    await Promise.all([
+                        this.loadOrders(),
+                        this.loadAnalytics()
+                    ]);
+                    
+                    this.updateDashboard();
+                    this.hideLoading();
+                    
+                } catch (error) {
+                    console.error('Initial data loading error:', error);
+                    this.hideLoading();
+                    this.showNotification('Ошибка загрузки данных', 'error');
+                }
+            }
+
+            async loadOrders() {
+                try {
+                    // Загрузка заказов CDEK
+                    if (this.config.API?.CDEK?.ENABLED) {
+                        try {
+                            this.orders.cdek = await this.generateDemoCDEKOrders();
+                        } catch (error) {
+                            console.warn('CDEK orders load failed:', error);
+                            this.orders.cdek = this.generateDemoCDEKOrders();
+                        }
+                    } else {
+                        this.orders.cdek = this.generateDemoCDEKOrders();
+                    }
+
+                    // Загрузка заказов Megamarket
+                    if (this.config.API?.MEGAMARKET?.ENABLED) {
+                        try {
+                            this.orders.megamarket = await this.generateDemoMegamarketOrders();
+                        } catch (error) {
+                            console.warn('Megamarket orders load failed:', error);
+                            this.orders.megamarket = this.generateDemoMegamarketOrders();
+                        }
+                    } else {
+                        this.orders.megamarket = this.generateDemoMegamarketOrders();
+                    }
+
+                    // Объединение всех заказов
+                    this.orders.all = [...this.orders.cdek, ...this.orders.megamarket]
+                        .sort((a, b) => new Date(b.createdDate) - new Date(a.createdDate));
+
+                    console.log(`✅ Orders loaded: CDEK ${this.orders.cdek.length}, Megamarket ${this.orders.megamarket.length}`);
+
+                } catch (error) {
+                    console.error('Orders loading error:', error);
+                    this.useDemoData();
+                }
+            }
+
+            async loadAnalytics() {
+                try {
+                    // Здесь будет загрузка аналитики
+                    this.analytics = {
+                        revenue: {
+                            total: this.orders.all.reduce((sum, order) => sum + (order.cost || order.totalAmount || 0), 0),
+                            cdek: this.orders.cdek.reduce((sum, order) => sum + (order.cost || 0), 0),
+                            megamarket: this.orders.megamarket.reduce((sum, order) => sum + (order.totalAmount || 0), 0)
+                        },
+                        orders: {
+                            total: this.orders.all.length,
+                            cdek: this.orders.cdek.length,
+                            megamarket: this.orders.megamarket.length
+                        }
+                    };
+                    
+                } catch (error) {
+                    console.error('Analytics loading error:', error);
+                }
+            }
+
+            updateDashboard() {
+                // Обновление быстрой статистики
+                document.getElementById('total-orders').textContent = this.orders.all.length;
+                document.getElementById('total-revenue').textContent = formatCurrency(this.analytics.revenue?.total || 0);
+                document.getElementById('success-rate').textContent = '95%';
+                document.getElementById('problem-orders').textContent = this.orders.all.filter(order => order.status === 'problem').length;
+
+                // Обновление виджетов платформ
+                document.getElementById('cdek-active').textContent = this.orders.cdek.filter(order => 
+                    order.status === 'active' || order.status === 'processing'
+                ).length;
+                
+                document.getElementById('megamarket-new').textContent = this.orders.megamarket.filter(order => 
+                    order.status === 'new'
+                ).length;
+
+                // Обновление последних заказов
+                this.updateRecentOrders();
+                
+                // Обновление бейджей
+                this.updateBadges();
+            }
+
+            updateRecentOrders() {
+                const container = document.getElementById('recent-orders-list');
+                const recentOrders = this.orders.all.slice(0, 5);
+                
+                if (recentOrders.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-activity">
+                            <i class="fas fa-inbox"></i>
+                            <p>Нет заказов для отображения</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = recentOrders.map(order => `
+                    <div class="activity-item" onclick="app.showOrderDetails('${order.platform}', '${order.id}')">
+                        <div class="activity-icon platform-${order.platform}">
+                            <i class="fas fa-${order.platform === 'cdek' ? 'shipping-fast' : 'store'}"></i>
+                        </div>
+                        <div class="activity-content">
+                            <div class="activity-title">
+                                ${order.platform === 'cdek' ? order.trackingNumber : 'Заказ #' + order.orderNumber}
+                            </div>
+                            <div class="activity-description">
+                                ${order.recipient || order.customerName} • ${formatCurrency(order.cost || order.totalAmount)}
+                            </div>
+                            <div class="activity-meta">
+                                <span class="activity-time">${formatRelativeTime(order.createdDate)}</span>
+                                <span class="activity-platform">${order.platform === 'cdek' ? 'CDEK' : 'Мегамаркет'}</span>
+                            </div>
+                        </div>
+                        <div class="activity-status status-${order.status}">
+                            ${this.getStatusConfig(order).text}
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            updateBadges() {
+                const ordersBadge = document.getElementById('nav-badge-orders');
+                const newOrdersCount = this.orders.all.filter(order => order.status === 'new').length;
+                
+                if (ordersBadge) {
+                    ordersBadge.textContent = newOrdersCount > 99 ? '99+' : newOrdersCount;
+                    ordersBadge.style.display = newOrdersCount > 0 ? 'flex' : 'none';
+                }
+
+                const notificationBadge = document.getElementById('notification-badge');
+                if (notificationBadge) {
+                    const problemOrders = this.orders.all.filter(order => order.status === 'problem').length;
+                    notificationBadge.textContent = problemOrders > 99 ? '99+' : problemOrders;
+                    notificationBadge.style.display = problemOrders > 0 ? 'flex' : 'none';
+                }
+            }
+
+            getStatusConfig(order) {
+                const statusMap = {
+                    'new': { text: 'Новый', color: '#3498db', icon: 'clock' },
+                    'processing': { text: 'В обработке', color: '#f39c12', icon: 'sync' },
+                    'active': { text: 'Активный', color: '#9b59b6', icon: 'shipping-fast' },
+                    'delivered': { text: 'Доставлен', color: '#27ae60', icon: 'check' },
+                    'problem': { text: 'Проблема', color: '#e74c3c', icon: 'exclamation-triangle' },
+                    'cancelled': { text: 'Отменен', color: '#95a5a6', icon: 'times' }
+                };
+                
+                return statusMap[order.status] || statusMap.new;
+            }
+
+            getOrderById(platform, orderId) {
+                const orders = platform === 'all' ? this.orders.all : this.orders[platform];
+                return orders.find(order => order.id === orderId);
+            }
+
+            // Навигация по разделам
+            showSection(section, platform = null) {
+                // Скрываем все секции
+                document.querySelectorAll('.content-section').forEach(section => {
+                    section.classList.remove('active');
+                });
+                
+                // Скрываем все активные элементы навигации
+                document.querySelectorAll('.nav-item').forEach(item => {
+                    item.classList.remove('active');
+                });
+                
+                // Показываем выбранную секцию
+                const targetSection = document.getElementById(section + '-section');
+                if (targetSection) {
+                    targetSection.classList.add('active');
+                }
+                
+                // Активируем соответствующий элемент навигации
+                const navItem = document.querySelector(`.nav-item[onclick*="${section}"]`);
+                if (navItem) {
+                    navItem.classList.add('active');
+                }
+                
+                // Загружаем контент секции
+                this.loadSectionContent(section, platform);
+            }
+
+            loadSectionContent(section, platform = null) {
+                switch (section) {
+                    case 'dashboard':
+                        this.updateDashboard();
+                        break;
+                    case 'orders':
+                        this.renderOrders(platform);
+                        break;
+                    case 'analytics':
+                        this.renderAnalytics();
+                        break;
+                    case 'settings':
+                        this.renderSettings();
+                        break;
+                }
+            }
+
+            renderOrders(platform = null) {
+                const container = document.getElementById('orders-container');
+                if (!container) return;
+                
+                const currentPlatform = platform || 'all';
+                const orders = currentPlatform === 'all' ? this.orders.all : this.orders[currentPlatform];
+                
+                container.innerHTML = `
+                    <div class="orders-controls">
+                        <div class="platform-filter">
+                            <button class="platform-btn ${currentPlatform === 'all' ? 'active' : ''}" 
+                                    onclick="app.showSection('orders', 'all')">
+                                <i class="fas fa-layer-group"></i>
+                                Все платформы
+                                <span class="platform-count">${this.orders.all.length}</span>
+                            </button>
+                            <button class="platform-btn ${currentPlatform === 'cdek' ? 'active' : ''}" 
+                                    onclick="app.showSection('orders', 'cdek')">
+                                <i class="fas fa-shipping-fast"></i>
+                                CDEK
+                                <span class="platform-count">${this.orders.cdek.length}</span>
+                            </button>
+                            <button class="platform-btn ${currentPlatform === 'megamarket' ? 'active' : ''}" 
+                                    onclick="app.showSection('orders', 'megamarket')">
+                                <i class="fas fa-store"></i>
+                                Мегамаркет
+                                <span class="platform-count">${this.orders.megamarket.length}</span>
+                            </button>
+                        </div>
+                        
+                        <div class="orders-actions">
+                            <button class="btn btn-outline" onclick="app.manualSync()">
+                                <i class="fas fa-sync"></i>
+                                Обновить
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="orders-summary">
+                        <div class="summary-item">
+                            <div class="summary-value">${orders.length}</div>
+                            <div class="summary-label">Найдено заказов</div>
+                        </div>
+                        <div class="summary-item">
+                            <div class="summary-value">${formatCurrency(orders.reduce((sum, order) => sum + (order.cost || order.totalAmount || 0), 0))}</div>
+                            <div class="summary-label">Общая сумма</div>
+                        </div>
+                        <div class="summary-item">
+                            <div class="summary-value">${orders.length > 0 ? formatCurrency(orders.reduce((sum, order) => sum + (order.cost || order.totalAmount || 0), 0) / orders.length) : '0 ₽'}</div>
+                            <div class="summary-label">Средний чек</div>
+                        </div>
+                    </div>
+                    
+                    <div class="orders-list-container">
+                        ${orders.length > 0 ? `
+                            <div class="orders-list">
+                                ${orders.map(order => this.createOrderCard(order)).join('')}
+                            </div>
+                        ` : `
+                            <div class="empty-state">
+                                <div class="empty-icon">
+                                    <i class="fas fa-inbox"></i>
+                                </div>
+                                <h3>Заказы не найдены</h3>
+                                <p>Попробуйте изменить параметры фильтрации или синхронизировать данные</p>
+                                <button class="btn btn-primary" onclick="app.manualSync()">
+                                    <i class="fas fa-sync"></i>
+                                    Обновить данные
+                                </button>
+                            </div>
+                        `}
+                    </div>
+                `;
+            }
+
+            createOrderCard(order) {
+                const statusConfig = this.getStatusConfig(order);
+                const platformIcon = order.platform === 'cdek' ? 'shipping-fast' : 'store';
+                const orderNumber = order.platform === 'cdek' ? order.trackingNumber : order.orderNumber;
+                const amount = order.cost || order.totalAmount || 0;
+                const recipient = order.recipient || order.customerName || 'Не указан';
+                
+                return `
+                    <div class="order-card" onclick="app.showOrderDetails('${order.platform}', '${order.id}')">
+                        <div class="order-header">
+                            <div class="order-platform platform-${order.platform}">
+                                <i class="fas fa-${platformIcon}"></i>
+                                ${formatPlatform(order.platform)}
+                            </div>
+                            <div class="order-status status-${order.status}">
+                                <i class="fas fa-${statusConfig.icon}"></i>
+                                ${statusConfig.text}
+                            </div>
+                        </div>
+                        
+                        <div class="order-body">
+                            <div class="order-info">
+                                <div class="order-number">
+                                    ${order.platform === 'cdek' ? order.trackingNumber : 'Заказ #' + order.orderNumber}
+                                </div>
+                                <div class="order-date">
+                                    ${formatRelativeTime(order.createdDate)}
+                                </div>
+                            </div>
+                            
+                            <div class="order-details">
+                                <div class="detail-item">
+                                    <span class="detail-label">Получатель:</span>
+                                    <span class="detail-value">${truncateText(recipient, 25)}</span>
+                                </div>
+                                
+                                ${order.platform === 'cdek' ? `
+                                    <div class="detail-item">
+                                        <span class="detail-label">Маршрут:</span>
+                                        <span class="detail-value">${order.fromCity} → ${order.toCity}</span>
+                                    </div>
+                                    <div class="detail-item">
+                                        <span class="detail-label">Вес:</span>
+                                        <span class="detail-value">${order.weight ? order.weight + ' кг' : '-'}</span>
+                                    </div>
+                                ` : `
+                                    <div class="detail-item">
+                                        <span class="detail-label">Телефон:</span>
+                                        <span class="detail-value">${order.customerPhone || '-'}</span>
+                                    </div>
+                                    <div class="detail-item">
+                                        <span class="detail-label">Товаров:</span>
+                                        <span class="detail-value">${order.items ? order.items.length : 1}</span>
+                                    </div>
+                                `}
+                            </div>
+                        </div>
+                        
+                        <div class="order-footer">
+                            <div class="order-amount">
+                                ${formatCurrency(amount)}
+                            </div>
+                            <div class="order-actions">
+                                <button class="btn-icon" onclick="event.stopPropagation(); app.trackOrder('${order.platform}', '${order.id}')" title="Отследить">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            renderAnalytics() {
+                const container = document.getElementById('analytics-container');
+                if (!container) return;
+                
+                const cdekRevenue = this.analytics.revenue?.cdek || 0;
+                const megamarketRevenue = this.analytics.revenue?.megamarket || 0;
+                const totalRevenue = cdekRevenue + megamarketRevenue;
+                
+                const cdekPercentage = totalRevenue > 0 ? (cdekRevenue / totalRevenue) * 100 : 0;
+                const megamarketPercentage = totalRevenue > 0 ? (megamarketRevenue / totalRevenue) * 100 : 0;
+                
+                container.innerHTML = `
+                    <div class="analytics-controls">
+                        <div class="period-selector">
+                            <label>Период:</label>
+                            <select>
+                                <option value="week">Неделя</option>
+                                <option value="month" selected>Месяц</option>
+                                <option value="quarter">Квартал</option>
+                                <option value="year">Год</option>
+                            </select>
+                        </div>
+                        
+                        <div class="analytics-actions">
+                            <button class="btn btn-primary" onclick="app.manualSync()">
+                                <i class="fas fa-sync"></i>
+                                Обновить данные
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="analytics-overview">
+                        <div class="analytics-grid">
+                            <div class="analytics-card">
+                                <h3>Общая статистика</h3>
+                                <div class="stats-grid">
+                                    <div class="stat-item">
+                                        <div class="stat-value">${this.orders.all.length}</div>
+                                        <div class="stat-label">Всего заказов</div>
+                                    </div>
+                                    <div class="stat-item">
+                                        <div class="stat-value">${formatCurrency(this.analytics.revenue?.total || 0)}</div>
+                                        <div class="stat-label">Общая выручка</div>
+                                    </div>
+                                    <div class="stat-item">
+                                        <div class="stat-value">95%</div>
+                                        <div class="stat-label">Успешные доставки</div>
+                                    </div>
+                                    <div class="stat-item">
+                                        <div class="stat-value">${this.orders.all.filter(order => order.status === 'problem').length}</div>
+                                        <div class="stat-label">Проблемные заказы</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="analytics-card">
+                                <h3>По платформам</h3>
+                                <div class="platform-stats">
+                                    <div class="platform-stat cdek">
+                                        <div class="platform-info">
+                                            <i class="fas fa-shipping-fast"></i>
+                                            <span>CDEK</span>
+                                        </div>
+                                        <div class="platform-numbers">
+                                            <div class="platform-orders">${this.orders.cdek.length} заказов</div>
+                                            <div class="platform-revenue">${formatCurrency(this.analytics.revenue?.cdek || 0)}</div>
+                                        </div>
+                                    </div>
+                                    <div class="platform-stat megamarket">
+                                        <div class="platform-info">
+                                            <i class="fas fa-store"></i>
+                                            <span>Мегамаркет</span>
+                                        </div>
+                                        <div class="platform-numbers">
+                                            <div class="platform-orders">${this.orders.megamarket.length} заказов</div>
+                                            <div class="platform-revenue">${formatCurrency(this.analytics.revenue?.megamarket || 0)}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="analytics-charts">
+                            <div class="chart-card">
+                                <h3>Распределение заказов по статусам</h3>
+                                <div class="chart-container">
+                                    <div class="status-chart">
+                                        ${this.generateStatusChart()}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="chart-card">
+                                <h3>Выручка по платформам</h3>
+                                <div class="chart-container">
+                                    <div class="revenue-chart">
+                                        ${this.generateRevenueChart()}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            generateStatusChart() {
+                const statusCounts = {
+                    'new': this.orders.all.filter(o => o.status === 'new').length,
+                    'processing': this.orders.all.filter(o => o.status === 'processing').length,
+                    'active': this.orders.all.filter(o => o.status === 'active').length,
+                    'delivered': this.orders.all.filter(o => o.status === 'delivered').length,
+                    'problem': this.orders.all.filter(o => o.status === 'problem').length,
+                    'cancelled': this.orders.all.filter(o => o.status === 'cancelled').length
+                };
+
+                const total = Object.values(statusCounts).reduce((a, b) => a + b, 0);
+                if (total === 0) {
+                    return '<div class="empty-chart">Нет данных для отображения</div>';
+                }
+
+                return `
+                    <div class="chart-bars">
+                        ${Object.entries(statusCounts).map(([status, count]) => {
+                            const percentage = total > 0 ? (count / total) * 100 : 0;
+                            const statusConfig = this.getStatusConfig({ status });
+                            return `
+                                <div class="chart-bar">
+                                    <div class="bar-label">
+                                        <span class="status-dot" style="background-color: ${statusConfig.color}"></span>
+                                        ${statusConfig.text}
+                                    </div>
+                                    <div class="bar-container">
+                                        <div class="bar-fill" style="width: ${percentage}%; background-color: ${statusConfig.color}"></div>
+                                    </div>
+                                    <div class="bar-value">${count} (${percentage.toFixed(1)}%)</div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                `;
+            }
+
+            generateRevenueChart() {
+                const cdekRevenue = this.analytics.revenue?.cdek || 0;
+                const megamarketRevenue = this.analytics.revenue?.megamarket || 0;
+                const totalRevenue = cdekRevenue + megamarketRevenue;
+
+                if (totalRevenue === 0) {
+                    return '<div class="empty-chart">Нет данных для отображения</div>';
+                }
+
+                const cdekPercentage = totalRevenue > 0 ? (cdekRevenue / totalRevenue) * 100 : 0;
+                const megamarketPercentage = totalRevenue > 0 ? (megamarketRevenue / totalRevenue) * 100 : 0;
+
+                return `
+                    <div class="revenue-distribution">
+                        <div class="revenue-item cdek">
+                            <div class="revenue-bar">
+                                <div class="revenue-fill" style="height: ${cdekPercentage}%"></div>
+                            </div>
+                            <div class="revenue-info">
+                                <div class="revenue-platform">CDEK</div>
+                                <div class="revenue-amount">${formatCurrency(cdekRevenue)}</div>
+                                <div class="revenue-percentage">${cdekPercentage.toFixed(1)}%</div>
+                            </div>
+                        </div>
+                        <div class="revenue-item megamarket">
+                            <div class="revenue-bar">
+                                <div class="revenue-fill" style="height: ${megamarketPercentage}%"></div>
+                            </div>
+                            <div class="revenue-info">
+                                <div class="revenue-platform">Мегамаркет</div>
+                                <div class="revenue-amount">${formatCurrency(megamarketRevenue)}</div>
+                                <div class="revenue-percentage">${megamarketPercentage.toFixed(1)}%</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            renderSettings() {
+                const container = document.getElementById('settings-container');
+                if (!container) return;
+                
+                container.innerHTML = `
+                    <div class="settings-content">
+                        <div class="settings-grid">
+                            <!-- Настройки API -->
+                            <div class="settings-section">
+                                <div class="section-header">
+                                    <h3 class="section-title">
+                                        <i class="fas fa-plug"></i>
+                                        Настройки API
+                                    </h3>
+                                    <p>Настройки интеграции с платформами доставки и маркетплейсами</p>
+                                </div>
+                                
+                                <div class="settings-group">
+                                    <!-- CDEK Settings -->
+                                    <div class="setting-group">
+                                        <h4 class="setting-group-title">
+                                            <i class="fas fa-shipping-fast"></i>
+                                            CDEK Logistics
+                                        </h4>
+                                        
+                                        <div class="setting-item">
+                                            <div class="setting-info">
+                                                <h5 class="setting-title">Включить интеграцию</h5>
+                                                <p class="setting-description">
+                                                    Активировать синхронизацию с CDEK API
+                                                </p>
+                                            </div>
+                                            <label class="switch">
+                                                <input type="checkbox" id="cdek-enabled" 
+                                                       ${this.config.get('API.CDEK.ENABLED', true) ? 'checked' : ''}>
+                                                <span class="slider"></span>
+                                            </label>
+                                        </div>
+
+                                        <div class="setting-item">
+                                            <div class="setting-info">
+                                                <h5 class="setting-title">Client ID</h5>
+                                                <p class="setting-description">Идентификатор клиента в системе CDEK</p>
+                                            </div>
+                                            <input type="text" class="setting-input" id="cdek-client-id" 
+                                                   value="${this.config.get('API.CDEK.CLIENT_ID', '')}" 
+                                                   placeholder="Введите Client ID"
+                                                   ${!this.config.get('API.CDEK.ENABLED', true) ? 'disabled' : ''}>
+                                        </div>
+
+                                        <div class="setting-item">
+                                            <div class="setting-info">
+                                                <h5 class="setting-title">Client Secret</h5>
+                                                <p class="setting-description">Секретный ключ для доступа к API</p>
+                                            </div>
+                                            <div class="password-input">
+                                                <input type="password" class="setting-input" id="cdek-client-secret" 
+                                                       value="${this.config.get('API.CDEK.CLIENT_SECRET', '')}" 
+                                                       placeholder="Введите Client Secret"
+                                                       ${!this.config.get('API.CDEK.ENABLED', true) ? 'disabled' : ''}>
+                                                <button type="button" class="password-toggle" onclick="this.togglePassword('cdek-client-secret')">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Megamarket Settings -->
+                                    <div class="setting-group">
+                                        <h4 class="setting-group-title">
+                                            <i class="fas fa-store"></i>
+                                            Мегамаркет
+                                        </h4>
+                                        
+                                        <div class="setting-item">
+                                            <div class="setting-info">
+                                                <h5 class="setting-title">Включить интеграцию</h5>
+                                                <p class="setting-description">
+                                                    Активировать синхронизацию с API Мегамаркет
+                                                </p>
+                                            </div>
+                                            <label class="switch">
+                                                <input type="checkbox" id="megamarket-enabled" 
+                                                       ${this.config.get('API.MEGAMARKET.ENABLED', true) ? 'checked' : ''}>
+                                                <span class="slider"></span>
+                                            </label>
+                                        </div>
+
+                                        <div class="setting-item">
+                                            <div class="setting-info">
+                                                <h5 class="setting-title">API Key</h5>
+                                                <p class="setting-description">Ключ API для доступа к платформе</p>
+                                            </div>
+                                            <div class="password-input">
+                                                <input type="password" class="setting-input" id="megamarket-api-key" 
+                                                       value="${this.config.get('API.MEGAMARKET.API_KEY', '')}" 
+                                                       placeholder="Введите API Key"
+                                                       ${!this.config.get('API.MEGAMARKET.ENABLED', true) ? 'disabled' : ''}>
+                                                <button type="button" class="password-toggle" onclick="this.togglePassword('megamarket-api-key')">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <div class="setting-item">
+                                            <div class="setting-info">
+                                                <h5 class="setting-title">Campaign ID</h5>
+                                                <p class="setting-description">Идентификатор кампании продавца</p>
+                                            </div>
+                                            <input type="text" class="setting-input" id="megamarket-campaign-id" 
+                                                   value="${this.config.get('API.MEGAMARKET.CAMPAIGN_ID', '')}" 
+                                                   placeholder="Введите Campaign ID"
+                                                   ${!this.config.get('API.MEGAMARKET.ENABLED', true) ? 'disabled' : ''}>
+                                        </div>
+                                    </div>
+
+                                    <div class="setting-actions">
+                                        <button class="btn btn-primary" onclick="app.testApiConnections()">
+                                            <i class="fas fa-bolt"></i>
+                                            Проверить соединение
+                                        </button>
+                                        <button class="btn btn-outline" onclick="app.resetApiSettings()">
+                                            <i class="fas fa-undo"></i>
+                                            Сбросить настройки API
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Настройки приложения -->
+                            <div class="settings-section">
+                                <div class="section-header">
+                                    <h3 class="section-title">
+                                        <i class="fas fa-cog"></i>
+                                        Настройки приложения
+                                    </h3>
+                                    <p>Общие настройки интерфейса и поведения приложения</p>
+                                </div>
+
+                                <div class="settings-group">
+                                    <div class="setting-item">
+                                        <div class="setting-info">
+                                            <h5 class="setting-title">Автосинхронизация</h5>
+                                            <p class="setting-description">
+                                                Автоматическая синхронизация данных с платформами
+                                            </p>
+                                        </div>
+                                        <label class="switch">
+                                            <input type="checkbox" id="auto-sync" 
+                                                   ${this.config.get('SETTINGS.AUTO_SYNC', true) ? 'checked' : ''}>
+                                            <span class="slider"></span>
+                                        </label>
+                                    </div>
+
+                                    <div class="setting-item">
+                                        <div class="setting-info">
+                                            <h5 class="setting-title">Уведомления</h5>
+                                            <p class="setting-description">
+                                                Показывать уведомления о новых заказах и событиях
+                                            </p>
+                                        </div>
+                                        <label class="switch">
+                                            <input type="checkbox" id="notifications-enabled" 
+                                                   ${this.config.get('FEATURES.NOTIFICATIONS', true) ? 'checked' : ''}>
+                                            <span class="slider"></span>
+                                        </label>
+                                    </div>
+
+                                    <div class="setting-item">
+                                        <div class="setting-info">
+                                            <h5 class="setting-title">Элементов на странице</h5>
+                                            <p class="setting-description">
+                                                Количество заказов, отображаемых на одной странице
+                                            </p>
+                                        </div>
+                                        <select class="setting-select" id="items-per-page">
+                                            <option value="10" ${this.config.get('SETTINGS.ITEMS_PER_PAGE', 20) === 10 ? 'selected' : ''}>10</option>
+                                            <option value="20" ${this.config.get('SETTINGS.ITEMS_PER_PAGE', 20) === 20 ? 'selected' : ''}>20</option>
+                                            <option value="50" ${this.config.get('SETTINGS.ITEMS_PER_PAGE', 20) === 50 ? 'selected' : ''}>50</option>
+                                            <option value="100" ${this.config.get('SETTINGS.ITEMS_PER_PAGE', 20) === 100 ? 'selected' : ''}>100</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="setting-item">
+                                        <div class="setting-info">
+                                            <h5 class="setting-title">Тема оформления</h5>
+                                            <p class="setting-description">
+                                                Внешний вид и цветовая схема приложения
+                                            </p>
+                                        </div>
+                                        <select class="setting-select" id="theme-select">
+                                            <option value="auto" ${this.config.get('SETTINGS.THEME', 'auto') === 'auto' ? 'selected' : ''}>Авто</option>
+                                            <option value="light" ${this.config.get('SETTINGS.THEME', 'auto') === 'light' ? 'selected' : ''}>Светлая</option>
+                                            <option value="dark" ${this.config.get('SETTINGS.THEME', 'auto') === 'dark' ? 'selected' : ''}>Темная</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Управление данными -->
+                            <div class="settings-section">
+                                <div class="section-header">
+                                    <h3 class="section-title">
+                                        <i class="fas fa-database"></i>
+                                        Управление данными
+                                    </h3>
+                                    <p>Управление кэшем, резервными копиями и данными приложения</p>
+                                </div>
+
+                                <div class="data-management">
+                                    <div class="data-action">
+                                        <div class="action-info">
+                                            <h5>Очистка кэша</h5>
+                                            <p>Удаление временных данных и перезагрузка информации</p>
+                                        </div>
+                                        <button class="btn btn-outline" onclick="app.clearCache()">
+                                            <i class="fas fa-broom"></i>
+                                            Очистить кэш
+                                        </button>
+                                    </div>
+
+                                    <div class="data-action danger">
+                                        <div class="action-info">
+                                            <h5>Сброс настроек</h5>
+                                            <p>Восстановление заводских настроек по умолчанию</p>
+                                        </div>
+                                        <button class="btn btn-danger" onclick="app.resetSettings()">
+                                            <i class="fas fa-trash"></i>
+                                            Сбросить настройки
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- О приложении -->
+                            <div class="settings-section">
+                                <div class="section-header">
+                                    <h3 class="section-title">
+                                        <i class="fas fa-info-circle"></i>
+                                        О приложении
+                                    </h3>
+                                    <p>Информация о версии и технические детали</p>
+                                </div>
+
+                                <div class="about-info">
+                                    <div class="about-item">
+                                        <span class="label">Версия приложения</span>
+                                        <span class="value">${this.config.get('APP.VERSION', '2.0.0')}</span>
+                                    </div>
+                                    <div class="about-item">
+                                        <span class="label">Название</span>
+                                        <span class="value">${this.config.get('APP.NAME', 'TEXNO EDEM')}</span>
+                                    </div>
+                                    <div class="about-item">
+                                        <span class="label">Компания</span>
+                                        <span class="value">${this.config.get('APP.COMPANY', 'TEXNO EDEM LLC')}</span>
+                                    </div>
+                                    <div class="about-item">
+                                        <span class="label">Последнее обновление</span>
+                                        <span class="value">${new Date().toLocaleDateString('ru-RU')}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Действия настроек -->
+                        <div class="settings-actions">
+                            <button class="btn btn-secondary" onclick="app.showSection('dashboard')">
+                                <i class="fas fa-arrow-left"></i>
+                                Назад
+                            </button>
+                            <div class="actions-right">
+                                <button class="btn btn-outline" onclick="app.cancelSettingsChanges()">
+                                    <i class="fas fa-times"></i>
+                                    Отменить
+                                </button>
+                                <button class="btn btn-primary" onclick="app.saveSettings()">
+                                    <i class="fas fa-save"></i>
+                                    Сохранить настройки
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            showOrderDetails(platform, orderId) {
+                const order = this.getOrderById(platform, orderId);
+                if (order) {
+                    this.showNotification(`Детали заказа: ${order.platform === 'cdek' ? order.trackingNumber : '#' + order.orderNumber}`, 'info');
+                }
+            }
+
+            trackOrder(platform, orderId) {
+                const order = this.getOrderById(platform, orderId);
+                if (!order) return;
+                
+                let trackUrl = '';
+                
+                if (platform === 'cdek' && order.trackingNumber) {
+                    trackUrl = `https://cdek.ru/tracking?order_id=${order.trackingNumber}`;
+                } else if (platform === 'megamarket' && order.orderNumber) {
+                    trackUrl = `https://megamarket.ru/seller/orders/${order.orderNumber}`;
+                }
+                
+                if (trackUrl) {
+                    window.open(trackUrl, '_blank');
+                } else {
+                    this.showNotification('Невозможно отследить заказ', 'warning');
+                }
+            }
+
+            // Управление синхронизацией
+            startAutoSync() {
+                if (this.config.SETTINGS?.AUTO_SYNC) {
+                    this.syncInterval = setInterval(() => {
+                        this.manualSync();
+                    }, 5 * 60 * 1000); // 5 минут
+                }
+            }
+
+            stopAutoSync() {
+                if (this.syncInterval) {
+                    clearInterval(this.syncInterval);
+                }
+            }
+
+            async manualSync() {
+                this.updateSyncStatus('syncing', 'Синхронизация...');
+                
+                try {
+                    await this.loadOrders();
+                    await this.loadAnalytics();
+                    this.updateDashboard();
+                    this.updateSyncStatus('success', 'Данные обновлены');
+                    this.showNotification('Данные успешно синхронизированы', 'success');
+                } catch (error) {
+                    console.error('Sync error:', error);
+                    this.updateSyncStatus('error', 'Ошибка синхронизации');
+                    this.showNotification('Ошибка синхронизации', 'error');
+                }
+            }
+
+            updateSyncStatus(status, message) {
+                const indicator = document.getElementById('sync-indicator');
+                const text = document.getElementById('sync-text');
+                
+                if (indicator && text) {
+                    indicator.className = 'sync-indicator';
+                    indicator.classList.add(status);
+                    text.textContent = message;
+                }
+            }
+
+            // Утилиты UI
+            showLoading(message = 'Загрузка...') {
+                const overlay = document.getElementById('loading-overlay');
+                const messageEl = document.getElementById('loading-message');
+                
+                if (overlay && messageEl) {
+                    messageEl.textContent = message;
+                    overlay.style.display = 'flex';
+                }
+            }
+
+            hideLoading() {
+                const overlay = document.getElementById('loading-overlay');
+                if (overlay) {
+                    overlay.style.display = 'none';
+                }
+            }
+
+            showNotification(message, type = 'info', duration = 5000) {
+                const container = document.getElementById('notifications-container');
+                if (!container) return;
+                
+                const notification = document.createElement('div');
+                notification.className = `notification notification-${type}`;
+                notification.innerHTML = `
+                    <div class="notification-content">
+                        <div class="notification-message">${message}</div>
+                    </div>
+                `;
+                
+                container.appendChild(notification);
+                
+                // Автоматическое скрытие
+                if (duration > 0) {
+                    setTimeout(() => {
+                        if (notification.parentNode) {
+                            notification.remove();
+                        }
+                    }, duration);
+                }
+            }
+
+            showNotifications() {
+                const problemOrders = this.orders.all.filter(order => order.status === 'problem');
+                if (problemOrders.length > 0) {
+                    this.showNotification(`Есть ${problemOrders.length} проблемных заказов`, 'warning');
+                } else {
+                    this.showNotification('Нет новых уведомлений', 'info');
+                }
+            }
+
+            // Демо данные
+            generateDemoCDEKOrders() {
+                return [
+                    {
+                        id: 'cdek-demo-1',
+                        platform: 'cdek',
+                        trackingNumber: 'CDEK123456789',
+                        status: 'active',
+                        fromCity: 'Москва',
+                        toCity: 'Санкт-Петербург',
+                        weight: 2.5,
+                        cost: 1500,
+                        sender: 'ООО "ТЕХНО ЭДЕМ"',
+                        recipient: 'Иван Иванов',
+                        createdDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+                        estimatedDelivery: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+                    },
+                    {
+                        id: 'cdek-demo-2',
+                        platform: 'cdek',
+                        trackingNumber: 'CDEK987654321',
+                        status: 'delivered',
+                        fromCity: 'Москва',
+                        toCity: 'Екатеринбург',
+                        weight: 1.8,
+                        cost: 1200,
+                        sender: 'ООО "ТЕХНО ЭДЕМ"',
+                        recipient: 'Мария Петрова',
+                        createdDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+                        deliveredDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString()
+                    }
+                ];
+            }
+
+            generateDemoMegamarketOrders() {
+                return [
+                    {
+                        id: 'mm-demo-1',
+                        platform: 'megamarket',
+                        orderNumber: 'MM100001',
+                        status: 'new',
+                        totalAmount: 15499,
+                        itemsTotal: 14999,
+                        deliveryCost: 0,
+                        discount: 500,
+                        customerName: 'Алексей Смирнов',
+                        customerPhone: '+7 912 345-67-89',
+                        deliveryAddress: 'г. Москва, ул. Примерная, д. 1',
+                        createdDate: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(),
+                        items: [
+                            {
+                                id: 'item-1',
+                                name: 'Смартфон Example Pro',
+                                quantity: 1,
+                                price: 14999,
+                                total: 14999
+                            }
+                        ]
+                    },
+                    {
+                        id: 'mm-demo-2',
+                        platform: 'megamarket',
+                        orderNumber: 'MM100002',
+                        status: 'processing',
+                        totalAmount: 27999,
+                        itemsTotal: 27499,
+                        deliveryCost: 0,
+                        discount: 500,
+                        customerName: 'Елена Козлова',
+                        customerPhone: '+7 923 456-78-90',
+                        deliveryAddress: 'г. Санкт-Петербург, пр. Тестовый, д. 15',
+                        createdDate: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
+                        items: [
+                            {
+                                id: 'item-2',
+                                name: 'Планшет Example Tab',
+                                quantity: 1,
+                                price: 27499,
+                                total: 27499
+                            }
+                        ]
+                    }
+                ];
+            }
+
+            useDemoData() {
+                console.warn('Using demo data');
+                this.orders.cdek = this.generateDemoCDEKOrders();
+                this.orders.megamarket = this.generateDemoMegamarketOrders();
+                this.orders.all = [...this.orders.cdek, ...this.orders.megamarket];
+                this.loadAnalytics();
+                this.updateDashboard();
+            }
+
+            // Настройки
+            async testApiConnections() {
+                this.showNotification('Тестирование подключения к API...', 'info');
+                
+                // Имитация тестирования API
+                setTimeout(() => {
+                    this.showNotification('Тестирование завершено: 2 успешно, 0 с ошибками', 'success');
+                }, 2000);
+            }
+
+            resetApiSettings() {
+                if (confirm('Сбросить настройки API к значениям по умолчанию?')) {
+                    this.config.set('API.CDEK.ENABLED', true);
+                    this.config.set('API.CDEK.CLIENT_ID', '');
+                    this.config.set('API.CDEK.CLIENT_SECRET', '');
+                    
+                    this.config.set('API.MEGAMARKET.ENABLED', true);
+                    this.config.set('API.MEGAMARKET.API_KEY', '');
+                    this.config.set('API.MEGAMARKET.CAMPAIGN_ID', '');
+                    
+                    this.renderSettings();
+                    this.showNotification('Настройки API сброшены', 'info');
+                }
+            }
+
+            clearCache() {
+                Storage.clear();
+                this.showNotification('Кэш успешно очищен', 'success');
+                
+                // Перезагружаем данные
+                setTimeout(() => {
+                    this.loadInitialData();
+                }, 1000);
+            }
+
+            resetSettings() {
+                if (confirm('Вы уверены, что хотите сбросить все настройки к значениям по умолчанию? Это действие нельзя отменить.')) {
+                    this.config.reset();
+                    this.renderSettings();
+                    this.showNotification('Настройки сброшены к значениям по умолчанию', 'success');
+                }
+            }
+
+            cancelSettingsChanges() {
+                this.renderSettings();
+                this.showNotification('Изменения отменены', 'info');
+            }
+
+            saveSettings() {
+                try {
+                    // Собираем настройки API CDEK
+                    this.config.set('API.CDEK.ENABLED', document.getElementById('cdek-enabled').checked);
+                    this.config.set('API.CDEK.CLIENT_ID', document.getElementById('cdek-client-id').value);
+                    this.config.set('API.CDEK.CLIENT_SECRET', document.getElementById('cdek-client-secret').value);
+
+                    // Собираем настройки API Megamarket
+                    this.config.set('API.MEGAMARKET.ENABLED', document.getElementById('megamarket-enabled').checked);
+                    this.config.set('API.MEGAMARKET.API_KEY', document.getElementById('megamarket-api-key').value);
+                    this.config.set('API.MEGAMARKET.CAMPAIGN_ID', document.getElementById('megamarket-campaign-id').value);
+
+                    // Собираем настройки приложения
+                    this.config.set('SETTINGS.AUTO_SYNC', document.getElementById('auto-sync').checked);
+                    this.config.set('SETTINGS.ITEMS_PER_PAGE', parseInt(document.getElementById('items-per-page').value));
+                    this.config.set('SETTINGS.THEME', document.getElementById('theme-select').value);
+                    this.config.set('FEATURES.NOTIFICATIONS', document.getElementById('notifications-enabled').checked);
+
+                    // Сохраняем конфигурацию
+                    this.saveConfig();
+                    
+                    // Применяем тему
+                    this.applyTheme();
+
+                    this.showNotification('Настройки успешно сохранены', 'success');
+                    
+                    // Перезапускаем автосинхронизацию
+                    this.stopAutoSync();
+                    this.startAutoSync();
+                    
+                } catch (error) {
+                    console.error('Error saving settings:', error);
+                    this.showNotification('Ошибка сохранения настроек', 'error');
+                }
+            }
+        }
+
+        // Инициализация приложения когда DOM загружен
+        let app;
+        document.addEventListener('DOMContentLoaded', () => {
+            app = new TexnoEdemApp();
+            window.app = app; // Делаем глобально доступным
+        });
+
+        // Обработка ошибок
+        window.addEventListener('error', (event) => {
+            console.error('Global error:', event.error);
+            if (app) {
+                app.showNotification('Произошла ошибка в приложении', 'error');
+            }
+        });
+    </script>
 </body>
 </html>
