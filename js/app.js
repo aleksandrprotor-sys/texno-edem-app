@@ -1,4 +1,4 @@
-// app.js - ПОЛНОЦЕННАЯ ВЕРСИЯ ДЛЯ TEXNO EDEM BUSINESS INTELLIGENCE
+// app.js - ПОЛНЫЙ КОД TEXNO EDEM BUSINESS INTELLIGENCE
 class TexnoEdemApp {
     constructor() {
         this.currentSection = 'dashboard';
@@ -6,14 +6,19 @@ class TexnoEdemApp {
         this.orders = [];
         this.analyticsData = null;
         this.settings = {};
+        this.config = {};
         this.isLoading = false;
         
         this.components = {
             orders: null,
             analytics: null,
             settings: null,
-            modal: null
+            modal: null,
+            notifications: null
         };
+
+        this.syncManager = null;
+        this.tg = null;
 
         this.init();
     }
@@ -101,22 +106,7 @@ class TexnoEdemApp {
         try {
             // Загрузка конфигурации из localStorage или использование значений по умолчанию
             const savedConfig = localStorage.getItem('texno_edem_config');
-            this.config = savedConfig ? JSON.parse(savedConfig) : {
-                api: {
-                    cdek: { enabled: true, apiKey: '' },
-                    megamarket: { enabled: true, apiKey: '' }
-                },
-                sync: {
-                    autoSync: true,
-                    syncInterval: 300000 // 5 минут
-                },
-                notifications: {
-                    enabled: true,
-                    sound: true,
-                    vibration: true
-                },
-                theme: 'auto'
-            };
+            this.config = savedConfig ? JSON.parse(savedConfig) : this.getDefaultConfig();
             
             console.log('✅ Конфигурация загружена');
         } catch (error) {
@@ -133,7 +123,7 @@ class TexnoEdemApp {
             },
             sync: {
                 autoSync: true,
-                syncInterval: 300000
+                syncInterval: 300000 // 5 минут
             },
             notifications: {
                 enabled: true,
@@ -233,50 +223,26 @@ class TexnoEdemApp {
             } else {
                 console.warn('ModalComponent не найден');
             }
-            
-// Инициализация компонента уведомлений
-        if (typeof NotificationsComponent !== 'undefined') {
-            this.components.notifications = new NotificationsComponent(this);
-        } else {
-            console.warn('NotificationsComponent не найден');
+
+            // Инициализация компонента уведомлений
+            if (typeof NotificationsComponent !== 'undefined') {
+                this.components.notifications = new NotificationsComponent(this);
+            } else {
+                console.warn('NotificationsComponent не найден');
+            }
+
+            // Инициализация менеджера синхронизации
+            if (typeof SyncManager !== 'undefined') {
+                this.syncManager = new SyncManager(this);
+            } else {
+                console.warn('SyncManager не найден');
+            }
+
+            console.log('✅ Все компоненты инициализированы');
+        } catch (error) {
+            console.error('Ошибка инициализации компонентов:', error);
         }
-
-        // Инициализация менеджера синхронизации
-        if (typeof SyncManager !== 'undefined') {
-            this.syncManager = new SyncManager(this);
-        } else {
-            console.warn('SyncManager не найден');
-        }
-
-        console.log('✅ Все компоненты инициализированы');
-    } catch (error) {
-        console.error('Ошибка инициализации компонентов:', error);
     }
-}
-
-// Добавим методы для работы с новыми компонентами
-getSyncManager() {
-    return this.syncManager;
-}
-
-getNotificationsComponent() {
-    return this.components.notifications;
-}
-
-// В метод manualSync() добавить использование SyncManager
-async manualSync() {
-    if (this.syncManager) {
-        await this.syncManager.forceSync();
-    } else {
-        // Fallback реализация
-        this.showLoading('Синхронизация данных...');
-        await this.delay(2000);
-        await this.loadDashboardData();
-        await this.loadOrders();
-        this.hideLoading();
-        this.showNotification('Синхронизация завершена', 'success');
-    }
-}
 
     async loadInitialData() {
         this.showLoading('Загрузка начальных данных...');
@@ -725,27 +691,31 @@ async manualSync() {
     }
 
     async manualSync() {
-        this.showLoading('Синхронизация данных...');
-        
-        try {
-            // Имитация синхронизации
-            await this.delay(2000);
+        if (this.syncManager) {
+            await this.syncManager.forceSync();
+        } else {
+            // Fallback реализация
+            this.showLoading('Синхронизация данных...');
             
-            // Обновление статуса синхронизации
-            this.updateSyncStatus('success', 'Данные обновлены');
-            
-            // Перезагрузка данных
-            await this.loadDashboardData();
-            await this.loadOrders();
-            
-            this.showNotification('Синхронизация завершена успешно', 'success');
-            
-        } catch (error) {
-            this.updateSyncStatus('error', 'Ошибка синхронизации');
-            this.showNotification('Ошибка синхронизации', 'error');
-            console.error('Ошибка синхронизации:', error);
-        } finally {
-            this.hideLoading();
+            try {
+                await this.delay(2000);
+                
+                // Обновление статуса синхронизации
+                this.updateSyncStatus('success', 'Данные обновлены');
+                
+                // Перезагрузка данных
+                await this.loadDashboardData();
+                await this.loadOrders();
+                
+                this.showNotification('Синхронизация завершена успешно', 'success');
+                
+            } catch (error) {
+                this.updateSyncStatus('error', 'Ошибка синхронизации');
+                this.showNotification('Ошибка синхронизации', 'error');
+                console.error('Ошибка синхронизации:', error);
+            } finally {
+                this.hideLoading();
+            }
         }
     }
 
@@ -785,8 +755,11 @@ async manualSync() {
     }
 
     showNotifications() {
-        // Временная реализация - можно расширить полноценным компонентом уведомлений
-        this.showNotification('У вас нет новых уведомлений', 'info');
+        if (this.components.notifications) {
+            this.components.notifications.showNotificationsPanel();
+        } else {
+            this.showNotification('У вас нет новых уведомлений', 'info');
+        }
     }
 
     showOrderDetails(orderId) {
@@ -820,7 +793,17 @@ async manualSync() {
     showNotification(message, type = 'info') {
         console.log(`Уведомление [${type}]: ${message}`);
         
-        // Создаем временное уведомление
+        // Показываем toast через компонент уведомлений если доступен
+        if (this.components.notifications) {
+            this.components.notifications.addNotification({
+                type: type,
+                title: this.getNotificationTitle(type),
+                message: message
+            });
+            return;
+        }
+        
+        // Fallback: создаем временное уведомление
         const notification = document.createElement('div');
         notification.className = `notification notification-${type}`;
         notification.innerHTML = `
@@ -828,6 +811,21 @@ async manualSync() {
                 <i class="fas ${this.getNotificationIcon(type)}"></i>
                 <span>${message}</span>
             </div>
+        `;
+        
+        // Стили для fallback уведомления
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--bg-primary);
+            border-left: 4px solid ${this.getNotificationColor(type)};
+            padding: 16px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 1200;
+            max-width: 300px;
+            animation: slideInRight 0.3s ease;
         `;
         
         document.body.appendChild(notification);
@@ -848,6 +846,26 @@ async manualSync() {
             'error': 'fa-exclamation-circle'
         };
         return icons[type] || 'fa-info-circle';
+    }
+
+    getNotificationColor(type) {
+        const colors = {
+            'info': 'var(--info)',
+            'success': 'var(--success)',
+            'warning': 'var(--warning)',
+            'error': 'var(--danger)'
+        };
+        return colors[type] || 'var(--info)';
+    }
+
+    getNotificationTitle(type) {
+        const titles = {
+            'info': 'Информация',
+            'success': 'Успех',
+            'warning': 'Предупреждение',
+            'error': 'Ошибка'
+        };
+        return titles[type] || 'Уведомление';
     }
 
     formatCurrency(amount, currency = 'RUB') {
@@ -941,6 +959,14 @@ async manualSync() {
     getSettings() {
         return this.settings;
     }
+
+    getSyncManager() {
+        return this.syncManager;
+    }
+
+    getNotificationsComponent() {
+        return this.components.notifications;
+    }
 }
 
 // ГЛОБАЛЬНАЯ ИНИЦИАЛИЗАЦИЯ
@@ -962,7 +988,16 @@ document.addEventListener('DOMContentLoaded', async function() {
             <div style="padding: 20px; text-align: center; font-family: sans-serif;">
                 <h1>😕 TEXNO EDEM</h1>
                 <p>Произошла ошибка при загрузке приложения</p>
-                <button onclick="location.reload()">Перезагрузить</button>
+                <p style="color: #666; font-size: 14px; margin: 10px 0;">${error.message}</p>
+                <button onclick="location.reload()" style="
+                    background: #2c3e50;
+                    color: white;
+                    border: none;
+                    padding: 10px 20px;
+                    border-radius: 5px;
+                    cursor: pointer;
+                    margin: 10px;
+                ">Перезагрузить</button>
             </div>
         `;
     }
@@ -998,7 +1033,39 @@ window.manualSync = function() {
     }
 };
 
+window.showOrderDetails = function(orderId) {
+    if (app) {
+        app.showOrderDetails(orderId);
+    }
+};
+
 // Fallback для совместимости
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = TexnoEdemApp;
 }
+
+// CSS анимации для fallback уведомлений
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideInRight {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+    
+    .notification-content {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .notification-content i {
+        font-size: 18px;
+    }
+`;
+document.head.appendChild(style);
