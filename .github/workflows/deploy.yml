@@ -16,7 +16,7 @@ jobs:
     concurrency:
       group: ${{ github.workflow }}-${{ github.ref }}
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
         
       - name: Setup Pages
@@ -30,7 +30,7 @@ jobs:
           # Создаем индексный файл если его нет
           if [ ! -f "index.html" ]; then
             echo "Creating basic index.html"
-            cat > index.html << EOF
+            cat > index.html << 'EOF'
 <!DOCTYPE html>
 <html>
 <head>
