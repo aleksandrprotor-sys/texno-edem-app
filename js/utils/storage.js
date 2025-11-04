@@ -1,20 +1,9 @@
-// js/utils/storage.js - Улучшенное управление хранилищем
-class StorageManager {
-    constructor() {
-        this.prefix = 'texno_edem_';
-        this.encryptionKey = null;
-    }
-
-    set(key, value, ttl = null) {
+// Утилиты для работы с localStorage
+class Storage {
+    static set(key, value) {
         try {
-            const item = {
-                value,
-                timestamp: Date.now(),
-                ttl
-            };
-            
-            const storageKey = this.prefix + key;
-            localStorage.setItem(storageKey, JSON.stringify(item));
+            const serializedValue = JSON.stringify(value);
+            localStorage.setItem(`texno_edem_${key}`, serializedValue);
             return true;
         } catch (error) {
             console.error('Storage set error:', error);
@@ -22,32 +11,20 @@ class StorageManager {
         }
     }
 
-    get(key, defaultValue = null) {
+    static get(key, defaultValue = null) {
         try {
-            const storageKey = this.prefix + key;
-            const item = localStorage.getItem(storageKey);
-            
-            if (!item) return defaultValue;
-            
-            const parsed = JSON.parse(item);
-            
-            // Проверяем TTL
-            if (parsed.ttl && Date.now() - parsed.timestamp > parsed.ttl) {
-                this.remove(key);
-                return defaultValue;
-            }
-            
-            return parsed.value;
+            const item = localStorage.getItem(`texno_edem_${key}`);
+            if (item === null) return defaultValue;
+            return JSON.parse(item);
         } catch (error) {
             console.error('Storage get error:', error);
             return defaultValue;
         }
     }
 
-    remove(key) {
+    static remove(key) {
         try {
-            const storageKey = this.prefix + key;
-            localStorage.removeItem(storageKey);
+            localStorage.removeItem(`texno_edem_${key}`);
             return true;
         } catch (error) {
             console.error('Storage remove error:', error);
@@ -55,21 +32,18 @@ class StorageManager {
         }
     }
 
-    clear() {
+    static clear() {
         try {
+            // Удаляем только ключи приложения
             const keysToRemove = [];
-            
             for (let i = 0; i < localStorage.length; i++) {
                 const key = localStorage.key(i);
-                if (key.startsWith(this.prefix)) {
+                if (key && key.startsWith('texno_edem_')) {
                     keysToRemove.push(key);
                 }
             }
             
-            keysToRemove.forEach(key => {
-                localStorage.removeItem(key);
-            });
-            
+            keysToRemove.forEach(key => localStorage.removeItem(key));
             return true;
         } catch (error) {
             console.error('Storage clear error:', error);
@@ -77,53 +51,77 @@ class StorageManager {
         }
     }
 
-    getSize() {
-        let total = 0;
-        
-        for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            if (key.startsWith(this.prefix)) {
-                const value = localStorage.getItem(key);
-                total += key.length + value.length;
+    static getAll() {
+        const result = {};
+        try {
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key && key.startsWith('texno_edem_')) {
+                    const cleanKey = key.replace('texno_edem_', '');
+                    result[cleanKey] = this.get(cleanKey);
+                }
             }
+        } catch (error) {
+            console.error('Storage getAll error:', error);
         }
-        
+        return result;
+    }
+
+    static getSize() {
+        let total = 0;
+        try {
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key && key.startsWith('texno_edem_')) {
+                    const value = localStorage.getItem(key);
+                    total += key.length + (value ? value.length : 0);
+                }
+            }
+        } catch (error) {
+            console.error('Storage getSize error:', error);
+        }
         return total;
     }
 
-    // Методы для работы с разными типами данных
-    setObject(key, value, ttl = null) {
-        return this.set(key, value, ttl);
+    // Специфичные методы для приложения
+    static getOrders(platform = 'all') {
+        const key = platform === 'all' ? 'orders' : `orders_${platform}`;
+        return this.get(key, []);
     }
 
-    getObject(key, defaultValue = null) {
-        return this.get(key, defaultValue);
+    static setOrders(orders, platform = 'all') {
+        const key = platform === 'all' ? 'orders' : `orders_${platform}`;
+        return this.set(key, orders);
     }
 
-    setArray(key, value, ttl = null) {
-        return this.set(key, value, ttl);
+    static getConfig() {
+        return this.get('config', new AppConfig());
     }
 
-    getArray(key, defaultValue = []) {
-        return this.get(key, defaultValue);
+    static setConfig(config) {
+        return this.set('config', config);
     }
 
-    // Миграция данных
-    migrate(fromKey, toKey) {
-        const value = this.get(fromKey);
-        if (value !== null) {
-            this.set(toKey, value);
-            this.remove(fromKey);
-            return true;
-        }
-        return false;
+    static getLastSync() {
+        return this.get('last_sync', null);
+    }
+
+    static setLastSync(timestamp = null) {
+        return this.set('last_sync', timestamp || new Date().toISOString());
+    }
+
+    static getSyncState() {
+        return this.get('sync_state', {
+            lastSuccess: null,
+            lastError: null,
+            inProgress: false
+        });
+    }
+
+    static setSyncState(state) {
+        return this.set('sync_state', state);
     }
 }
-
-// Создаем глобальный экземпляр
-const Storage = new StorageManager();
 
 // Экспорт для использования в других модулях
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { StorageManager, Storage };
-}
+window.Storage = Storage;
