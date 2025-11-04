@@ -1,10 +1,16 @@
-/* css/telegram.css - Стили для Telegram Mini Apps */
+/* css/telegram.css - Улучшенные стили для Telegram Mini Apps */
 
 /* ===== БАЗОВЫЕ СТИЛИ ДЛЯ TELEGRAM ===== */
 .tg-theme {
     /* Используем переменные Telegram для согласованности */
     background-color: var(--tg-theme-bg-color, var(--white));
     color: var(--tg-theme-text-color, var(--gray-900));
+}
+
+.tg-theme-aware {
+    background: var(--tg-theme-bg-color, var(--white));
+    color: var(--tg-theme-text-color, var(--gray-900));
+    transition: all 0.3s ease;
 }
 
 /* Стили для хедера в Telegram */
@@ -14,28 +20,37 @@
     border-bottom: 1px solid var(--tg-theme-secondary-bg-color, var(--primary-light));
 }
 
+/* Стили для навигации в Telegram */
+.tg-nav {
+    background: var(--tg-theme-bg-color, var(--white));
+    border-bottom: 1px solid var(--tg-theme-secondary-bg-color, var(--gray-200));
+}
+
+.tg-nav-item {
+    color: var(--tg-theme-text-color, var(--gray-700));
+    transition: all 0.2s ease;
+}
+
+.tg-nav-item.active {
+    color: var(--tg-theme-button-color, var(--primary));
+    border-bottom-color: var(--tg-theme-button-color, var(--primary));
+    background: color-mix(in srgb, var(--tg-theme-button-color, var(--primary)) 5%, transparent);
+}
+
 /* Стили для кнопок в Telegram */
 .tg-button {
     background: var(--tg-theme-button-color, var(--primary));
     color: var(--tg-theme-button-text-color, var(--white));
     border: none;
+    transition: all 0.2s ease;
 }
 
 .tg-button:hover {
     background: var(--tg-theme-button-color, var(--primary-dark));
     opacity: 0.9;
+    transform: translateY(-1px);
 }
 
-/* ===== АДАПТАЦИЯ ПОД TELEGRAM VIEWPORT ===== */
-.tg-viewport {
-    /* Учитываем безопасные зоны на разных устройствах */
-    padding-top: env(safe-area-inset-top);
-    padding-bottom: env(safe-area-inset-bottom);
-    padding-left: env(safe-area-inset-left);
-    padding-right: env(safe-area-inset-right);
-}
-
-/* ===== СТИЛИ ДЛЯ TELEGRAM КНОПОК ===== */
 .tg-main-button {
     background: var(--tg-theme-button-color, var(--primary));
     color: var(--tg-theme-button-text-color, var(--white));
@@ -62,23 +77,80 @@
     cursor: pointer;
 }
 
-/* ===== СПЕЦИАЛЬНЫЕ СТИЛИ ДЛЯ TELEGRAM ===== */
-/* Улучшаем скролл в Telegram Web App */
-.tg-scroll {
-    -webkit-overflow-scrolling: touch;
-    scroll-behavior: smooth;
+/* ===== АДАПТАЦИЯ ПОД TELEGRAM VIEWPORT ===== */
+.tg-viewport {
+    /* Учитываем безопасные зоны на разных устройствах */
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+    min-height: 100vh;
+    min-height: 100dvh; /* Новые единицы для динамического viewport */
 }
 
-/* Стили для уведомлений в Telegram */
+.tg-viewport-optimized {
+    min-height: 100vh;
+    min-height: 100dvh;
+    max-width: 100vw;
+    overflow-x: hidden;
+}
+
+.tg-safe-area {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: max(env(safe-area-inset-left), 20px);
+    padding-right: max(env(safe-area-inset-right), 20px);
+}
+
+/* ===== КОМПОНЕНТЫ ДЛЯ TELEGRAM ===== */
+.tg-card {
+    background: var(--tg-theme-bg-color, var(--white));
+    border: 1px solid var(--tg-theme-secondary-bg-color, var(--gray-200));
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: all 0.2s ease;
+}
+
+.tg-card:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+}
+
+/* Уведомления в Telegram */
 .tg-notification {
     background: var(--tg-theme-bg-color, var(--white));
     color: var(--tg-theme-text-color, var(--gray-900));
     border: 1px solid var(--tg-theme-secondary-bg-color, var(--gray-200));
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
+    border-left: 4px solid var(--tg-theme-button-color, var(--primary));
 }
 
-/* Анимации для Telegram */
+.tg-alert {
+    background: var(--tg-theme-bg-color, var(--white));
+    color: var(--tg-theme-text-color, var(--gray-900));
+    border-left: 4px solid var(--tg-theme-button-color, var(--primary));
+}
+
+/* ===== ФОРМЫ ДЛЯ TELEGRAM ===== */
+.tg-input {
+    background: var(--tg-theme-secondary-bg-color, var(--gray-50));
+    color: var(--tg-theme-text-color, var(--gray-900));
+    border: 1px solid var(--tg-theme-hint-color, var(--gray-300));
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 16px; /* Предотвращает zoom в iOS */
+    transition: all 0.2s ease;
+    width: 100%;
+}
+
+.tg-input:focus {
+    border-color: var(--tg-theme-button-color, var(--primary));
+    outline: none;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--tg-theme-button-color, var(--primary)) 20%, transparent);
+}
+
+/* ===== АНИМАЦИИ ДЛЯ TELEGRAM ===== */
 .tg-slide-in {
     animation: tgSlideIn 0.3s ease-out;
 }
@@ -109,126 +181,40 @@
     }
 }
 
+.tg-fade-in {
+    animation: tgFadeIn 0.3s ease-out;
+}
+
+@keyframes tgFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
 /* ===== ОПТИМИЗАЦИЯ ДЛЯ TELEGRAM ===== */
-/* Убираем выделение при долгом нажатии */
 .tg-no-select {
     -webkit-touch-callout: none;
     -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
     user-select: none;
+}
+
+.tg-tap-effect:active {
+    transform: scale(0.98);
+    opacity: 0.8;
+    transition: transform 0.1s ease;
+}
+
+.tg-scroll {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
 }
 
 /* Улучшаем responsiveness в Telegram */
 .tg-responsive-image {
     max-width: 100%;
     height: auto;
-}
-
-/* Стили для форм в Telegram */
-.tg-input {
-    background: var(--tg-theme-secondary-bg-color, var(--gray-50));
-    color: var(--tg-theme-text-color, var(--gray-900));
-    border: 1px solid var(--tg-theme-hint-color, var(--gray-300));
-    border-radius: 8px;
-    padding: 12px;
-    font-size: 16px; /* Предотвращает zoom в iOS */
-}
-
-.tg-input:focus {
-    border-color: var(--tg-theme-button-color, var(--primary));
-    outline: none;
-}
-
-/* ===== ТЕМНАЯ ТЕМА ДЛЯ TELEGRAM ===== */
-[data-theme="dark"] .tg-theme {
-    background: var(--tg-theme-bg-color, #1c1c1c);
-    color: var(--tg-theme-text-color, #ffffff);
-}
-
-[data-theme="dark"] .tg-input {
-    background: var(--tg-theme-secondary-bg-color, #2d2d2d);
-    color: var(--tg-theme-text-color, #ffffff);
-    border-color: var(--tg-theme-hint-color, #555555);
-}
-
-/* ===== СПЕЦИАЛЬНЫЕ КЛАССЫ ДЛЯ TELEGRAM ===== */
-/* Класс для скрытия элементов в Telegram */
-.tg-hidden {
-    display: none !important;
-}
-
-/* Класс для показа элементов только в Telegram */
-.tg-only {
-    display: block !important;
-}
-
-/* Безопасные зоны для iPhone X и новее */
-.tg-safe-area {
-    padding-top: constant(safe-area-inset-top);
-    padding-top: env(safe-area-inset-top);
-    padding-bottom: constant(safe-area-inset-bottom);
-    padding-bottom: env(safe-area-inset-bottom);
-    padding-left: constant(safe-area-inset-left);
-    padding-left: env(safe-area-inset-left);
-    padding-right: constant(safe-area-inset-right);
-    padding-right: env(safe-area-inset-right);
-}
-
-/* ===== АДАПТАЦИЯ КОМПОНЕНТОВ ДЛЯ TELEGRAM ===== */
-/* Навигация в Telegram */
-.tg-nav {
-    background: var(--tg-theme-bg-color, var(--white));
-    border-bottom: 1px solid var(--tg-theme-secondary-bg-color, var(--gray-200));
-}
-
-.tg-nav-item {
-    color: var(--tg-theme-text-color, var(--gray-700));
-}
-
-.tg-nav-item.active {
-    color: var(--tg-theme-button-color, var(--primary));
-    border-bottom-color: var(--tg-theme-button-color, var(--primary));
-}
-
-/* Карточки в Telegram */
-.tg-card {
-    background: var(--tg-theme-bg-color, var(--white));
-    border: 1px solid var(--tg-theme-secondary-bg-color, var(--gray-200));
-    border-radius: 12px;
-}
-
-/* Уведомления в Telegram */
-.tg-alert {
-    background: var(--tg-theme-bg-color, var(--white));
-    color: var(--tg-theme-text-color, var(--gray-900));
-    border-left: 4px solid var(--tg-theme-button-color, var(--primary));
-}
-
-/* ===== МЕДИА-ЗАПРОСЫ ДЛЯ TELEGRAM ===== */
-/* Маленькие экраны в Telegram */
-@media (max-width: 360px) {
-    .tg-compact {
-        padding: 8px;
-    }
-    
-    .tg-compact .btn {
-        padding: 10px 12px;
-        font-size: 14px;
-    }
-}
-
-/* Планшеты в Telegram */
-@media (min-width: 768px) and (max-width: 1024px) {
-    .tg-tablet-optimized {
-        max-width: 600px;
-        margin: 0 auto;
-    }
-}
-
-/* ===== СПЕЦИАЛЬНЫЕ ЭФФЕКТЫ ДЛЯ TELEGRAM ===== */
-/* Эффект при нажатии в Telegram */
-.tg-tap-effect:active {
-    transform: scale(0.98);
-    opacity: 0.8;
 }
 
 /* Анимация загрузки для Telegram */
@@ -248,7 +234,32 @@
     }
 }
 
-/* ===== УТИЛИТЫ ДЛЯ TELEGRAM ===== */
+/* ===== ТЕМНАЯ ТЕМА ДЛЯ TELEGRAM ===== */
+[data-theme="dark"] .tg-theme {
+    background: var(--tg-theme-bg-color, #1c1c1c);
+    color: var(--tg-theme-text-color, #ffffff);
+}
+
+[data-theme="dark"] .tg-input {
+    background: var(--tg-theme-secondary-bg-color, #2d2d2d);
+    color: var(--tg-theme-text-color, #ffffff);
+    border-color: var(--tg-theme-hint-color, #555555);
+}
+
+[data-theme="dark"] .tg-card {
+    background: var(--tg-theme-bg-color, #1c1c1c);
+    border-color: var(--tg-theme-secondary-bg-color, #2d2d2d);
+}
+
+/* ===== СПЕЦИАЛЬНЫЕ КЛАССЫ ДЛЯ TELEGRAM ===== */
+.tg-hidden {
+    display: none !important;
+}
+
+.tg-only {
+    display: block !important;
+}
+
 .tg-text-muted {
     color: var(--tg-theme-hint-color, var(--gray-500));
 }
@@ -283,30 +294,64 @@
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
 }
 
-/* В telegram.css добавить */
-.tg-haptic-feedback:active {
-    background: var(--tg-theme-secondary-bg-color, #f0f0f0);
+/* ===== МЕДИА-ЗАПРОСЫ ДЛЯ TELEGRAM ===== */
+/* Маленькие экраны в Telegram */
+@media (max-width: 360px) {
+    .tg-compact {
+        padding: 8px;
+    }
+    
+    .tg-compact .btn {
+        padding: 10px 12px;
+        font-size: 14px;
+    }
 }
 
-.tg-main-button-pulse {
-    animation: tgPulse 2s infinite;
+/* Планшеты в Telegram */
+@media (min-width: 768px) and (max-width: 1024px) {
+    .tg-tablet-optimized {
+        max-width: 600px;
+        margin: 0 auto;
+    }
 }
 
-@keyframes tgPulse {
-    0% { box-shadow: 0 0 0 0 rgba(var(--tg-theme-button-color-rgb), 0.4); }
-    70% { box-shadow: 0 0 0 10px rgba(var(--tg-theme-button-color-rgb), 0); }
-    100% { box-shadow: 0 0 0 0 rgba(var(--tg-theme-button-color-rgb), 0); }
+/* Высокие экраны */
+@media (min-height: 1000px) {
+    .tg-tall-optimized {
+        padding-top: 40px;
+        padding-bottom: 40px;
+    }
 }
 
-/* Добавить в telegram.css */
-.tg-viewport-optimized {
-    min-height: 100vh;
-    min-height: 100dvh; /* Новые единицы */
+/* ===== HAPTIC FEEDBACK SIMULATION ===== */
+.tg-haptic:active {
+    background-color: color-mix(in srgb, currentColor 10%, transparent);
 }
 
-/* Улучшить поддержку темной темы */
-.tg-theme-aware {
-    background: var(--tg-theme-bg-color, var(--white));
-    color: var(--tg-theme-text-color, var(--gray-900));
-    transition: all 0.3s ease;
+/* ===== IMPROVED PERFORMANCE ===== */
+.tg-will-change {
+    will-change: transform, opacity;
+}
+
+.tg-transform-layer {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+}
+
+/* ===== ACCESSIBILITY ===== */
+.tg-focus-visible:focus-visible {
+    outline: 2px solid var(--tg-theme-button-color, var(--primary));
+    outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .tg-slide-in,
+    .tg-slide-out,
+    .tg-fade-in {
+        animation: none;
+    }
+    
+    .tg-tap-effect:active {
+        transform: none;
+    }
 }
