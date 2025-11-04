@@ -949,3 +949,6 @@ document.addEventListener('DOMContentLoaded', () => {
     console.error('Ошибка инициализации приложения', err);
   }
 });
+
+// Созданием глобальной переменной
+window.app = null; // перед этим
