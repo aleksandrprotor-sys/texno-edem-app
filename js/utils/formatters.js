@@ -1,4 +1,4 @@
-// js/utils/formatters.js - Утилиты форматирования для TEXNO EDEM
+// Утилиты форматирования для TEXNO EDEM
 
 // Форматирование валюты
 function formatCurrency(amount, currency = 'RUB') {
@@ -65,16 +65,15 @@ function formatRelativeTime(dateString) {
         
         const now = new Date();
         const diffMs = now - date;
-        const diffMins = Math.floor(diffMs / (1000 * 60));
-        const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-        const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+        const diffMins = Math.floor(diffMs / 60000);
+        const diffHours = Math.floor(diffMs / 3600000);
+        const diffDays = Math.floor(diffMs / 86400000);
         
         if (diffMins < 1) return 'только что';
-        if (diffMins < 60) return `${diffMins} мин. назад`;
-        if (diffHours < 24) return `${diffHours} ч. назад`;
+        if (diffMins < 60) return `${diffMins} мин назад`;
+        if (diffHours < 24) return `${diffHours} ч назад`;
         if (diffDays === 1) return 'вчера';
-        if (diffDays < 7) return `${diffDays} дн. назад`;
-        if (diffDays < 30) return `${Math.floor(diffDays / 7)} нед. назад`;
+        if (diffDays < 7) return `${diffDays} дн назад`;
         
         return formatDate(dateString);
     } catch (error) {
@@ -84,203 +83,102 @@ function formatRelativeTime(dateString) {
 }
 
 // Форматирование веса
-function formatWeight(grams, unit = 'kg') {
-    if (grams === null || grams === undefined || isNaN(grams)) return '-';
+function formatWeight(weight, unit = 'kg') {
+    if (weight === null || weight === undefined || isNaN(weight)) return '-';
     
     if (unit === 'kg') {
-        return `${(grams / 1000).toFixed(2)} кг`;
+        return `${parseFloat(weight).toFixed(1)} кг`;
+    } else if (unit === 'g') {
+        return `${Math.round(weight)} г`;
     }
-    return `${grams} г`;
+    
+    return `${weight} ${unit}`;
 }
 
-// Форматирование номера телефона
+// Форматирование телефона
 function formatPhone(phone) {
     if (!phone) return '-';
     
-    try {
-        const cleaned = phone.replace(/\D/g, '');
-        const match = cleaned.match(/^(\d{1})(\d{3})(\d{3})(\d{2})(\d{2})$/);
-        
-        if (match) {
-            return `+${match[1]} (${match[2]}) ${match[3]}-${match[4]}-${match[5]}`;
-        }
-        
-        return phone;
-    } catch (error) {
-        console.error('Error formatting phone:', error);
-        return phone;
+    const cleaned = phone.replace(/\D/g, '');
+    
+    if (cleaned.length === 11 && cleaned.startsWith('7')) {
+        return `+7 (${cleaned.substring(1, 4)}) ${cleaned.substring(4, 7)}-${cleaned.substring(7, 9)}-${cleaned.substring(9)}`;
+    } else if (cleaned.length === 10) {
+        return `+7 (${cleaned.substring(0, 3)}) ${cleaned.substring(3, 6)}-${cleaned.substring(6, 8)}-${cleaned.substring(8)}`;
     }
-}
-
-// Сокращение больших чисел
-function formatNumber(num) {
-    if (num === null || num === undefined || isNaN(num)) return '0';
     
-    if (num < 1000) return num.toString();
-    if (num < 1000000) return `${(num / 1000).toFixed(1)}K`;
-    if (num < 1000000000) return `${(num / 1000000).toFixed(1)}M`;
-    return `${(num / 1000000000).toFixed(1)}B`;
-}
-
-// Форматирование процентов
-function formatPercent(value, decimals = 1) {
-    if (value === null || value === undefined || isNaN(value)) return '0%';
-    
-    return `${Math.max(0, Math.min(100, value)).toFixed(decimals)}%`;
-}
-
-// Форматирование длительности
-function formatDuration(minutes) {
-    if (minutes === null || minutes === undefined || isNaN(minutes)) return '-';
-    
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    
-    if (hours > 0) {
-        return `${hours} ч ${mins} мин`;
-    }
-    return `${mins} мин`;
+    return phone;
 }
 
 // Форматирование статуса заказа
-function formatOrderStatus(status, platform = 'cdek') {
+function formatOrderStatus(status, platform = '') {
     const statusMap = {
-        cdek: {
-            'new': 'Новый',
-            'processing': 'В обработке',
-            'active': 'Активный',
-            'delivered': 'Доставлен',
-            'problem': 'Проблема',
-            'cancelled': 'Отменен'
-        },
-        megamarket: {
-            'new': 'Новый',
-            'confirmed': 'Подтвержден',
-            'packed': 'Упакован',
-            'shipped': 'Отправлен',
-            'delivered': 'Доставлен',
-            'cancelled': 'Отменен',
-            'problem': 'Проблема'
-        }
+        'new': { text: 'Новый', color: '#3498db', icon: 'clock' },
+        'processing': { text: 'В обработке', color: '#f39c12', icon: 'sync' },
+        'active': { text: 'Активный', color: '#9b59b6', icon: 'shipping-fast' },
+        'delivered': { text: 'Доставлен', color: '#27ae60', icon: 'check' },
+        'problem': { text: 'Проблема', color: '#e74c3c', icon: 'exclamation-triangle' },
+        'cancelled': { text: 'Отменен', color: '#95a5a6', icon: 'times' }
     };
     
-    const platformMap = statusMap[platform] || statusMap.cdek;
-    return platformMap[status] || status;
+    const config = statusMap[status] || statusMap.new;
+    
+    if (platform === 'cdek') {
+        const cdekStatusMap = {
+            'active': { text: 'В пути', color: '#9b59b6' },
+            'delivered': { text: 'Доставлен', color: '#27ae60' }
+        };
+        Object.assign(config, cdekStatusMap[status] || {});
+    }
+    
+    return config;
 }
 
 // Форматирование платформы
 function formatPlatform(platform) {
     const platformMap = {
         'cdek': 'CDEK',
-        'megamarket': 'Мегамаркет'
+        'megamarket': 'Мегамаркет',
+        'all': 'Все платформы'
     };
     
     return platformMap[platform] || platform;
 }
 
-// Экранирование HTML
-function escapeHtml(unsafe) {
-    if (!unsafe) return '';
-    
-    return unsafe
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
-}
-
 // Обрезание длинного текста
 function truncateText(text, maxLength = 50) {
-    if (!text) return '';
-    
-    if (text.length <= maxLength) return text;
+    if (!text || text.length <= maxLength) return text;
     return text.substring(0, maxLength) + '...';
 }
 
-// Форматирование адреса
-function formatAddress(address) {
-    if (!address) return 'Не указан';
-    
-    // Убираем лишние пробелы и форматируем адрес
-    return address.replace(/\s+/g, ' ').trim();
+// Форматирование процентов
+function formatPercent(value, decimals = 1) {
+    if (value === null || value === undefined || isNaN(value)) return '-';
+    return `${parseFloat(value).toFixed(decimals)}%`;
 }
 
-// Форматирование имени клиента
-function formatCustomerName(name) {
-    if (!name) return 'Не указан';
+// Форматирование номера заказа
+function formatOrderNumber(number, platform = '') {
+    if (!number) return '-';
     
-    // Приводим к нормальному формату: Иванов Иван Иванович
-    return name.split(' ')
-        .map(part => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
-        .join(' ');
-}
-
-// Валидация email
-function isValidEmail(email) {
-    if (!email) return false;
-    
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-}
-
-// Валидация телефона
-function isValidPhone(phone) {
-    if (!phone) return false;
-    
-    const cleaned = phone.replace(/\D/g, '');
-    return cleaned.length >= 10 && cleaned.length <= 15;
-}
-
-// Генерация случайного цвета на основе строки
-function stringToColor(str) {
-    if (!str) return '#6b7280';
-    
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-        hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    if (platform === 'cdek' && number.startsWith('CDEK')) {
+        return number;
+    } else if (platform === 'megamarket' && number.startsWith('MM')) {
+        return number;
     }
     
-    const colors = [
-        '#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6',
-        '#06b6d4', '#84cc16', '#f97316', '#6366f1', '#ec4899'
-    ];
-    
-    return colors[Math.abs(hash) % colors.length];
-}
-
-// Форматирование размера файла
-function formatFileSize(bytes) {
-    if (bytes === 0) return '0 Bytes';
-    
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    return `#${number}`;
 }
 
 // Экспорт функций для использования в других модулях
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = {
-        formatCurrency,
-        formatDate,
-        formatDateTime,
-        formatRelativeTime,
-        formatWeight,
-        formatPhone,
-        formatNumber,
-        formatPercent,
-        formatDuration,
-        formatOrderStatus,
-        formatPlatform,
-        escapeHtml,
-        truncateText,
-        formatAddress,
-        formatCustomerName,
-        isValidEmail,
-        isValidPhone,
-        stringToColor,
-        formatFileSize
-    };
-}
+window.formatCurrency = formatCurrency;
+window.formatDate = formatDate;
+window.formatDateTime = formatDateTime;
+window.formatRelativeTime = formatRelativeTime;
+window.formatWeight = formatWeight;
+window.formatPhone = formatPhone;
+window.formatOrderStatus = formatOrderStatus;
+window.formatPlatform = formatPlatform;
+window.truncateText = truncateText;
+window.formatPercent = formatPercent;
+window.formatOrderNumber = formatOrderNumber;
