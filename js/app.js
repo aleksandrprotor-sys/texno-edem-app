@@ -19,6 +19,12 @@ class TexnoEdemApp {
         
         // Безопасная инициализация с таймаутом
         this.safeInit();
+        // Внутри конструктора
+constructor() {
+  this.isInitialized = false;
+  this.safeInit(); // запуск безопасной инициализации
+}
+
     }
 
     async safeInit() {
@@ -884,4 +890,15 @@ window.addEventListener('beforeunload', () => {
     if (app) {
         app.destroy();
     }
+});
+window.app = null;
+
+document.addEventListener('DOMContentLoaded', () => {
+  // Создаем приложение и инициализируем
+  try {
+    window.app = new TexnoEdemApp();
+    window.app.safeInit(); // или init()
+  } catch (err) {
+    console.error('Ошибка инициализации приложения', err);
+  }
 });
