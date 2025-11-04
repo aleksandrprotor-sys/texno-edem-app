@@ -32,167 +32,23 @@
 <nav class="main-nav" id="main-nav"></nav>
 <main class="main-content">
 
-<section class="section active" id="dashboard-section">
-<div class="container">
-
-<div class="dashboard-header">
-<h1 class="dashboard-title">Business Intelligence Dashboard</h1>
-<div class="dashboard-subtitle">Реальная аналитика вашего бизнеса</div>
-</div>
-
-
-<div class="quick-stats" id="quick-stats">
-<div class="stat-card orders">
-<div class="stat-icon"><i class="fas fa-boxes"></i></div>
-<div class="stat-value" id="total-orders">0</div>
-<div class="stat-label">Всего заказов</div>
-<div class="stat-change positive" id="orders-change"><i class="fas fa-arrow-up"></i> 12%</div>
-</div>
-<div class="stat-card revenue">
-<div class="stat-icon"><i class="fas fa-chart-line"></i></div>
-<div class="stat-value" id="total-revenue">0 ₽</div>
-<div class="stat-label">Общая выручка</div>
-<div class="stat-change positive" id="revenue-change"><i class="fas fa-arrow-up"></i> 8%</div>
-</div>
-<div class="stat-card success">
-<div class="stat-icon"><i class="fas fa-check-circle"></i></div>
-<div class="stat-value" id="success-rate">0%</div>
-<div class="stat-label">Успешные доставки</div>
-<div class="stat-change positive" id="success-change"><i class="fas fa-arrow-up"></i> 3%</div>
-</div>
-<div class="stat-card problems">
-<div class="stat-icon"><i class="fas fa-exclamation-triangle"></i></div>
-<div class="stat-value" id="problem-orders">0</div>
-<div class="stat-label">Проблемные заказы</div>
-<div class="stat-change negative" id="problems-change"><i class="fas fa-arrow-down"></i> 5%</div>
-</div>
-</div>
-
-
-<div class="platform-widgets">
-<div class="widget cdek-widget" onclick="app.showSection('orders', 'cdek')">
-<div class="widget-icon"><i class="fas fa-shipping-fast"></i></div>
-<div class="widget-content">
-<h3>CDEK Logistics</h3>
-<div class="widget-stats">
-<span class="stat-value" id="cdek-active">0</span>
-<span class="stat-label">активных отправлений</span>
-</div>
-<div class="widget-trend positive"><i class="fas fa-arrow-up"></i> 15% за неделю</div>
-<div class="widget-action"><span>Управлять отправлениями</span><i class="fas fa-arrow-right"></i></div>
-</div>
-</div>
-<div class="widget megamarket-widget" onclick="app.showSection('orders', 'megamarket')">
-<div class="widget-icon"><i class="fas fa-store"></i></div>
-<div class="widget-content">
-<h3>Мегамаркет</h3>
-<div class="widget-stats">
-<span class="stat-value" id="megamarket-new">0</span>
-<span class="stat-label">новых заказов</span>
-</div>
-<div class="widget-trend positive"><i class="fas fa-arrow-up"></i> 22% за неделю</div>
-<div class="widget-action"><span>Обработать заказы</span><i class="fas fa-arrow-right"></i></div>
-</div>
-</div>
-</div>
-
-
-<div class="analytics-preview">
-<div class="preview-header">
-<h3>Ключевые метрики</h3>
-<button class="btn btn-outline" onclick="app.showSection('analytics')">
-<i class="fas fa-chart-bar"></i> Вся аналитика
-</button>
-</div>
-<div class="preview-grid" id="analytics-preview">
-
-</div>
-</div>
-
-
-<div class="recent-activity">
-<div class="recent-activity-card">
-<div class="card-header">
-<h3>Последние заказы</h3>
-<div class="card-actions">
-<button class="btn btn-sm btn-outline" onclick="app.showSection('orders')">Все заказы</button>
-</div>
-</div>
-<div class="activity-list" id="recent-orders-list"></div>
-</div>
-</div>
-</div>
-</section>
-
-
-<section class="section" id="orders-section">
-<div class="container">
-<div class="section-header">
-<div class="section-title-container">
-<h2 class="section-title" id="orders-title">Заказы</h2>
-<div class="section-subtitle" id="orders-subtitle">Управление заказами и отправлениями</div>
-</div>
-<div class="section-actions">
-<button class="btn btn-primary" onclick="app.manualSync()"><i class="fas fa-sync-alt"></i> Обновить</button>
-</div>
-</div>
-<div class="orders-container" id="orders-container"></div>
-</div>
-</section>
-
-
-<section class="section" id="analytics-section">
-<div class="container">
-<div class="section-header">
-<div class="section-title-container">
-<h2 class="section-title">Аналитика и отчеты</h2>
-<div class="section-subtitle">Детальная аналитика по платформам и метрикам</div>
-</div>
-<div class="section-actions">
-<div class="time-filter">
-<select id="analytics-period" onchange="app.analyticsComponent.changePeriod(this.value)">
-<option value="week">Неделя</option>
-<option value="month" selected>Месяц</option>
-<option value="quarter">Квартал</option>
-<option value="year">Год</option>
-</select>
-</div>
-<button class="btn btn-primary" onclick="app.analyticsComponent.exportReport()"><i class="fas fa-download"></i> Экспорт отчета</button>
-</div>
-</div>
-<div class="analytics-container" id="analytics-container"></div>
-</div>
-</section>
-
-
-<section class="section" id="settings-section">
-<div class="container">
-<div class="section-header">
-<div class="section-title-container">
-<h2 class="section-title">Настройки</h2>
-<div class="section-subtitle">Настройка приложения и интеграций</div>
-</div>
-</div>
-<div class="settings-container" id="settings-container"></div>
-</div>
-</section>
-
+<section class="section active" id="dashboard-section"></section>
+<section class="section" id="orders-section"></section>
+<section class="section" id="analytics-section"></section>
+<section class="section" id="settings-section"></section>
 </main>
 
 
 <div class="modals-container" id="modals-container"></div>
-
-
 <div class="notifications-container" id="notifications-container"></div>
 
 
 <div class="loading-overlay" id="loading-overlay">
-<div class="loading-content">
-<div class="loading-spinner"></div>
-<p id="loading-message">Загрузка данных...</p>
+  <div class="loading-content">
+    <div class="loading-spinner"></div>
+    <p id="loading-message">Загрузка данных...</p>
+  </div>
 </div>
-</div>
-
 </div>
 
 
