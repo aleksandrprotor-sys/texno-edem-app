@@ -1,437 +1,345 @@
-// js/utils/formatters.js - Полные утилиты форматирования для TEXNO EDEM
-
-// Форматирование валюты
-function formatCurrency(amount, currency = 'RUB') {
-    if (amount === null || amount === undefined || isNaN(amount)) return '-';
-    
-    const formatter = new Intl.NumberFormat('ru-RU', {
-        style: 'currency',
-        currency: currency,
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0
-    });
-    
-    return formatter.format(amount);
-}
-
-// Форматирование даты
-function formatDate(dateString, options = {}) {
-    if (!dateString) return '-';
-    
-    try {
-        const date = new Date(dateString);
-        if (isNaN(date.getTime())) return '-';
-        
-        const formatOptions = {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric',
-            ...options
-        };
-        
-        return date.toLocaleDateString('ru-RU', formatOptions);
-    } catch (error) {
-        console.error('Error formatting date:', error);
-        return '-';
+// js/components/modal.js
+class ModalComponent {
+    constructor(app) {
+        this.app = app;
+        this.currentModal = null;
+        this.init();
     }
-}
 
-// Форматирование даты и времени
-function formatDateTime(dateString) {
-    if (!dateString) return '-';
-    
-    try {
-        const date = new Date(dateString);
-        if (isNaN(date.getTime())) return '-';
-        
-        return date.toLocaleString('ru-RU', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
+    init() {
+        console.log('✅ ModalComponent инициализирован');
+        this.setupEventListeners();
+    }
+
+    setupEventListeners() {
+        // Закрытие модального окна по клику на backdrop
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('modal-backdrop')) {
+                this.hide();
+            }
         });
-    } catch (error) {
-        console.error('Error formatting datetime:', error);
-        return '-';
-    }
-}
 
-// Относительное время
-function formatRelativeTime(dateString) {
-    if (!dateString) return '-';
-    
-    try {
-        const date = new Date(dateString);
-        if (isNaN(date.getTime())) return '-';
-        
-        const now = new Date();
-        const diffMs = now - date;
-        const diffMins = Math.floor(diffMs / (1000 * 60));
-        const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-        const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-        const diffWeeks = Math.floor(diffDays / 7);
-        const diffMonths = Math.floor(diffDays / 30);
-        
-        if (diffMins < 1) return 'только что';
-        if (diffMins < 60) return `${diffMins} мин. назад`;
-        if (diffHours < 24) return `${diffHours} ч. назад`;
-        if (diffDays === 1) return 'вчера';
-        if (diffDays < 7) return `${diffDays} дн. назад`;
-        if (diffWeeks < 4) return `${diffWeeks} нед. назад`;
-        if (diffMonths < 12) return `${diffMonths} мес. назад`;
-        
-        return formatDate(dateString);
-    } catch (error) {
-        console.error('Error formatting relative time:', error);
-        return '-';
-    }
-}
+        // Закрытие по ESC
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && this.currentModal) {
+                this.hide();
+            }
+        });
 
-// Форматирование веса
-function formatWeight(grams, unit = 'kg') {
-    if (grams === null || grams === undefined || isNaN(grams)) return '-';
-    
-    if (unit === 'kg') {
-        return `${(grams / 1000).toFixed(2)} кг`;
-    } else if (unit === 'g') {
-        return `${grams} г`;
+        // Обработчики для кнопок закрытия
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('.modal-close') || e.target.closest('.btn-cancel')) {
+                this.hide();
+            }
+        });
     }
-    return `${grams} ${unit}`;
-}
 
-// Форматирование номера телефона
-function formatPhone(phone) {
-    if (!phone) return '-';
-    
-    try {
-        const cleaned = phone.replace(/\D/g, '');
-        
-        if (cleaned.length === 11 && cleaned.startsWith('7')) {
-            // Российский номер: +7 (XXX) XXX-XX-XX
-            return `+7 (${cleaned.substring(1, 4)}) ${cleaned.substring(4, 7)}-${cleaned.substring(7, 9)}-${cleaned.substring(9, 11)}`;
-        } else if (cleaned.length === 10) {
-            // Российский номер без +7: (XXX) XXX-XX-XX
-            return `+7 (${cleaned.substring(0, 3)}) ${cleaned.substring(3, 6)}-${cleaned.substring(6, 8)}-${cleaned.substring(8, 10)}`;
+    showOrderDetails(order) {
+        const modalHTML = this.createOrderDetailsModal(order);
+        this.showModal('order-details', 'Детали заказа', modalHTML);
+    }
+
+    createOrderDetailsModal(order) {
+        const statusColors = {
+            'new': 'var(--primary)',
+            'processing': 'var(--warning)',
+            'active': 'var(--info)',
+            'shipped': 'var(--primary-light)',
+            'delivered': 'var(--success)',
+            'problem': 'var(--danger)',
+            'cancelled': 'var(--gray-500)'
+        };
+
+        return `
+            <div class="order-details-header">
+                <div class="order-main-info">
+                    <div class="order-title">
+                        <i class="fas ${order.platform === 'cdek' ? 'fa-shipping-fast' : 'fa-store'}"></i>
+                        ${order.id}
+                        <span class="order-number">${order.orderNumber}</span>
+                    </div>
+                    <div class="order-tracking">Трек-номер: ${order.orderNumber}</div>
+                </div>
+                <div class="order-status-badge" style="--status-color: ${statusColors[order.status]}">
+                    ${this.app.getStatusText(order.status)}
+                </div>
+            </div>
+
+            <div class="details-grid">
+                <div class="detail-section">
+                    <div class="section-title">Основная информация</div>
+                    <div class="detail-item">
+                        <span class="detail-label">Платформа</span>
+                        <span class="detail-value platform-${order.platform}">${order.platform.toUpperCase()}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Статус</span>
+                        <span class="detail-value">${this.app.getStatusText(order.status)}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Сумма</span>
+                        <span class="detail-value">${this.app.formatCurrency(order.amount)}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Клиент</span>
+                        <span class="detail-value">${order.customer}</span>
+                    </div>
+                </div>
+
+                <div class="detail-section">
+                    <div class="section-title">Доставка</div>
+                    <div class="detail-item">
+                        <span class="detail-label">Город</span>
+                        <span class="detail-value">${order.deliveryCity}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Дата создания</span>
+                        <span class="detail-value">${this.app.formatDateTime(order.createdDate)}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Последнее обновление</span>
+                        <span class="detail-value">${this.app.formatDateTime(order.updatedDate || order.createdDate)}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Товары</span>
+                        <span class="detail-value">${order.items} шт</span>
+                    </div>
+                </div>
+
+                ${this.getOrderSpecificDetails(order)}
+
+                <div class="detail-section full-width">
+                    <div class="section-title">История статусов</div>
+                    <div class="timeline">
+                        ${this.generateTimeline(order).join('')}
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-outline btn-cancel">
+                    <i class="fas fa-times"></i> Закрыть
+                </button>
+                ${order.status === 'new' ? `
+                    <button class="btn btn-primary" onclick="app.components.orders.processOrder('${order.id}')">
+                        <i class="fas fa-play"></i> Обработать заказ
+                    </button>
+                ` : ''}
+                ${order.status === 'problem' ? `
+                    <button class="btn btn-warning" onclick="app.components.orders.resolveProblem('${order.id}')">
+                        <i class="fas fa-wrench"></i> Решить проблему
+                    </button>
+                ` : ''}
+            </div>
+        `;
+    }
+
+    getOrderSpecificDetails(order) {
+        if (order.platform === 'cdek') {
+            return `
+                <div class="detail-section">
+                    <div class="section-title">CDEK Детали</div>
+                    <div class="detail-item">
+                        <span class="detail-label">Вес</span>
+                        <span class="detail-value">${order.weight || '0'} г</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Габариты</span>
+                        <span class="detail-value">${order.dimensions ? `${order.dimensions.length}x${order.dimensions.width}x${order.dimensions.height} см` : 'Не указано'}</span>
+                    </div>
+                </div>
+            `;
+        } else {
+            return `
+                <div class="detail-section">
+                    <div class="section-title">Мегамаркет Детали</div>
+                    <div class="detail-item">
+                        <span class="detail-label">Метод доставки</span>
+                        <span class="detail-value">${order.shipping?.method || 'Курьер'}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Стоимость доставки</span>
+                        <span class="detail-value">${this.app.formatCurrency(order.shipping?.cost || 0)}</span>
+                    </div>
+                </div>
+            `;
         }
-        
-        return phone;
-    } catch (error) {
-        console.error('Error formatting phone:', error);
-        return phone;
     }
-}
 
-// Сокращение больших чисел
-function formatNumber(num) {
-    if (num === null || num === undefined || isNaN(num)) return '0';
-    
-    if (num < 1000) return num.toString();
-    if (num < 1000000) return `${(num / 1000).toFixed(1)}K`;
-    if (num < 1000000000) return `${(num / 1000000).toFixed(1)}M`;
-    return `${(num / 1000000000).toFixed(1)}B`;
-}
+    generateTimeline(order) {
+        const events = [
+            {
+                date: order.createdDate,
+                title: 'Заказ создан',
+                description: 'Заказ успешно создан в системе'
+            }
+        ];
 
-// Форматирование процентов
-function formatPercent(value, decimals = 1) {
-    if (value === null || value === undefined || isNaN(value)) return '0%';
-    
-    const normalizedValue = Math.max(0, Math.min(100, value));
-    return `${normalizedValue.toFixed(decimals)}%`;
-}
-
-// Форматирование длительности
-function formatDuration(minutes) {
-    if (minutes === null || minutes === undefined || isNaN(minutes)) return '-';
-    
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    
-    if (hours > 0) {
-        return `${hours} ч ${mins} мин`;
-    }
-    return `${mins} мин`;
-}
-
-// Форматирование длительности в днях/часах
-function formatDurationDetailed(seconds) {
-    if (seconds === null || seconds === undefined || isNaN(seconds)) return '-';
-    
-    const days = Math.floor(seconds / (24 * 60 * 60));
-    const hours = Math.floor((seconds % (24 * 60 * 60)) / (60 * 60));
-    const minutes = Math.floor((seconds % (60 * 60)) / 60);
-    
-    const parts = [];
-    if (days > 0) parts.push(`${days} д`);
-    if (hours > 0) parts.push(`${hours} ч`);
-    if (minutes > 0) parts.push(`${minutes} мин`);
-    
-    return parts.length > 0 ? parts.join(' ') : 'менее минуты';
-}
-
-// Форматирование статуса заказа
-function formatOrderStatus(status, platform = 'cdek') {
-    const statusMap = {
-        cdek: {
-            'new': 'Новый',
-            'processing': 'В обработке',
-            'active': 'В пути',
-            'delivered': 'Доставлен',
-            'problem': 'Проблема',
-            'cancelled': 'Отменен',
-            'created': 'Создан',
-            'accepted': 'Принят',
-            'in_progress': 'В пути'
-        },
-        megamarket: {
-            'new': 'Новый',
-            'confirmed': 'Подтвержден',
-            'packed': 'Упакован',
-            'shipped': 'Отправлен',
-            'delivered': 'Доставлен',
-            'cancelled': 'Отменен',
-            'problem': 'Проблема',
-            'returned': 'Возврат',
-            'packaging': 'Упаковка',
-            'ready_for_shipment': 'Готов к отправке'
+        if (order.status !== 'new') {
+            events.push({
+                date: new Date(order.createdDate).setHours(new Date(order.createdDate).getHours() + 2),
+                title: 'Передан в обработку',
+                description: 'Заказ взят в работу'
+            });
         }
-    };
-    
-    const platformMap = statusMap[platform] || statusMap.cdek;
-    return platformMap[status] || status;
-}
 
-// Форматирование платформы
-function formatPlatform(platform) {
-    const platformMap = {
-        'cdek': 'CDEK',
-        'megamarket': 'Мегамаркет',
-        'all': 'Все платформы'
-    };
-    
-    return platformMap[platform] || platform;
-}
-
-// Экранирование HTML
-function escapeHtml(unsafe) {
-    if (!unsafe) return '';
-    
-    return unsafe
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
-}
-
-// Обрезание длинного текста
-function truncateText(text, maxLength = 50, suffix = '...') {
-    if (!text) return '';
-    
-    if (text.length <= maxLength) return text;
-    return text.substring(0, maxLength - suffix.length) + suffix;
-}
-
-// Форматирование адреса
-function formatAddress(address) {
-    if (!address) return 'Не указан';
-    
-    // Убираем лишние пробелы и форматируем адрес
-    return address
-        .replace(/\s+/g, ' ')
-        .trim()
-        .replace(/(г\.|ул\.|пр\.|д\.|кв\.)/g, '$1 ')
-        .replace(/\s+/g, ' ');
-}
-
-// Форматирование имени клиента
-function formatCustomerName(name) {
-    if (!name) return 'Не указан';
-    
-    // Приводим к нормальному формату: Иванов Иван Иванович
-    return name
-        .split(' ')
-        .map(part => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
-        .join(' ');
-}
-
-// Валидация email
-function isValidEmail(email) {
-    if (!email) return false;
-    
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-}
-
-// Валидация телефона
-function isValidPhone(phone) {
-    if (!phone) return false;
-    
-    const cleaned = phone.replace(/\D/g, '');
-    return cleaned.length >= 10 && cleaned.length <= 15;
-}
-
-// Генерация случайного цвета на основе строки
-function stringToColor(str) {
-    if (!str) return '#6b7280';
-    
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-        hash = str.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    
-    const colors = [
-        '#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6',
-        '#06b6d4', '#84cc16', '#f97316', '#6366f1', '#ec4899',
-        '#14b8a6', '#f43f5e', '#8b5cf6', '#06b6d4', '#84cc16'
-    ];
-    
-    return colors[Math.abs(hash) % colors.length];
-}
-
-// Форматирование размера файла
-function formatFileSize(bytes) {
-    if (bytes === 0) return '0 Bytes';
-    
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-}
-
-// Форматирование рейтинга
-function formatRating(rating, max = 5) {
-    if (rating === null || rating === undefined || isNaN(rating)) return '-';
-    
-    const normalized = Math.max(0, Math.min(max, rating));
-    return `${normalized.toFixed(1)}/${max}`;
-}
-
-// Форматирование срока доставки
-function formatDeliveryTime(days) {
-    if (days === null || days === undefined || isNaN(days)) return '-';
-    
-    if (days === 0) return 'Сегодня';
-    if (days === 1) return 'Завтра';
-    if (days < 7) return `Через ${days} ${getRussianDays(days)}`;
-    if (days < 30) {
-        const weeks = Math.ceil(days / 7);
-        return `Через ${weeks} ${getRussianWeeks(weeks)}`;
-    }
-    
-    const months = Math.ceil(days / 30);
-    return `Через ${months} ${getRussianMonths(months)}`;
-}
-
-function getRussianDays(days) {
-    if (days === 1) return 'день';
-    if (days >= 2 && days <= 4) return 'дня';
-    return 'дней';
-}
-
-function getRussianWeeks(weeks) {
-    if (weeks === 1) return 'неделю';
-    if (weeks >= 2 && weeks <= 4) return 'недели';
-    return 'недель';
-}
-
-function getRussianMonths(months) {
-    if (months === 1) return 'месяц';
-    if (months >= 2 && months <= 4) return 'месяца';
-    return 'месяцев';
-}
-
-// Форматирование цены за единицу
-function formatUnitPrice(price, unit = 'шт') {
-    if (price === null || price === undefined || isNaN(price)) return '-';
-    
-    return `${formatCurrency(price)}/${unit}`;
-}
-
-// Форматирование диапазона дат
-function formatDateRange(startDate, endDate) {
-    if (!startDate || !endDate) return '-';
-    
-    try {
-        const start = new Date(startDate);
-        const end = new Date(endDate);
-        
-        if (isNaN(start.getTime()) || isNaN(end.getTime())) return '-';
-        
-        if (start.toDateString() === end.toDateString()) {
-            return formatDate(startDate);
+        if (['active', 'shipped', 'delivered'].includes(order.status)) {
+            events.push({
+                date: new Date(order.createdDate).setHours(new Date(order.createdDate).getHours() + 4),
+                title: 'Передан в доставку',
+                description: 'Заказ передан службе доставки'
+            });
         }
-        
-        return `${formatDate(startDate)} - ${formatDate(endDate)}`;
-    } catch (error) {
-        console.error('Error formatting date range:', error);
-        return '-';
-    }
-}
 
-// Форматирование времени из минут
-function formatTimeFromMinutes(totalMinutes) {
-    if (totalMinutes === null || totalMinutes === undefined || isNaN(totalMinutes)) return '-';
-    
-    const hours = Math.floor(totalMinutes / 60);
-    const minutes = totalMinutes % 60;
-    
-    if (hours > 0) {
-        return `${hours}:${minutes.toString().padStart(2, '0')}`;
-    }
-    return `${minutes} мин`;
-}
+        if (order.status === 'delivered') {
+            events.push({
+                date: new Date(order.createdDate).setHours(new Date(order.createdDate).getHours() + 24),
+                title: 'Доставлен',
+                description: 'Заказ успешно доставлен клиенту'
+            });
+        }
 
-// Форматирование номера документа
-function formatDocumentNumber(number, type = 'default') {
-    if (!number) return '-';
-    
-    const formats = {
-        'invoice': /^(\d{4})(\d{2})(\d{4})$/,
-        'order': /^(\w{2})(\d{6})$/,
-        'tracking': /^(\w{4})(\d{8})$/,
-        'default': /^(.{4})(.{4})(.{4})(.{4})$/
-    };
-    
-    const format = formats[type] || formats.default;
-    const match = number.replace(/\s/g, '').match(format);
-    
-    if (match) {
-        return match.slice(1).join(' ');
-    }
-    
-    return number;
-}
+        if (order.status === 'problem') {
+            events.push({
+                date: new Date(order.createdDate).setHours(new Date(order.createdDate).getHours() + 3),
+                title: 'Обнаружена проблема',
+                description: order.notes || 'Требуется дополнительная проверка'
+            });
+        }
 
-// Экспорт функций для использования в других модулях
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = {
-        formatCurrency,
-        formatDate,
-        formatDateTime,
-        formatRelativeTime,
-        formatWeight,
-        formatPhone,
-        formatNumber,
-        formatPercent,
-        formatDuration,
-        formatDurationDetailed,
-        formatOrderStatus,
-        formatPlatform,
-        escapeHtml,
-        truncateText,
-        formatAddress,
-        formatCustomerName,
-        isValidEmail,
-        isValidPhone,
-        stringToColor,
-        formatFileSize,
-        formatRating,
-        formatDeliveryTime,
-        formatUnitPrice,
-        formatDateRange,
-        formatTimeFromMinutes,
-        formatDocumentNumber
-    };
+        return events.map((event, index) => `
+            <div class="timeline-event">
+                <div class="timeline-dot"></div>
+                <div class="timeline-content">
+                    <div class="timeline-title">${event.title}</div>
+                    <div class="timeline-description">${event.description}</div>
+                    <div class="timeline-date">${this.app.formatDateTime(event.date)}</div>
+                </div>
+            </div>
+        `);
+    }
+
+    showConfirmModal(title, message, confirmCallback, confirmText = 'Подтвердить', cancelText = 'Отмена') {
+        const modalHTML = `
+            <div class="modal-body">
+                <div style="text-align: center; padding: 20px;">
+                    <i class="fas fa-exclamation-triangle" style="font-size: 48px; color: var(--warning); margin-bottom: 20px;"></i>
+                    <h3 style="margin-bottom: 10px;">${title}</h3>
+                    <p style="color: var(--text-secondary); line-height: 1.5;">${message}</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline btn-cancel">
+                    <i class="fas fa-times"></i> ${cancelText}
+                </button>
+                <button class="btn btn-danger" id="confirm-action">
+                    <i class="fas fa-check"></i> ${confirmText}
+                </button>
+            </div>
+        `;
+
+        const modal = this.showModal('confirm', title, modalHTML);
+
+        // Добавляем обработчик для кнопки подтверждения
+        const confirmBtn = modal.querySelector('#confirm-action');
+        if (confirmBtn) {
+            confirmBtn.addEventListener('click', () => {
+                confirmCallback();
+                this.hide();
+            });
+        }
+    }
+
+    showModal(type, title, content) {
+        // Скрываем предыдущее модальное окно
+        if (this.currentModal) {
+            this.hide();
+        }
+
+        // Создаем модальное окно
+        const modal = document.createElement('div');
+        modal.className = 'modal active';
+        modal.innerHTML = `
+            <div class="modal-backdrop"></div>
+            <div class="modal-dialog">
+                <div class="modal-header">
+                    <h3 class="modal-title">${title}</h3>
+                    <button class="modal-close">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                ${content}
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+        this.currentModal = modal;
+
+        // Блокируем прокрутку body
+        document.body.style.overflow = 'hidden';
+
+        return modal;
+    }
+
+    hide() {
+        if (this.currentModal) {
+            this.currentModal.remove();
+            this.currentModal = null;
+        }
+
+        // Восстанавливаем прокрутку body
+        document.body.style.overflow = '';
+    }
+
+    // Утилиты для работы с модальными окнами
+    showLoadingModal(message = 'Загрузка...') {
+        const modalHTML = `
+            <div class="modal-body">
+                <div style="text-align: center; padding: 40px;">
+                    <div class="loading-spinner" style="margin: 0 auto 20px;"></div>
+                    <p>${message}</p>
+                </div>
+            </div>
+        `;
+
+        return this.showModal('loading', 'Загрузка', modalHTML);
+    }
+
+    showErrorModal(title, message) {
+        const modalHTML = `
+            <div class="modal-body">
+                <div style="text-align: center; padding: 20px;">
+                    <i class="fas fa-exclamation-circle" style="font-size: 48px; color: var(--danger); margin-bottom: 20px;"></i>
+                    <h3 style="margin-bottom: 10px;">${title}</h3>
+                    <p style="color: var(--text-secondary); line-height: 1.5;">${message}</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary btn-cancel">
+                    <i class="fas fa-times"></i> Закрыть
+                </button>
+            </div>
+        `;
+
+        return this.showModal('error', title, modalHTML);
+    }
+
+    showSuccessModal(title, message) {
+        const modalHTML = `
+            <div class="modal-body">
+                <div style="text-align: center; padding: 20px;">
+                    <i class="fas fa-check-circle" style="font-size: 48px; color: var(--success); margin-bottom: 20px;"></i>
+                    <h3 style="margin-bottom: 10px;">${title}</h3>
+                    <p style="color: var(--text-secondary); line-height: 1.5;">${message}</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary btn-cancel">
+                    <i class="fas fa-times"></i> Закрыть
+                </button>
+            </div>
+        `;
+
+        return this.showModal('success', title, modalHTML);
+    }
 }
