@@ -16,6 +16,11 @@ class AnalyticsComponent {
         this.renderCharts();
         this.attachEventListeners();
     }
+    
+update() {
+  this.generateAnalyticsData();
+  this.render();
+}
 
     createAnalyticsHTML() {
         return `
