@@ -1,19 +1,18 @@
-/* Стили для шапки приложения */
+/* Стили хедера */
 .header {
-    background: var(--primary);
-    color: var(--white);
-    box-shadow: var(--shadow-md);
+    background-color: var(--bg-primary);
+    border-bottom: 1px solid var(--border-color);
+    box-shadow: var(--shadow-sm);
     position: sticky;
     top: 0;
-    z-index: 1000;
-    border-bottom: 1px solid var(--primary-light);
+    z-index: 100;
 }
 
 .header-content {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    padding: 16px 20px;
+    justify-content: space-between;
+    padding: var(--space-md) var(--space-lg);
     max-width: 1200px;
     margin: 0 auto;
 }
@@ -22,30 +21,25 @@
 .logo {
     display: flex;
     align-items: center;
-    gap: 12px;
-    text-decoration: none;
-    color: inherit;
+    gap: var(--space-md);
     cursor: pointer;
-    transition: var(--transition);
+    transition: opacity 0.2s ease;
 }
 
 .logo:hover {
-    opacity: 0.9;
-    transform: translateX(-2px);
+    opacity: 0.8;
 }
 
 .logo-icon {
-    width: 40px;
-    height: 40px;
-    background: linear-gradient(135deg, var(--secondary), var(--accent));
-    border-radius: 10px;
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    border-radius: var(--radius-md);
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--white);
-    font-size: 18px;
-    font-weight: 700;
-    box-shadow: var(--shadow);
+    color: white;
+    font-size: var(--font-size-xl);
 }
 
 .logo-text {
@@ -54,108 +48,94 @@
 }
 
 .logo-title {
-    font-size: 20px;
-    font-weight: 800;
+    font-size: var(--font-size-lg);
+    font-weight: 700;
+    color: var(--text-primary);
     line-height: 1.2;
 }
 
 .logo-subtitle {
-    font-size: 11px;
-    opacity: 0.8;
-    font-weight: 500;
-    letter-spacing: 0.5px;
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+    line-height: 1.2;
 }
 
-/* Действия в шапке */
+/* Действия в хедере */
 .header-actions {
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: var(--space-md);
 }
 
 /* Статус синхронизации */
 .sync-status {
     display: flex;
     align-items: center;
-    gap: 8px;
-    font-size: 12px;
-    color: rgba(255, 255, 255, 0.8);
-    padding: 6px 12px;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 16px;
-    backdrop-filter: blur(10px);
+    gap: var(--space-sm);
+    padding: var(--space-sm) var(--space-md);
+    background-color: var(--bg-secondary);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-sm);
 }
 
 .sync-indicator {
     width: 8px;
     height: 8px;
     border-radius: 50%;
-    background: var(--success);
-    transition: var(--transition);
+    background-color: var(--text-muted);
     position: relative;
 }
 
 .sync-indicator.syncing {
-    background: var(--warning);
+    background-color: var(--warning-color);
     animation: pulse 1.5s infinite;
 }
 
-.sync-indicator::before {
-    content: '';
-    position: absolute;
-    top: -2px;
-    left: -2px;
-    right: -2px;
-    bottom: -2px;
-    border-radius: 50%;
-    background: inherit;
-    opacity: 0.4;
-    animation: pulse 2s infinite;
+.sync-indicator.success {
+    background-color: var(--success-color);
+}
+
+.sync-indicator.error {
+    background-color: var(--error-color);
 }
 
 @keyframes pulse {
-    0% {
-        transform: scale(1);
-        opacity: 1;
-    }
-    50% {
-        transform: scale(1.1);
-        opacity: 0.7;
-    }
-    100% {
-        transform: scale(1);
-        opacity: 1;
-    }
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.sync-text {
+    color: var(--text-secondary);
+    font-weight: 500;
 }
 
 /* Информация о пользователе */
 .user-info {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 8px 12px;
-    border-radius: var(--border-radius);
-    transition: var(--transition);
+    gap: var(--space-sm);
+    padding: var(--space-sm) var(--space-md);
+    background-color: var(--bg-secondary);
+    border-radius: var(--radius-md);
     cursor: pointer;
-    background: rgba(255, 255, 255, 0.1);
+    transition: background-color 0.2s ease;
 }
 
 .user-info:hover {
-    background: rgba(255, 255, 255, 0.15);
+    background-color: var(--bg-tertiary);
 }
 
 .user-avatar {
-    width: 36px;
-    height: 36px;
+    width: 32px;
+    height: 32px;
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
     border-radius: 50%;
-    background: linear-gradient(135deg, var(--secondary), var(--accent));
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--white);
+    color: white;
     font-weight: 600;
-    font-size: 14px;
-    box-shadow: var(--shadow-sm);
+    font-size: var(--font-size-sm);
 }
 
 .user-details {
@@ -165,162 +145,127 @@
 
 .user-name {
     font-weight: 600;
-    font-size: 14px;
+    color: var(--text-primary);
+    font-size: var(--font-size-sm);
 }
 
 .user-role {
-    font-size: 11px;
-    opacity: 0.8;
-}
-
-/* Кнопки в шапке */
-.btn-icon {
-    background: rgba(255, 255, 255, 0.1);
-    border: none;
-    color: var(--white);
-    width: 40px;
-    height: 40px;
-    border-radius: var(--border-radius);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: var(--transition);
-    backdrop-filter: blur(10px);
-}
-
-.btn-icon:hover:not(:disabled) {
-    background: rgba(255, 255, 255, 0.2);
-    transform: translateY(-1px);
-}
-
-.btn-icon:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
+    font-size: var(--font-size-xs);
+    color: var(--text-secondary);
 }
 
 /* Навигация */
 .main-nav {
-    background: var(--white);
-    border-bottom: 1px solid var(--gray-200);
-    box-shadow: var(--shadow-sm);
+    background-color: var(--bg-primary);
+    border-bottom: 1px solid var(--border-color);
     position: sticky;
-    top: 72px;
-    z-index: 999;
+    top: 73px; /* Высота хедера */
+    z-index: 99;
 }
 
 .nav-container {
     max-width: 1200px;
     margin: 0 auto;
-    padding: 0 20px;
+    padding: 0 var(--space-lg);
 }
 
 .nav-items {
     display: flex;
-    gap: 0;
+    gap: var(--space-md);
 }
 
 .nav-item {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 16px 24px;
+    gap: var(--space-sm);
+    padding: var(--space-md) var(--space-lg);
+    background: none;
     border: none;
-    background: transparent;
-    color: var(--gray-600);
+    color: var(--text-secondary);
     cursor: pointer;
-    transition: var(--transition);
-    border-radius: 0;
-    font-weight: 500;
+    transition: all 0.2s ease;
     position: relative;
-    text-decoration: none;
     border-bottom: 2px solid transparent;
+    font-size: var(--font-size-sm);
+    font-weight: 500;
 }
 
 .nav-item:hover {
-    background: var(--gray-50);
-    color: var(--gray-800);
+    color: var(--text-primary);
+    background-color: var(--bg-secondary);
 }
 
 .nav-item.active {
-    background: var(--primary);
-    color: var(--white);
-    border-bottom-color: var(--accent);
+    color: var(--primary-color);
+    border-bottom-color: var(--primary-color);
 }
 
-.nav-item.active::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 2px;
-    background: var(--accent);
+.nav-item i {
+    font-size: var(--font-size-md);
 }
 
 .nav-badge {
-    background: var(--accent);
-    color: var(--white);
-    border-radius: 12px;
-    padding: 2px 8px;
-    font-size: 11px;
-    font-weight: 700;
-    min-width: 20px;
-    height: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    position: absolute;
+    top: 8px;
+    right: 8px;
 }
 
-/* Адаптивность */
+/* Адаптивность хедера */
 @media (max-width: 768px) {
     .header-content {
-        padding: 12px 16px;
+        padding: var(--space-sm);
     }
-
+    
+    .logo-icon {
+        width: 40px;
+        height: 40px;
+        font-size: var(--font-size-lg);
+    }
+    
     .logo-title {
-        font-size: 18px;
+        font-size: var(--font-size-md);
     }
-
+    
     .logo-subtitle {
-        font-size: 10px;
+        font-size: var(--font-size-xs);
     }
-
+    
+    .header-actions {
+        gap: var(--space-sm);
+    }
+    
+    .sync-status {
+        padding: var(--space-xs) var(--space-sm);
+    }
+    
+    .user-info {
+        padding: var(--space-xs) var(--space-sm);
+    }
+    
     .user-details {
         display: none;
     }
-
-    .sync-status .sync-text {
-        display: none;
-    }
-
-    .sync-status {
-        padding: 6px;
-    }
-
+    
     .nav-container {
-        padding: 0;
-        overflow-x: auto;
+        padding: 0 var(--space-sm);
     }
-
+    
     .nav-items {
-        padding: 0 16px;
+        gap: var(--space-xs);
     }
-
+    
     .nav-item {
-        padding: 12px 16px;
-        font-size: 14px;
-        white-space: nowrap;
+        padding: var(--space-sm) var(--space-md);
+        font-size: var(--font-size-xs);
     }
-
+    
     .nav-item span:not(.nav-badge) {
         display: none;
     }
-
-    .nav-badge {
-        position: absolute;
-        top: 8px;
-        right: 8px;
+    
+    .nav-item i {
+        font-size: var(--font-size-lg);
+        margin: 0;
     }
 }
 
@@ -328,13 +273,12 @@
     .logo-text {
         display: none;
     }
-
-    .header-actions {
-        gap: 8px;
+    
+    .sync-text {
+        display: none;
     }
-
-    .btn-icon {
-        width: 36px;
-        height: 36px;
+    
+    .header-actions .btn-icon:not(:last-child) {
+        display: none;
     }
 }
