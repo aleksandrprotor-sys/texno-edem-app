@@ -9,6 +9,10 @@ class OrdersComponent {
             status: 'all',
             search: ''
         };
+        this.sortField = 'createdDate';
+        this.sortDirection = 'desc';
+        this.currentPage = 1;
+        this.itemsPerPage = 10;
         this.init();
     }
 
@@ -38,6 +42,19 @@ class OrdersComponent {
             if (e.target.closest('.btn-details')) {
                 this.showOrderDetails(e.target.closest('.btn-details').dataset.orderId);
             }
+            if (e.target.closest('.btn-export')) {
+                this.exportOrders();
+            }
+            if (e.target.closest('.pagination-btn')) {
+                this.handlePagination(e.target.closest('.pagination-btn').dataset.page);
+            }
+        });
+
+        // Обработчики сортировки
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('.sort-header')) {
+                this.handleSort(e.target.closest('.sort-header').dataset.field);
+            }
         });
     }
 
@@ -66,7 +83,7 @@ class OrdersComponent {
     }
 
     applyFilters() {
-        this.filteredOrders = this.orders.filter(order => {
+        let filtered = this.orders.filter(order => {
             // Фильтр по платформе
             if (this.currentFilters.platform !== 'all' && order.platform !== this.currentFilters.platform) {
                 return false;
@@ -91,8 +108,73 @@ class OrdersComponent {
             return true;
         });
 
+        // Сортировка
+        filtered = this.sortOrders(filtered);
+        
+        this.filteredOrders = filtered;
+        this.currentPage = 1; // Сбрасываем на первую страницу при изменении фильтров
         this.renderOrders();
         this.updateOrdersSummary();
+        this.renderPagination();
+    }
+
+    sortOrders(orders) {
+        return orders.sort((a, b) => {
+            let aValue = a[this.sortField];
+            let bValue = b[this.sortField];
+            
+            // Для дат преобразуем в timestamp
+            if (this.sortField === 'createdDate') {
+                aValue = new Date(aValue).getTime();
+                bValue = new Date(bValue).getTime();
+            }
+            
+            // Для числовых значений
+            if (typeof aValue === 'number' && typeof bValue === 'number') {
+                return this.sortDirection === 'asc' ? aValue - bValue : bValue - aValue;
+            }
+            
+            // Для строк
+            if (typeof aValue === 'string' && typeof bValue === 'string') {
+                return this.sortDirection === 'asc' 
+                    ? aValue.localeCompare(bValue)
+                    : bValue.localeCompare(aValue);
+            }
+            
+            return 0;
+        });
+    }
+
+    handleSort(field) {
+        if (this.sortField === field) {
+            // Меняем направление сортировки
+            this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            // Новая сортировка
+            this.sortField = field;
+            this.sortDirection = 'desc';
+        }
+        
+        this.applyFilters();
+        this.updateSortHeaders();
+    }
+
+    updateSortHeaders() {
+        // Обновляем UI заголовков таблицы для отображения сортировки
+        document.querySelectorAll('.sort-header').forEach(header => {
+            const field = header.dataset.field;
+            const icon = header.querySelector('.sort-icon');
+            
+            if (icon) {
+                if (field === this.sortField) {
+                    icon.className = `sort-icon fas fa-arrow-${this.sortDirection === 'asc' ? 'up' : 'down'}`;
+                    header.classList.add('active');
+                } else {
+                    icon.className = 'sort-icon fas fa-sort';
+                    header.classList.remove('active');
+                }
+            }
+        });
     }
 
     filterByPlatform(platform) {
@@ -121,12 +203,17 @@ class OrdersComponent {
         const container = document.getElementById('orders-container');
         if (!container) return;
 
-        if (this.filteredOrders.length === 0) {
+        // Пагинация
+        const startIndex = (this.currentPage - 1) * this.itemsPerPage;
+        const endIndex = startIndex + this.itemsPerPage;
+        const paginatedOrders = this.filteredOrders.slice(startIndex, endIndex);
+
+        if (paginatedOrders.length === 0) {
             container.innerHTML = this.getEmptyState();
             return;
         }
 
-        container.innerHTML = this.filteredOrders.map(order => this.createOrderCard(order)).join('');
+        container.innerHTML = paginatedOrders.map(order => this.createOrderCard(order)).join('');
     }
 
     createOrderCard(order) {
@@ -150,12 +237,17 @@ class OrdersComponent {
             'cancelled': 'fa-times-circle'
         };
 
+        const platformIcons = {
+            'cdek': 'fa-shipping-fast',
+            'megamarket': 'fa-store'
+        };
+
         return `
             <div class="order-card" data-order-id="${order.id}">
                 <div class="order-header">
                     <div class="order-main-info">
                         <div class="order-id">
-                            <i class="fas ${order.platform === 'cdek' ? 'fa-shipping-fast' : 'fa-store'}"></i>
+                            <i class="fas ${platformIcons[order.platform]}"></i>
                             ${order.id}
                             <span class="order-number">${order.orderNumber}</span>
                         </div>
@@ -184,10 +276,20 @@ class OrdersComponent {
                             </div>
                             <div class="detail-item">
                                 <span class="detail-label">Платформа</span>
-                                <span class="detail-value platform-${order.platform}">${order.platform.toUpperCase()}</span>
+                                <span class="detail-value platform-${order.platform}">
+                                    <i class="fas ${platformIcons[order.platform]}"></i>
+                                    ${order.platform.toUpperCase()}
+                                </span>
                             </div>
                         </div>
                     </div>
+                    
+                    ${order.notes ? `
+                        <div class="order-notes">
+                            <i class="fas fa-exclamation-circle"></i>
+                            <span>${order.notes}</span>
+                        </div>
+                    ` : ''}
                 </div>
                 
                 <div class="order-footer">
@@ -220,16 +322,22 @@ class OrdersComponent {
     }
 
     getEmptyState() {
+        const hasFilters = this.currentFilters.platform !== 'all' || 
+                          this.currentFilters.status !== 'all' || 
+                          this.currentFilters.search !== '';
+
         return `
             <div class="empty-state">
                 <div class="empty-icon">
-                    <i class="fas fa-box-open"></i>
+                    <i class="fas fa-${hasFilters ? 'search' : 'box-open'}"></i>
                 </div>
-                <h3>Заказы не найдены</h3>
-                <p>Попробуйте изменить параметры фильтрации</p>
-                <button class="btn btn-primary" onclick="app.components.orders.clearFilters()">
-                    <i class="fas fa-times"></i> Сбросить фильтры
-                </button>
+                <h3>${hasFilters ? 'Заказы не найдены' : 'Нет заказов'}</h3>
+                <p>${hasFilters ? 'Попробуйте изменить параметры фильтрации' : 'Здесь будут отображаться ваши заказы'}</p>
+                ${hasFilters ? `
+                    <button class="btn btn-primary" onclick="app.components.orders.clearFilters()">
+                        <i class="fas fa-times"></i> Сбросить фильтры
+                    </button>
+                ` : ''}
             </div>
         `;
     }
@@ -258,6 +366,84 @@ class OrdersComponent {
         });
     }
 
+    renderPagination() {
+        const totalPages = Math.ceil(this.filteredOrders.length / this.itemsPerPage);
+        
+        if (totalPages <= 1) {
+            this.hidePagination();
+            return;
+        }
+
+        const paginationContainer = document.querySelector('.pagination');
+        if (!paginationContainer) return;
+
+        paginationContainer.innerHTML = `
+            <div class="pagination-info">
+                Показано ${((this.currentPage - 1) * this.itemsPerPage) + 1}-${Math.min(this.currentPage * this.itemsPerPage, this.filteredOrders.length)} из ${this.filteredOrders.length}
+            </div>
+            <div class="pagination-controls">
+                <button class="pagination-btn ${this.currentPage === 1 ? 'disabled' : ''}" 
+                        data-page="${this.currentPage - 1}" ${this.currentPage === 1 ? 'disabled' : ''}>
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                
+                ${this.generatePageNumbers(totalPages)}
+                
+                <button class="pagination-btn ${this.currentPage === totalPages ? 'disabled' : ''}" 
+                        data-page="${this.currentPage + 1}" ${this.currentPage === totalPages ? 'disabled' : ''}>
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+        `;
+
+        paginationContainer.style.display = 'flex';
+    }
+
+    generatePageNumbers(totalPages) {
+        const pages = [];
+        const maxVisiblePages = 5;
+        
+        let startPage = Math.max(1, this.currentPage - Math.floor(maxVisiblePages / 2));
+        let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+        
+        if (endPage - startPage + 1 < maxVisiblePages) {
+            startPage = Math.max(1, endPage - maxVisiblePages + 1);
+        }
+        
+        for (let i = startPage; i <= endPage; i++) {
+            pages.push(`
+                <button class="pagination-btn ${i === this.currentPage ? 'active' : ''}" 
+                        data-page="${i}">
+                    ${i}
+                </button>
+            `);
+        }
+        
+        return pages.join('');
+    }
+
+    hidePagination() {
+        const paginationContainer = document.querySelector('.pagination');
+        if (paginationContainer) {
+            paginationContainer.style.display = 'none';
+        }
+    }
+
+    handlePagination(page) {
+        const pageNum = parseInt(page);
+        if (pageNum && pageNum !== this.currentPage) {
+            this.currentPage = pageNum;
+            this.renderOrders();
+            this.renderPagination();
+            
+            // Прокрутка к верху контейнера
+            const container = document.getElementById('orders-container');
+            if (container) {
+                container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }
+    }
+
     async processOrder(orderId) {
         try {
             this.app.showLoading('Обработка заказа...');
@@ -273,6 +459,15 @@ class OrdersComponent {
                 
                 this.applyFilters();
                 this.app.showNotification(`Заказ ${orderId} передан в обработку`, 'success');
+                
+                // Добавляем уведомление
+                if (this.app.components.notifications) {
+                    this.app.components.notifications.addNotification({
+                        type: 'success',
+                        title: 'Заказ обработан',
+                        message: `Заказ ${orderId} успешно передан в обработку`
+                    });
+                }
             }
             
         } catch (error) {
@@ -319,6 +514,7 @@ class OrdersComponent {
             if (order) {
                 order.status = 'processing';
                 order.updatedDate = new Date().toISOString();
+                order.notes = 'Проблема решена';
                 
                 this.applyFilters();
                 this.app.showNotification(`Проблема с заказом ${orderId} решена`, 'success');
@@ -374,13 +570,20 @@ class OrdersComponent {
     }
 
     convertToCSV(data) {
+        if (data.length === 0) return '';
+        
         const headers = Object.keys(data[0]);
         const csv = [
             headers.join(','),
-            ...data.map(row => headers.map(header => `"${row[header]}"`).join(','))
+            ...data.map(row => headers.map(header => {
+                const value = row[header] || '';
+                // Экранируем кавычки и добавляем кавычки если есть запятые
+                const escaped = String(value).replace(/"/g, '""');
+                return escaped.includes(',') ? `"${escaped}"` : escaped;
+            }).join(','))
         ].join('\n');
         
-        return csv;
+        return '\uFEFF' + csv; // BOM для корректного отображения кириллицы в Excel
     }
 
     downloadCSV(csv, filename) {
@@ -395,5 +598,53 @@ class OrdersComponent {
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+        
+        URL.revokeObjectURL(url);
+    }
+
+    // Метод для массовых операций
+    async bulkAction(orderIds, action) {
+        try {
+            this.app.showLoading(`Выполнение операции над ${orderIds.length} заказами...`);
+            
+            await this.app.delay(2000);
+            
+            let updatedCount = 0;
+            orderIds.forEach(orderId => {
+                const order = this.orders.find(o => o.id === orderId);
+                if (order) {
+                    switch (action) {
+                        case 'process':
+                            if (order.status === 'new') {
+                                order.status = 'processing';
+                                updatedCount++;
+                            }
+                            break;
+                        case 'cancel':
+                            if (!['delivered', 'cancelled'].includes(order.status)) {
+                                order.status = 'cancelled';
+                                updatedCount++;
+                            }
+                            break;
+                    }
+                    order.updatedDate = new Date().toISOString();
+                }
+            });
+            
+            this.applyFilters();
+            this.app.showNotification(`Операция выполнена для ${updatedCount} заказов`, 'success');
+            
+        } catch (error) {
+            console.error('Ошибка массовой операции:', error);
+            this.app.showNotification('Ошибка выполнения операции', 'error');
+        } finally {
+            this.app.hideLoading();
+        }
+    }
+
+    // Метод для обновления заказов извне
+    updateOrders(newOrders) {
+        this.orders = newOrders;
+        this.applyFilters();
     }
 }
