@@ -1,251 +1,217 @@
-// js/components/modal.js - Улучшенный компонент модальных окон
+// js/components/modal.js
 class ModalComponent {
-    constructor(app) {
-        this.app = app;
-        this.currentModal = null;
+    constructor() {
+        this.container = document.getElementById('modals-container');
+        this.init();
+    }
+
+    init() {
+        this.bindEvents();
+    }
+
+    bindEvents() {
+        // Закрытие модального окна по клику на бэкдроп
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('modal-backdrop')) {
+                this.hide();
+            }
+        });
+
+        // Закрытие по ESC
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                this.hide();
+            }
+        });
     }
 
     showOrderDetails(order) {
-        const modalId = 'order-details-modal';
-        let modal = document.getElementById(modalId);
-        
-        if (!modal) {
-            modal = this.createModal(modalId, 'Детали заказа', '');
-            document.getElementById('modals-container').appendChild(modal);
-        }
-
-        const content = order.platform === 'cdek' ? 
-            this.createCDEKOrderDetails(order) : 
-            this.createMegamarketOrderDetails(order);
-
-        modal.querySelector('.modal-body').innerHTML = content;
-        this.show(modalId);
-    }
-
-    createCDEKOrderDetails(order) {
-        const statusConfig = this.app.getStatusConfig(order);
-
-        return `
-            <div class="order-details-header">
-                <div class="order-main-info">
-                    <div class="order-title">
-                        <i class="fas fa-shipping-fast"></i>
-                        Отправление CDEK
+        const modalHtml = `
+            <div class="modal active tg-slide-in">
+                <div class="modal-backdrop"></div>
+                <div class="modal-dialog tg-card">
+                    <div class="modal-header">
+                        <h3 class="modal-title">Детали заказа</h3>
+                        <button class="modal-close tg-tap-effect" onclick="app.modal.hide()">
+                            <i class="fas fa-times"></i>
+                        </button>
                     </div>
-                    <div class="order-tracking">${order.trackingNumber}</div>
-                </div>
-                <div class="order-status-badge" style="--status-color: ${statusConfig.color}">
-                    ${statusConfig.text}
-                </div>
-            </div>
-
-            <div class="details-grid">
-                <div class="detail-section">
-                    <h4 class="section-title">Основная информация</h4>
-                    <div class="detail-item">
-                        <span class="detail-label">Трек номер</span>
-                        <span class="detail-value">${order.trackingNumber}</span>
-                    </div>
-                    <div class="detail-item">
-                        <span class="detail-label">Статус</span>
-                        <span class="detail-value">${statusConfig.text}</span>
-                    </div>
-                    <div class="detail-item">
-                        <span class="detail-label">Маршрут</span>
-                        <span class="detail-value">${order.fromCity} → ${order.toCity}</span>
-                    </div>
-                    <div class="detail-item">
-                        <span class="detail-label">Вес</span>
-                        <span class="detail-value">${order.weight} кг</span>
-                    </div>
-                    <div class="detail-item">
-                        <span class="detail-label">Стоимость доставки</span>
-                        <span class="detail-value">${formatCurrency(order.cost)}</span>
-                    </div>
-                </div>
-
-                <div class="detail-section">
-                    <h4 class="section-title">Контакты</h4>
-                    <div class="detail-item">
-                        <span class="detail-label">Отправитель</span>
-                        <span class="detail-value">${order.sender}</span>
-                    </div>
-                    <div class="detail-item">
-                        <span class="detail-label">Получатель</span>
-                        <span class="detail-value">${order.recipient}</span>
-                    </div>
-                </div>
-
-                <div class="detail-section">
-                    <h4 class="section-title">Детали доставки</h4>
-                    <div class="detail-item">
-                        <span class="detail-label">Дата создания</span>
-                        <span class="detail-value">${formatDateTime(order.createdDate)}</span>
-                    </div>
-                    ${order.estimatedDelivery ? `
-                        <div class="detail-item">
-                            <span class="detail-label">Ожидаемая доставка</span>
-                            <span class="detail-value">${formatDate(order.estimatedDelivery)}</span>
-                        </div>
-                    ` : ''}
-                </div>
-            </div>
-
-            <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="app.modal.close()">Закрыть</button>
-                <button class="btn btn-primary" onclick="app.modal.printOrderDetails()">
-                    <i class="fas fa-print"></i> Печать
-                </button>
-                ${order.status === 'problem' ? `
-                    <button class="btn btn-warning" onclick="app.ordersComponent.contactSupport('${order.platform}', '${order.id}')">
-                        <i class="fas fa-headset"></i> Поддержка
-                    </button>
-                ` : ''}
-            </div>
-        `;
-    }
-
-    createMegamarketOrderDetails(order) {
-        const statusConfig = this.app.getStatusConfig(order);
-
-        return `
-            <div class="order-details-header">
-                <div class="order-main-info">
-                    <div class="order-title">
-                        <i class="fas fa-store"></i>
-                        Заказ Мегамаркет
-                    </div>
-                    <div class="order-number">#${order.orderNumber}</div>
-                </div>
-                <div class="order-status-badge" style="--status-color: ${statusConfig.color}">
-                    ${statusConfig.text}
-                </div>
-            </div>
-
-            <div class="details-grid">
-                <div class="detail-section">
-                    <h4 class="section-title">Информация о заказе</h4>
-                    <div class="detail-item">
-                        <span class="detail-label">Номер заказа</span>
-                        <span class="detail-value">#${order.orderNumber}</span>
-                    </div>
-                    <div class="detail-item">
-                        <span class="detail-label">Статус</span>
-                        <span class="detail-value">${statusConfig.text}</span>
-                    </div>
-                    <div class="detail-item">
-                        <span class="detail-label">Общая сумма</span>
-                        <span class="detail-value">${formatCurrency(order.totalAmount)}</span>
-                    </div>
-                    <div class="detail-item">
-                        <span class="detail-label">Стоимость доставки</span>
-                        <span class="detail-value">${formatCurrency(order.deliveryCost || 0)}</span>
-                    </div>
-                </div>
-
-                <div class="detail-section">
-                    <h4 class="section-title">Информация о клиенте</h4>
-                    <div class="detail-item">
-                        <span class="detail-label">Имя клиента</span>
-                        <span class="detail-value">${order.customerName}</span>
-                    </div>
-                    <div class="detail-item">
-                        <span class="detail-label">Телефон</span>
-                        <span class="detail-value">${order.customerPhone || 'Не указан'}</span>
-                    </div>
-                    <div class="detail-item">
-                        <span class="detail-label">Адрес доставки</span>
-                        <span class="detail-value">${order.deliveryAddress}</span>
-                    </div>
-                </div>
-
-                ${order.items ? `
-                    <div class="detail-section full-width">
-                        <h4 class="section-title">Товары (${order.items.length})</h4>
-                        <div class="order-items-list">
-                            ${order.items.map(item => `
-                                <div class="order-item-detail">
-                                    <div class="item-image">
-                                        <i class="fas fa-box"></i>
-                                    </div>
-                                    <div class="item-info">
-                                        <div class="item-name">${item.name}</div>
-                                        <div class="item-quantity">${item.quantity} шт.</div>
-                                    </div>
-                                    <div class="item-price">${formatCurrency(item.price)}</div>
-                                    <div class="item-total">${formatCurrency(item.total)}</div>
+                    
+                    <div class="modal-body">
+                        <div class="order-details-header">
+                            <div class="order-main-info">
+                                <div class="order-title">
+                                    <span>${order.id}</span>
+                                    <span class="order-platform ${order.platform}">
+                                        <i class="fas fa-${order.platform === 'cdek' ? 'shipping-fast' : 'store'}"></i>
+                                        ${order.platform === 'cdek' ? 'CDEK' : 'Мегамаркет'}
+                                    </span>
                                 </div>
-                            `).join('')}
+                                <div class="order-tracking">
+                                    ${order.trackingNumber ? `Трек-номер: ${order.trackingNumber}` : 'Трек-номер не назначен'}
+                                </div>
+                            </div>
+                            <div class="order-status-badge" style="--status-color: ${app.orders.getStatusColor(order.status)}">
+                                ${app.orders.getStatusText(order.status)}
+                            </div>
+                        </div>
+
+                        <div class="details-grid">
+                            <div class="detail-section">
+                                <h4 class="section-title">Информация о заказе</h4>
+                                <div class="detail-item">
+                                    <span class="detail-label">Дата создания</span>
+                                    <span class="detail-value">${app.formatters.formatDateTime(order.date)}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Сумма заказа</span>
+                                    <span class="detail-value">${app.formatters.formatCurrency(order.amount)}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Статус оплаты</span>
+                                    <span class="detail-value ${order.paymentStatus === 'paid' ? 'text-success' : 'text-warning'}">
+                                        ${order.paymentStatus === 'paid' ? 'Оплачен' : 'Ожидает оплаты'}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="detail-section">
+                                <h4 class="section-title">Данные клиента</h4>
+                                <div class="detail-item">
+                                    <span class="detail-label">Имя</span>
+                                    <span class="detail-value">${order.customerName}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Телефон</span>
+                                    <span class="detail-value">
+                                        <a href="tel:${order.customerPhone}" class="tg-tap-effect">${order.customerPhone}</a>
+                                    </span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Email</span>
+                                    <span class="detail-value">
+                                        <a href="mailto:${order.customerEmail}" class="tg-tap-effect">${order.customerEmail}</a>
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="detail-section full-width">
+                                <h4 class="section-title">Товары в заказе</h4>
+                                <div class="order-items-list">
+                                    ${order.items.map((item, index) => `
+                                        <div class="order-item-detail">
+                                            <div class="item-image">
+                                                ${item.image ? 
+                                                    `<img src="${item.image}" alt="${item.name}" loading="lazy">` : 
+                                                    `<i class="fas fa-box"></i>`
+                                                }
+                                            </div>
+                                            <div class="item-info">
+                                                <div class="item-name">${item.name}</div>
+                                                <div class="item-sku">Артикул: ${item.sku}</div>
+                                                <div class="item-brand">${item.brand || ''}</div>
+                                            </div>
+                                            <div class="item-quantity">${item.quantity} шт.</div>
+                                            <div class="item-price">${app.formatters.formatCurrency(item.price)}</div>
+                                            <div class="item-total">${app.formatters.formatCurrency(item.price * item.quantity)}</div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+
+                            ${order.timeline && order.timeline.length > 0 ? `
+                                <div class="detail-section full-width">
+                                    <h4 class="section-title">История статусов</h4>
+                                    <div class="timeline">
+                                        ${order.timeline.map(event => `
+                                            <div class="timeline-event">
+                                                <div class="timeline-dot"></div>
+                                                <div class="timeline-content">
+                                                    <div class="timeline-title">${event.status}</div>
+                                                    <div class="timeline-date">${app.formatters.formatDateTime(event.date)}</div>
+                                                    ${event.description ? `<div class="timeline-desc">${event.description}</div>` : ''}
+                                                </div>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                            ` : ''}
                         </div>
                     </div>
-                ` : ''}
-            </div>
-
-            <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="app.modal.close()">Закрыть</button>
-                <button class="btn btn-primary" onclick="app.modal.printOrderDetails()">
-                    <i class="fas fa-print"></i> Печать
-                </button>
-                ${order.status === 'new' ? `
-                    <button class="btn btn-success" onclick="app.ordersComponent.confirmOrder('${order.platform}', '${order.id}')">
-                        <i class="fas fa-check"></i> Подтвердить
-                    </button>
-                ` : ''}
-            </div>
-        `;
-    }
-
-    createModal(id, title, content) {
-        const modal = document.createElement('div');
-        modal.className = 'modal';
-        modal.id = id;
-        modal.innerHTML = `
-            <div class="modal-backdrop" onclick="app.modal.close()"></div>
-            <div class="modal-dialog">
-                <div class="modal-header">
-                    <h3 class="modal-title">${title}</h3>
-                    <button class="modal-close" onclick="app.modal.close()">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    ${content}
+                    
+                    <div class="modal-footer">
+                        ${order.trackingNumber ? `
+                            <button class="btn btn-outline tg-tap-effect" onclick="app.orders.trackOrder('${order.id}')">
+                                <i class="fas fa-truck"></i> Отследить
+                            </button>
+                        ` : ''}
+                        
+                        ${order.status === 'new' || order.status === 'processing' ? `
+                            <button class="btn btn-danger tg-tap-effect" onclick="app.orders.cancelOrder('${order.id}')">
+                                <i class="fas fa-times"></i> Отменить заказ
+                            </button>
+                        ` : ''}
+                        
+                        <button class="btn btn-primary tg-main-button tg-tap-effect" onclick="app.modal.hide()">
+                            Закрыть
+                        </button>
+                    </div>
                 </div>
             </div>
         `;
-        return modal;
-    }
 
-    show(modalId) {
-        this.close(); // Закрываем предыдущее модальное окно
-
-        const modal = document.getElementById(modalId);
-        if (!modal) {
-            console.error(`Modal ${modalId} not found`);
-            return;
-        }
-
-        this.currentModal = modalId;
-        modal.classList.add('active');
+        this.container.innerHTML = modalHtml;
         document.body.style.overflow = 'hidden';
     }
 
-    close() {
-        if (!this.currentModal) return;
+    async confirm(title, message, confirmText = 'Подтвердить', type = 'primary') {
+        return new Promise((resolve) => {
+            const modalHtml = `
+                <div class="modal active tg-slide-in">
+                    <div class="modal-backdrop"></div>
+                    <div class="modal-dialog tg-card">
+                        <div class="modal-header">
+                            <h3 class="modal-title">${title}</h3>
+                            <button class="modal-close tg-tap-effect" onclick="this.resolveConfirm(false)">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        
+                        <div class="modal-body">
+                            <div class="confirm-content">
+                                <div class="confirm-icon">
+                                    <i class="fas fa-${type === 'danger' ? 'exclamation-triangle' : 'question-circle'}"></i>
+                                </div>
+                                <div class="confirm-message">${message}</div>
+                            </div>
+                        </div>
+                        
+                        <div class="modal-footer">
+                            <button class="btn btn-outline tg-tap-effect" onclick="this.resolveConfirm(false)">
+                                Отмена
+                            </button>
+                            <button class="btn btn-${type} tg-main-button tg-tap-effect" onclick="this.resolveConfirm(true)">
+                                ${confirmText}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
 
-        const modal = document.getElementById(this.currentModal);
-        if (modal) {
-            modal.classList.remove('active');
-        }
-
-        document.body.style.overflow = '';
-        this.currentModal = null;
+            this.container.innerHTML = modalHtml;
+            
+            // Добавляем методы для разрешения промиса
+            this.container.querySelector('.modal').resolveConfirm = (result) => {
+                this.hide();
+                resolve(result);
+            };
+            
+            document.body.style.overflow = 'hidden';
+        });
     }
 
-    printOrderDetails() {
-        this.app.showNotification('Подготовка к печати...', 'info');
-        setTimeout(() => {
-            window.print();
-        }, 500);
+    hide() {
+        this.container.innerHTML = '';
+        document.body.style.overflow = '';
     }
 }
