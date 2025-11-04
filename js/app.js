@@ -41,7 +41,13 @@ class TexnoEdemApp {
         if (window.Telegram && Telegram.WebApp) {
             this.tg = Telegram.WebApp;
             this.tg.expand();
-            this.tg.enableClosingConfirmation();
+            
+            // Безопасная установка подтверждения закрытия
+            try {
+                this.tg.enableClosingConfirmation();
+            } catch (error) {
+                console.warn('Closing confirmation not supported:', error.message);
+            }
             
             // Показываем информацию о пользователе
             this.showUserInfo();
@@ -321,13 +327,19 @@ class TexnoEdemApp {
                 this.updateDashboard();
                 break;
             case 'orders':
-                this.components.orders.render(platform);
+                if (this.components.orders) {
+                    this.components.orders.render(platform);
+                }
                 break;
             case 'analytics':
-                this.components.analytics.render();
+                if (this.components.analytics) {
+                    this.components.analytics.render();
+                }
                 break;
             case 'settings':
-                this.components.settings.render();
+                if (this.components.settings) {
+                    this.components.settings.render();
+                }
                 break;
         }
     }
