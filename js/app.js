@@ -237,8 +237,50 @@ class TexnoEdemApp {
             console.log('✅ Компоненты инициализированы');
         } catch (error) {
             console.error('Ошибка инициализации компонентов:', error);
+            
+             // Инициализация компонента уведомлений
+        if (typeof NotificationsComponent !== 'undefined') {
+            this.components.notifications = new NotificationsComponent(this);
+        } else {
+            console.warn('NotificationsComponent не найден');
         }
+
+        // Инициализация менеджера синхронизации
+        if (typeof SyncManager !== 'undefined') {
+            this.syncManager = new SyncManager(this);
+        } else {
+            console.warn('SyncManager не найден');
+        }
+
+        console.log('✅ Все компоненты инициализированы');
+    } catch (error) {
+        console.error('Ошибка инициализации компонентов:', error);
     }
+}
+
+// Добавим методы для работы с новыми компонентами
+getSyncManager() {
+    return this.syncManager;
+}
+
+getNotificationsComponent() {
+    return this.components.notifications;
+}
+
+// В метод manualSync() добавить использование SyncManager
+async manualSync() {
+    if (this.syncManager) {
+        await this.syncManager.forceSync();
+    } else {
+        // Fallback реализация
+        this.showLoading('Синхронизация данных...');
+        await this.delay(2000);
+        await this.loadDashboardData();
+        await this.loadOrders();
+        this.hideLoading();
+        this.showNotification('Синхронизация завершена', 'success');
+    }
+}
 
     async loadInitialData() {
         this.showLoading('Загрузка начальных данных...');
