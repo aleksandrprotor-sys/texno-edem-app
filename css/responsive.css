@@ -1,572 +1,587 @@
-/* css/responsive.css - Адаптивные стили для всех устройств */
+/* Enhanced Responsive Design for TEXNO EDEM */
 
-/* ===== БАЗОВЫЕ АДАПТИВНЫЕ НАСТРОЙКИ ===== */
+/* Mobile First Approach */
 .app {
-    min-height: 100vh;
-    max-width: 100vw;
-    overflow-x: hidden;
+    width: 100%;
+    min-width: 320px;
 }
 
-/* ===== МОБИЛЬНЫЕ УСТРОЙСТВА (до 768px) ===== */
+/* Container Responsive */
+.container {
+    width: 100%;
+    max-width: 100%;
+    margin: 0 auto;
+    padding: 0 var(--space-4);
+}
+
+/* Header Responsive */
 @media (max-width: 768px) {
-    .container {
-        padding: 0 12px;
+    .header-container {
+        padding: var(--space-3);
+        flex-wrap: wrap;
+        gap: var(--space-3);
     }
-
-    .main-content {
-        padding-top: 60px;
+    
+    .header-brand {
+        flex: 1;
+        min-width: 200px;
     }
-
-    /* Хедер для мобильных */
-    .header-content {
-        padding: 12px 16px;
-    }
-
-    .logo-title {
-        font-size: 18px;
-    }
-
-    .logo-subtitle {
-        font-size: 10px;
-    }
-
-    .user-details {
+    
+    .header-title {
         display: none;
     }
-
-    .sync-text {
-        display: none;
-    }
-
-    /* Навигация для мобильных */
-    .nav-container {
-        padding: 0;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-        scrollbar-width: none;
-    }
-
-    .nav-container::-webkit-scrollbar {
-        display: none;
-    }
-
-    .nav-items {
-        padding: 0 12px;
-        min-width: max-content;
-    }
-
-    .nav-item {
-        padding: 12px 16px;
-        font-size: 14px;
-        white-space: nowrap;
-    }
-
-    .nav-item span:not(.nav-badge) {
-        display: none;
-    }
-
-    .nav-badge {
-        position: absolute;
-        top: 8px;
-        right: 8px;
-        font-size: 10px;
-        min-width: 18px;
-        height: 18px;
-    }
-
-    /* Дашборд для мобильных */
-    .dashboard-header {
-        padding: 30px 16px;
-        margin-bottom: 20px;
-    }
-
-    .dashboard-title {
-        font-size: 1.8rem;
-        line-height: 1.2;
-    }
-
-    .dashboard-subtitle {
-        font-size: 1rem;
-    }
-
-    .quick-stats {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 12px;
-        margin-bottom: 20px;
-    }
-
-    .stat-card {
-        padding: 16px;
-    }
-
-    .stat-value {
-        font-size: 1.8rem;
-    }
-
-    .platform-widgets {
-        grid-template-columns: 1fr;
-        gap: 16px;
-        margin-bottom: 24px;
-    }
-
-    .widget {
-        padding: 20px;
-    }
-
-    /* Заказы для мобильных */
-    .orders-header {
-        margin-bottom: 16px;
-    }
-
-    .platform-header {
-        padding: 20px;
-        flex-direction: column;
-        gap: 16px;
-    }
-
-    .platform-info {
-        flex-direction: column;
-        text-align: center;
-        gap: 12px;
-    }
-
-    .orders-summary {
+    
+    .header-actions {
+        order: 3;
         width: 100%;
+        justify-content: space-between;
+        background: var(--bg-secondary);
+        padding: var(--space-3);
+        margin: var(--space-3) calc(-1 * var(--space-3)) calc(-1 * var(--space-3));
+        border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+    }
+    
+    .sync-status {
+        flex: 1;
+        justify-content: center;
+    }
+}
+
+/* Navigation Responsive */
+@media (max-width: 768px) {
+    .main-nav {
+        top: auto;
+        bottom: 0;
+        border-top: 1px solid var(--border-color);
+        border-bottom: none;
+        box-shadow: 0 -2px 10px var(--shadow-color);
+    }
+    
+    .nav-container {
+        padding: var(--space-2);
         justify-content: space-around;
     }
-
-    .orders-toolbar {
-        padding: 16px 20px;
+    
+    .nav-item {
         flex-direction: column;
-        gap: 12px;
+        padding: var(--space-2) var(--space-3);
+        font-size: var(--font-size-xs);
+        border-bottom: none;
+        border-top: 2px solid transparent;
+        border-radius: var(--radius-md);
+        min-width: 60px;
     }
+    
+    .nav-item.active {
+        border-top-color: var(--primary-600);
+        border-bottom: none;
+    }
+    
+    .nav-item span:not(.nav-badge) {
+        font-size: var(--font-size-xs);
+    }
+    
+    .nav-badge {
+        position: absolute;
+        top: 4px;
+        right: 4px;
+        width: 16px;
+        height: 16px;
+        font-size: 10px;
+    }
+}
 
-    .toolbar-left {
-        min-width: auto;
+/* Main Content Responsive */
+@media (max-width: 768px) {
+    .main-content {
+        padding: var(--space-4) var(--space-3);
+        padding-bottom: 80px; /* Space for bottom navigation */
+    }
+    
+    .section-header {
         flex-direction: column;
-        gap: 12px;
+        gap: var(--space-4);
+        align-items: flex-start;
     }
-
-    .search-box {
-        max-width: none;
+    
+    .section-title-container {
+        text-align: center;
+        width: 100%;
     }
-
-    .toolbar-right {
+    
+    .section-actions {
         width: 100%;
         justify-content: space-between;
     }
-
-    .order-card {
-        margin: 0 -12px;
-        border-radius: 0;
-        border-left: none;
-        border-right: none;
-    }
-
-    .order-header {
-        flex-direction: column;
-        gap: 12px;
-        align-items: stretch;
-    }
-
-    .order-status {
-        align-self: flex-start;
-    }
-
-    .detail-grid {
-        grid-template-columns: 1fr;
-        gap: 12px;
-    }
-
-    .order-actions {
-        justify-content: center;
-        flex-wrap: wrap;
-    }
-
-    /* Аналитика для мобильных */
-    .analytics-metrics {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 12px;
-    }
-
-    .metric-widget {
-        padding: 16px;
-    }
-
-    .metric-value {
-        font-size: 1.5rem;
-    }
-
-    .analytics-charts {
-        grid-template-columns: 1fr;
-        gap: 16px;
-    }
-
-    .chart-container {
-        padding: 16px;
-    }
-
-    .chart-wrapper {
-        height: 250px;
-    }
-
-    .analytics-details {
-        grid-template-columns: 1fr;
-        gap: 16px;
-    }
-
-    /* Настройки для мобильных */
-    .settings-grid {
-        grid-template-columns: 1fr;
-        gap: 16px;
-    }
-
-    .settings-section {
-        padding: 16px;
-    }
-
-    .setting-item {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 12px;
-    }
-
-    .setting-input,
-    .setting-select {
-        min-width: auto;
-        width: 100%;
-    }
-
-    .settings-actions {
-        flex-direction: column;
-    }
-
-    /* Модальные окна для мобильных */
-    .modal-dialog {
-        max-width: 95%;
-        max-height: 95%;
-        width: 95%;
-        margin: 10px;
-        border-radius: 16px;
-    }
-
-    .modal-header,
-    .modal-body,
-    .modal-footer {
-        padding: 16px;
-    }
-
-    .details-grid {
-        grid-template-columns: 1fr;
-        gap: 16px;
-    }
-
-    .order-details-header {
-        flex-direction: column;
-        gap: 12px;
-        align-items: stretch;
-    }
-
-    /* Уведомления для мобильных */
-    .notifications-container {
-        top: 10px;
-        right: 10px;
-        left: 10px;
-        max-width: none;
-    }
-
-    .notification {
-        max-width: none;
-        margin: 0 10px;
-    }
 }
 
-/* ===== ПЛАНШЕТЫ (769px - 1024px) ===== */
-@media (min-width: 769px) and (max-width: 1024px) {
-    .container {
-        padding: 0 16px;
-    }
-
-    .quick-stats {
-        grid-template-columns: repeat(2, 1fr);
-    }
-
-    .platform-widgets {
-        grid-template-columns: repeat(2, 1fr);
-    }
-
-    .analytics-metrics {
-        grid-template-columns: repeat(2, 1fr);
-    }
-
-    .analytics-charts {
-        grid-template-columns: repeat(2, 1fr);
-    }
-
-    .chart-container.large {
-        grid-column: 1 / -1;
-    }
-
-    .settings-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
-
-    /* Улучшенная навигация для планшетов */
-    .nav-item {
-        padding: 14px 20px;
-    }
-
-    /* Оптимизация карточек заказов */
-    .order-card {
-        margin-bottom: 12px;
-    }
-}
-
-/* ===== МАЛЕНЬКИЕ МОБИЛЬНЫЕ (до 480px) ===== */
-@media (max-width: 480px) {
-    .container {
-        padding: 0 8px;
-    }
-
+/* Dashboard Responsive */
+@media (max-width: 1024px) {
     .dashboard-title {
-        font-size: 1.5rem;
+        font-size: var(--font-size-2xl);
     }
-
-    .quick-stats {
-        grid-template-columns: 1fr;
-    }
-
-    .stat-value {
-        font-size: 1.6rem;
-    }
-
-    .analytics-metrics {
-        grid-template-columns: 1fr;
-    }
-
-    .metric-value {
-        font-size: 1.3rem;
-    }
-
-    .order-meta {
-        flex-direction: column;
-        gap: 4px;
-        align-items: flex-start;
-    }
-
-    .section-header {
-        gap: 12px;
-    }
-
-    .section-actions {
-        flex-direction: column;
-        gap: 8px;
-    }
-
-    .btn {
-        width: 100%;
-        justify-content: center;
-    }
-
-    /* Улучшения для очень маленьких экранов */
-    .stat-icon,
-    .widget-icon,
-    .metric-icon {
-        width: 50px;
-        height: 50px;
-        font-size: 20px;
-    }
-
-    .activity-icon {
-        width: 40px;
-        height: 40px;
-        font-size: 16px;
+    
+    .dashboard-subtitle {
+        font-size: var(--font-size-base);
     }
 }
 
-/* ===== ОРИЕНТАЦИЯ ЭКРАНА ===== */
-/* Портретный режим */
-@media (orientation: portrait) {
+@media (max-width: 768px) {
     .dashboard-header {
+        margin-bottom: var(--space-6);
+        padding: var(--space-6) 0;
+    }
+    
+    .dashboard-title {
+        font-size: var(--font-size-xl);
+    }
+}
+
+/* Quick Stats Responsive */
+@media (max-width: 1200px) {
+    .quick-stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 640px) {
+    .quick-stats {
+        grid-template-columns: 1fr;
+    }
+    
+    .stat-card {
+        padding: var(--space-4);
+    }
+    
+    .stat-value {
+        font-size: var(--font-size-2xl);
+    }
+}
+
+/* Platform Widgets Responsive */
+@media (max-width: 1024px) {
+    .platform-widgets {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .widget {
+        padding: var(--space-4);
+        flex-direction: column;
         text-align: center;
     }
+    
+    .widget-icon {
+        width: 48px;
+        height: 48px;
+        font-size: var(--font-size-xl);
+    }
+    
+    .widget-stats {
+        justify-content: center;
+    }
+}
 
-    .platform-widgets {
+/* Analytics Preview Responsive */
+@media (max-width: 768px) {
+    .analytics-preview {
+        padding: var(--space-4);
+    }
+    
+    .preview-header {
+        flex-direction: column;
+        gap: var(--space-3);
+        align-items: flex-start;
+    }
+    
+    .preview-grid {
         grid-template-columns: 1fr;
     }
 }
 
-/* Ландшафтный режим для мобильных */
+/* Recent Activity Responsive */
+@media (max-width: 768px) {
+    .recent-activity-card {
+        padding: var(--space-4);
+    }
+    
+    .activity-item {
+        padding: var(--space-3);
+        flex-wrap: wrap;
+    }
+    
+    .activity-content {
+        min-width: 200px;
+        flex: 1;
+    }
+    
+    .activity-amount {
+        width: 100%;
+        text-align: right;
+        margin-top: var(--space-2);
+        padding-top: var(--space-2);
+        border-top: 1px solid var(--border-color);
+    }
+}
+
+/* Orders Section Responsive */
+.orders-container {
+    display: grid;
+    gap: var(--space-4);
+}
+
+@media (max-width: 768px) {
+    .orders-container {
+        grid-template-columns: 1fr;
+    }
+    
+    .order-card {
+        padding: var(--space-4);
+    }
+    
+    .order-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--space-2);
+    }
+    
+    .order-actions {
+        width: 100%;
+        justify-content: space-between;
+        margin-top: var(--space-3);
+    }
+}
+
+/* Analytics Section Responsive */
+.analytics-grid {
+    display: grid;
+    gap: var(--space-6);
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+}
+
+@media (max-width: 768px) {
+    .analytics-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .chart-container {
+        min-height: 300px;
+    }
+}
+
+/* Settings Section Responsive */
+.settings-grid {
+    display: grid;
+    gap: var(--space-6);
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+}
+
+@media (max-width: 768px) {
+    .settings-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .settings-card {
+        padding: var(--space-4);
+    }
+}
+
+/* Modal Responsive */
+@media (max-width: 768px) {
+    .modal-content {
+        margin: var(--space-4);
+        width: calc(100% - var(--space-8));
+        max-height: calc(100vh - var(--space-8));
+    }
+    
+    .modal-header {
+        padding: var(--space-4);
+    }
+    
+    .modal-body {
+        padding: var(--space-4);
+    }
+    
+    .modal-footer {
+        padding: var(--space-4);
+        flex-direction: column;
+        gap: var(--space-2);
+    }
+    
+    .modal-footer .btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+/* Form Elements Responsive */
+@media (max-width: 768px) {
+    .form-group {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .form-label {
+        margin-bottom: var(--space-2);
+    }
+    
+    .form-control {
+        width: 100%;
+    }
+    
+    .platform-filter,
+    .time-filter {
+        flex-direction: column;
+        width: 100%;
+        gap: var(--space-2);
+    }
+    
+    .platform-filter select,
+    .time-filter select {
+        width: 100%;
+    }
+}
+
+/* Table Responsive */
+@media (max-width: 768px) {
+    .table-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    table {
+        min-width: 600px;
+    }
+    
+    .table-responsive {
+        font-size: var(--font-size-sm);
+    }
+}
+
+/* Loading Overlay Responsive */
+@media (max-width: 768px) {
+    .loading-content {
+        margin: var(--space-4);
+        padding: var(--space-6);
+        width: calc(100% - var(--space-8));
+    }
+    
+    .loading-spinner {
+        width: 40px;
+        height: 40px;
+    }
+}
+
+/* Notification Responsive */
+@media (max-width: 768px) {
+    .notifications-container {
+        bottom: 80px; /* Above bottom navigation */
+        left: var(--space-3);
+        right: var(--space-3);
+    }
+    
+    .notification {
+        margin-bottom: var(--space-2);
+    }
+}
+
+/* Emergency Mode Responsive */
+@media (max-width: 768px) {
+    .emergency-mode .header {
+        background: var(--error-500);
+    }
+    
+    .emergency-mode .main-nav {
+        background: var(--error-600);
+    }
+}
+
+/* High Contrast Mode Support */
+@media (prefers-contrast: high) {
+    :root {
+        --border-color: #000000;
+        --shadow-color: #000000;
+    }
+    
+    .stat-card,
+    .widget,
+    .analytics-preview,
+    .recent-activity-card {
+        border: 2px solid var(--border-color);
+    }
+    
+    .btn {
+        border: 2px solid currentColor;
+    }
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+    .stat-card,
+    .widget,
+    .activity-item,
+    .btn {
+        transition: none;
+        transform: none !important;
+    }
+    
+    .loading-spinner {
+        animation: none;
+        border-top-color: transparent;
+    }
+}
+
+/* Orientation Specific Styles */
 @media (max-width: 768px) and (orientation: landscape) {
     .main-content {
-        padding-top: 50px;
+        padding-bottom: var(--space-4);
     }
-
-    .header-content {
-        padding: 8px 12px;
+    
+    .main-nav {
+        position: static;
     }
-
+    
+    .nav-container {
+        flex-wrap: wrap;
+    }
+    
     .nav-item {
-        padding: 8px 12px;
+        flex: 1;
+        min-width: 80px;
     }
+}
 
-    .dashboard-header {
-        padding: 20px 12px;
+/* Very Small Screens */
+@media (max-width: 360px) {
+    .container {
+        padding: 0 var(--space-2);
     }
+    
+    .main-content {
+        padding: var(--space-3) var(--space-2);
+    }
+    
+    .stat-card,
+    .widget,
+    .analytics-preview,
+    .recent-activity-card {
+        padding: var(--space-3);
+    }
+    
+    .btn {
+        padding: var(--space-2) var(--space-3);
+    }
+}
 
+/* Large Screens Optimization */
+@media (min-width: 1920px) {
+    .container {
+        max-width: 1600px;
+    }
+    
     .quick-stats {
         grid-template-columns: repeat(4, 1fr);
     }
-
-    /* Скрываем некоторые элементы в ландшафтном режиме */
-    .dashboard-subtitle {
-        display: none;
+    
+    .platform-widgets {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .analytics-grid {
+        grid-template-columns: repeat(3, 1fr);
     }
 }
 
-/* ===== ВЫСОКИЕ ЭКРАНЫ ===== */
-@media (min-height: 1000px) {
-    .main-content {
-        padding-bottom: 40px;
-    }
-
-    .section {
-        padding: 32px 0;
-    }
-
-    /* Увеличиваем отступы для больших экранов */
-    .dashboard-header {
-        padding: 60px 20px;
-    }
-
-    .stat-card,
-    .widget,
-    .metric-widget {
-        padding: 30px;
-    }
-}
-
-/* ===== ПОДДЕРЖКА КАСАНИЙ ===== */
-@media (hover: none) and (pointer: coarse) {
-    .btn, .nav-item, .order-card {
-        min-height: 44px;
-    }
-
-    .btn-icon {
-        width: 44px;
-        height: 44px;
-    }
-
-    input, select {
-        font-size: 16px; /* Предотвращает масштабирование в iOS */
-    }
-
-    /* Увеличиваем область касания для маленьких элементов */
-    .notification-close {
-        min-width: 44px;
-        min-height: 44px;
-    }
-
-    /* Улучшаем скролл для касаний */
-    .orders-list,
-    .activity-list,
-    .modal-body {
-        -webkit-overflow-scrolling: touch;
-    }
-
-    /* Убираем ховер-эффекты для касаний */
-    .order-card:hover {
-        transform: none;
-    }
-}
-
-/* ===== ТЕМНАЯ ТЕМА ПОДДЕРЖКА ===== */
-@media (prefers-color-scheme: dark) {
-    :root:not([data-theme]) {
-        --primary: #3b82f6;
-        --primary-dark: #1d4ed8;
-        --gray-50: #1f2937;
-        --gray-100: #374151;
-        --gray-200: #4b5563;
-        --gray-800: #f9fafb;
-        --gray-900: #ffffff;
-        --white: #111827;
-    }
-}
-
-/* ===== АНИМАЦИИ ДЛЯ МЕДЛЕННЫХ УСТРОЙСТВ ===== */
-@media (prefers-reduced-motion: reduce) {
-    * {
-        animation-duration: 0.01ms !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: 0.01ms !important;
-    }
-}
-
-/* ===== ПОДДЕРЖКА РАЗЛИЧНЫХ ПЛОТНОСТЕЙ ПИКСЕЛЕЙ ===== */
-@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
-    .logo-icon, .stat-icon, .widget-icon {
-        image-rendering: -webkit-optimize-contrast;
-    }
-}
-
-/* ===== ПЕЧАТЬ ===== */
+/* Print Optimization */
 @media print {
-    .header, .main-nav, .btn, .settings-actions {
+    .app {
+        background: white !important;
+        color: black !important;
+    }
+    
+    .header,
+    .main-nav,
+    .btn,
+    .sync-status,
+    .notification-badge {
         display: none !important;
     }
-
+    
     .main-content {
-        padding-top: 0;
+        padding: 0 !important;
     }
-
-    .section.active {
+    
+    .section {
         display: block !important;
-    }
-
-    /* Улучшения для печати */
-    .stat-card, .widget, .order-card {
         break-inside: avoid;
+    }
+    
+    .stat-card,
+    .widget,
+    .analytics-preview,
+    .recent-activity-card {
+        border: 1px solid #000 !important;
         box-shadow: none !important;
-        border: 1px solid #ccc !important;
+        margin-bottom: 1cm !important;
+    }
+    
+    @page {
+        margin: 2cm;
     }
 }
 
-/* ===== ВЫСОКОКОНТРАСТНЫЙ РЕЖИМ ===== */
-@media (prefers-contrast: high) {
-    .stat-card, .widget, .order-card {
-        border: 2px solid currentColor;
+/* Touch Device Optimizations */
+@media (hover: none) and (pointer: coarse) {
+    .btn,
+    .nav-item,
+    .activity-item,
+    .widget {
+        min-height: 44px; /* Minimum touch target size */
     }
-
-    .btn {
-        border: 2px solid currentColor;
-    }
-}
-
-/* ===== ЭКОНОМИЯ ЭНЕРГИИ ===== */
-@media (prefers-reduced-data: reduce) {
-    .dashboard-header::before {
-        background: none;
-    }
-
+    
     .stat-card:hover,
     .widget:hover,
-    .order-card:hover {
+    .activity-item:hover {
         transform: none;
     }
-}
-
-/* Добавить в responsive.css */
-@media (prefers-reduced-motion: reduce) {
-    * {
-        animation-duration: 0.01ms !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: 0.01ms !important;
+    
+    /* Remove hover effects on touch devices */
+    .nav-item:hover {
+        background: transparent;
+    }
+    
+    .nav-item.active:hover {
+        background: var(--primary-50);
     }
 }
 
-/* Оптимизировать анимации */
-.performance-optimized {
-    transform: translateZ(0);
-    backface-visibility: hidden;
+/* Foldable Devices Support */
+@media (max-width: 768px) and (max-height: 500px) {
+    .dashboard-header {
+        padding: var(--space-4) 0;
+        margin-bottom: var(--space-4);
+    }
+    
+    .quick-stats {
+        margin-bottom: var(--space-4);
+    }
+    
+    .platform-widgets {
+        margin-bottom: var(--space-4);
+    }
+}
+
+/* Dark theme auto-detection */
+@media (prefers-color-scheme: dark) {
+    :root:not(.light-theme) {
+        --bg-primary: var(--gray-900);
+        --bg-secondary: var(--gray-800);
+        --bg-tertiary: var(--gray-700);
+        --text-primary: var(--gray-100);
+        --text-secondary: var(--gray-300);
+        --text-tertiary: var(--gray-400);
+        --border-color: var(--gray-700);
+        --shadow-color: rgba(0, 0, 0, 0.3);
+    }
 }
