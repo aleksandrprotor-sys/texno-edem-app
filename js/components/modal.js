@@ -1,217 +1,437 @@
-// js/components/modal.js
-class ModalComponent {
-    constructor() {
-        this.container = document.getElementById('modals-container');
-        this.init();
-    }
+// js/utils/formatters.js - Полные утилиты форматирования для TEXNO EDEM
 
-    init() {
-        this.bindEvents();
-    }
+// Форматирование валюты
+function formatCurrency(amount, currency = 'RUB') {
+    if (amount === null || amount === undefined || isNaN(amount)) return '-';
+    
+    const formatter = new Intl.NumberFormat('ru-RU', {
+        style: 'currency',
+        currency: currency,
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+    });
+    
+    return formatter.format(amount);
+}
 
-    bindEvents() {
-        // Закрытие модального окна по клику на бэкдроп
-        document.addEventListener('click', (e) => {
-            if (e.target.classList.contains('modal-backdrop')) {
-                this.hide();
-            }
+// Форматирование даты
+function formatDate(dateString, options = {}) {
+    if (!dateString) return '-';
+    
+    try {
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) return '-';
+        
+        const formatOptions = {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            ...options
+        };
+        
+        return date.toLocaleDateString('ru-RU', formatOptions);
+    } catch (error) {
+        console.error('Error formatting date:', error);
+        return '-';
+    }
+}
+
+// Форматирование даты и времени
+function formatDateTime(dateString) {
+    if (!dateString) return '-';
+    
+    try {
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) return '-';
+        
+        return date.toLocaleString('ru-RU', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
         });
-
-        // Закрытие по ESC
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                this.hide();
-            }
-        });
+    } catch (error) {
+        console.error('Error formatting datetime:', error);
+        return '-';
     }
+}
 
-    showOrderDetails(order) {
-        const modalHtml = `
-            <div class="modal active tg-slide-in">
-                <div class="modal-backdrop"></div>
-                <div class="modal-dialog tg-card">
-                    <div class="modal-header">
-                        <h3 class="modal-title">Детали заказа</h3>
-                        <button class="modal-close tg-tap-effect" onclick="app.modal.hide()">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    </div>
-                    
-                    <div class="modal-body">
-                        <div class="order-details-header">
-                            <div class="order-main-info">
-                                <div class="order-title">
-                                    <span>${order.id}</span>
-                                    <span class="order-platform ${order.platform}">
-                                        <i class="fas fa-${order.platform === 'cdek' ? 'shipping-fast' : 'store'}"></i>
-                                        ${order.platform === 'cdek' ? 'CDEK' : 'Мегамаркет'}
-                                    </span>
-                                </div>
-                                <div class="order-tracking">
-                                    ${order.trackingNumber ? `Трек-номер: ${order.trackingNumber}` : 'Трек-номер не назначен'}
-                                </div>
-                            </div>
-                            <div class="order-status-badge" style="--status-color: ${app.orders.getStatusColor(order.status)}">
-                                ${app.orders.getStatusText(order.status)}
-                            </div>
-                        </div>
-
-                        <div class="details-grid">
-                            <div class="detail-section">
-                                <h4 class="section-title">Информация о заказе</h4>
-                                <div class="detail-item">
-                                    <span class="detail-label">Дата создания</span>
-                                    <span class="detail-value">${app.formatters.formatDateTime(order.date)}</span>
-                                </div>
-                                <div class="detail-item">
-                                    <span class="detail-label">Сумма заказа</span>
-                                    <span class="detail-value">${app.formatters.formatCurrency(order.amount)}</span>
-                                </div>
-                                <div class="detail-item">
-                                    <span class="detail-label">Статус оплаты</span>
-                                    <span class="detail-value ${order.paymentStatus === 'paid' ? 'text-success' : 'text-warning'}">
-                                        ${order.paymentStatus === 'paid' ? 'Оплачен' : 'Ожидает оплаты'}
-                                    </span>
-                                </div>
-                            </div>
-
-                            <div class="detail-section">
-                                <h4 class="section-title">Данные клиента</h4>
-                                <div class="detail-item">
-                                    <span class="detail-label">Имя</span>
-                                    <span class="detail-value">${order.customerName}</span>
-                                </div>
-                                <div class="detail-item">
-                                    <span class="detail-label">Телефон</span>
-                                    <span class="detail-value">
-                                        <a href="tel:${order.customerPhone}" class="tg-tap-effect">${order.customerPhone}</a>
-                                    </span>
-                                </div>
-                                <div class="detail-item">
-                                    <span class="detail-label">Email</span>
-                                    <span class="detail-value">
-                                        <a href="mailto:${order.customerEmail}" class="tg-tap-effect">${order.customerEmail}</a>
-                                    </span>
-                                </div>
-                            </div>
-
-                            <div class="detail-section full-width">
-                                <h4 class="section-title">Товары в заказе</h4>
-                                <div class="order-items-list">
-                                    ${order.items.map((item, index) => `
-                                        <div class="order-item-detail">
-                                            <div class="item-image">
-                                                ${item.image ? 
-                                                    `<img src="${item.image}" alt="${item.name}" loading="lazy">` : 
-                                                    `<i class="fas fa-box"></i>`
-                                                }
-                                            </div>
-                                            <div class="item-info">
-                                                <div class="item-name">${item.name}</div>
-                                                <div class="item-sku">Артикул: ${item.sku}</div>
-                                                <div class="item-brand">${item.brand || ''}</div>
-                                            </div>
-                                            <div class="item-quantity">${item.quantity} шт.</div>
-                                            <div class="item-price">${app.formatters.formatCurrency(item.price)}</div>
-                                            <div class="item-total">${app.formatters.formatCurrency(item.price * item.quantity)}</div>
-                                        </div>
-                                    `).join('')}
-                                </div>
-                            </div>
-
-                            ${order.timeline && order.timeline.length > 0 ? `
-                                <div class="detail-section full-width">
-                                    <h4 class="section-title">История статусов</h4>
-                                    <div class="timeline">
-                                        ${order.timeline.map(event => `
-                                            <div class="timeline-event">
-                                                <div class="timeline-dot"></div>
-                                                <div class="timeline-content">
-                                                    <div class="timeline-title">${event.status}</div>
-                                                    <div class="timeline-date">${app.formatters.formatDateTime(event.date)}</div>
-                                                    ${event.description ? `<div class="timeline-desc">${event.description}</div>` : ''}
-                                                </div>
-                                            </div>
-                                        `).join('')}
-                                    </div>
-                                </div>
-                            ` : ''}
-                        </div>
-                    </div>
-                    
-                    <div class="modal-footer">
-                        ${order.trackingNumber ? `
-                            <button class="btn btn-outline tg-tap-effect" onclick="app.orders.trackOrder('${order.id}')">
-                                <i class="fas fa-truck"></i> Отследить
-                            </button>
-                        ` : ''}
-                        
-                        ${order.status === 'new' || order.status === 'processing' ? `
-                            <button class="btn btn-danger tg-tap-effect" onclick="app.orders.cancelOrder('${order.id}')">
-                                <i class="fas fa-times"></i> Отменить заказ
-                            </button>
-                        ` : ''}
-                        
-                        <button class="btn btn-primary tg-main-button tg-tap-effect" onclick="app.modal.hide()">
-                            Закрыть
-                        </button>
-                    </div>
-                </div>
-            </div>
-        `;
-
-        this.container.innerHTML = modalHtml;
-        document.body.style.overflow = 'hidden';
+// Относительное время
+function formatRelativeTime(dateString) {
+    if (!dateString) return '-';
+    
+    try {
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) return '-';
+        
+        const now = new Date();
+        const diffMs = now - date;
+        const diffMins = Math.floor(diffMs / (1000 * 60));
+        const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+        const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+        const diffWeeks = Math.floor(diffDays / 7);
+        const diffMonths = Math.floor(diffDays / 30);
+        
+        if (diffMins < 1) return 'только что';
+        if (diffMins < 60) return `${diffMins} мин. назад`;
+        if (diffHours < 24) return `${diffHours} ч. назад`;
+        if (diffDays === 1) return 'вчера';
+        if (diffDays < 7) return `${diffDays} дн. назад`;
+        if (diffWeeks < 4) return `${diffWeeks} нед. назад`;
+        if (diffMonths < 12) return `${diffMonths} мес. назад`;
+        
+        return formatDate(dateString);
+    } catch (error) {
+        console.error('Error formatting relative time:', error);
+        return '-';
     }
+}
 
-    async confirm(title, message, confirmText = 'Подтвердить', type = 'primary') {
-        return new Promise((resolve) => {
-            const modalHtml = `
-                <div class="modal active tg-slide-in">
-                    <div class="modal-backdrop"></div>
-                    <div class="modal-dialog tg-card">
-                        <div class="modal-header">
-                            <h3 class="modal-title">${title}</h3>
-                            <button class="modal-close tg-tap-effect" onclick="this.resolveConfirm(false)">
-                                <i class="fas fa-times"></i>
-                            </button>
-                        </div>
-                        
-                        <div class="modal-body">
-                            <div class="confirm-content">
-                                <div class="confirm-icon">
-                                    <i class="fas fa-${type === 'danger' ? 'exclamation-triangle' : 'question-circle'}"></i>
-                                </div>
-                                <div class="confirm-message">${message}</div>
-                            </div>
-                        </div>
-                        
-                        <div class="modal-footer">
-                            <button class="btn btn-outline tg-tap-effect" onclick="this.resolveConfirm(false)">
-                                Отмена
-                            </button>
-                            <button class="btn btn-${type} tg-main-button tg-tap-effect" onclick="this.resolveConfirm(true)">
-                                ${confirmText}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            `;
-
-            this.container.innerHTML = modalHtml;
-            
-            // Добавляем методы для разрешения промиса
-            this.container.querySelector('.modal').resolveConfirm = (result) => {
-                this.hide();
-                resolve(result);
-            };
-            
-            document.body.style.overflow = 'hidden';
-        });
+// Форматирование веса
+function formatWeight(grams, unit = 'kg') {
+    if (grams === null || grams === undefined || isNaN(grams)) return '-';
+    
+    if (unit === 'kg') {
+        return `${(grams / 1000).toFixed(2)} кг`;
+    } else if (unit === 'g') {
+        return `${grams} г`;
     }
+    return `${grams} ${unit}`;
+}
 
-    hide() {
-        this.container.innerHTML = '';
-        document.body.style.overflow = '';
+// Форматирование номера телефона
+function formatPhone(phone) {
+    if (!phone) return '-';
+    
+    try {
+        const cleaned = phone.replace(/\D/g, '');
+        
+        if (cleaned.length === 11 && cleaned.startsWith('7')) {
+            // Российский номер: +7 (XXX) XXX-XX-XX
+            return `+7 (${cleaned.substring(1, 4)}) ${cleaned.substring(4, 7)}-${cleaned.substring(7, 9)}-${cleaned.substring(9, 11)}`;
+        } else if (cleaned.length === 10) {
+            // Российский номер без +7: (XXX) XXX-XX-XX
+            return `+7 (${cleaned.substring(0, 3)}) ${cleaned.substring(3, 6)}-${cleaned.substring(6, 8)}-${cleaned.substring(8, 10)}`;
+        }
+        
+        return phone;
+    } catch (error) {
+        console.error('Error formatting phone:', error);
+        return phone;
     }
+}
+
+// Сокращение больших чисел
+function formatNumber(num) {
+    if (num === null || num === undefined || isNaN(num)) return '0';
+    
+    if (num < 1000) return num.toString();
+    if (num < 1000000) return `${(num / 1000).toFixed(1)}K`;
+    if (num < 1000000000) return `${(num / 1000000).toFixed(1)}M`;
+    return `${(num / 1000000000).toFixed(1)}B`;
+}
+
+// Форматирование процентов
+function formatPercent(value, decimals = 1) {
+    if (value === null || value === undefined || isNaN(value)) return '0%';
+    
+    const normalizedValue = Math.max(0, Math.min(100, value));
+    return `${normalizedValue.toFixed(decimals)}%`;
+}
+
+// Форматирование длительности
+function formatDuration(minutes) {
+    if (minutes === null || minutes === undefined || isNaN(minutes)) return '-';
+    
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    
+    if (hours > 0) {
+        return `${hours} ч ${mins} мин`;
+    }
+    return `${mins} мин`;
+}
+
+// Форматирование длительности в днях/часах
+function formatDurationDetailed(seconds) {
+    if (seconds === null || seconds === undefined || isNaN(seconds)) return '-';
+    
+    const days = Math.floor(seconds / (24 * 60 * 60));
+    const hours = Math.floor((seconds % (24 * 60 * 60)) / (60 * 60));
+    const minutes = Math.floor((seconds % (60 * 60)) / 60);
+    
+    const parts = [];
+    if (days > 0) parts.push(`${days} д`);
+    if (hours > 0) parts.push(`${hours} ч`);
+    if (minutes > 0) parts.push(`${minutes} мин`);
+    
+    return parts.length > 0 ? parts.join(' ') : 'менее минуты';
+}
+
+// Форматирование статуса заказа
+function formatOrderStatus(status, platform = 'cdek') {
+    const statusMap = {
+        cdek: {
+            'new': 'Новый',
+            'processing': 'В обработке',
+            'active': 'В пути',
+            'delivered': 'Доставлен',
+            'problem': 'Проблема',
+            'cancelled': 'Отменен',
+            'created': 'Создан',
+            'accepted': 'Принят',
+            'in_progress': 'В пути'
+        },
+        megamarket: {
+            'new': 'Новый',
+            'confirmed': 'Подтвержден',
+            'packed': 'Упакован',
+            'shipped': 'Отправлен',
+            'delivered': 'Доставлен',
+            'cancelled': 'Отменен',
+            'problem': 'Проблема',
+            'returned': 'Возврат',
+            'packaging': 'Упаковка',
+            'ready_for_shipment': 'Готов к отправке'
+        }
+    };
+    
+    const platformMap = statusMap[platform] || statusMap.cdek;
+    return platformMap[status] || status;
+}
+
+// Форматирование платформы
+function formatPlatform(platform) {
+    const platformMap = {
+        'cdek': 'CDEK',
+        'megamarket': 'Мегамаркет',
+        'all': 'Все платформы'
+    };
+    
+    return platformMap[platform] || platform;
+}
+
+// Экранирование HTML
+function escapeHtml(unsafe) {
+    if (!unsafe) return '';
+    
+    return unsafe
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+// Обрезание длинного текста
+function truncateText(text, maxLength = 50, suffix = '...') {
+    if (!text) return '';
+    
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength - suffix.length) + suffix;
+}
+
+// Форматирование адреса
+function formatAddress(address) {
+    if (!address) return 'Не указан';
+    
+    // Убираем лишние пробелы и форматируем адрес
+    return address
+        .replace(/\s+/g, ' ')
+        .trim()
+        .replace(/(г\.|ул\.|пр\.|д\.|кв\.)/g, '$1 ')
+        .replace(/\s+/g, ' ');
+}
+
+// Форматирование имени клиента
+function formatCustomerName(name) {
+    if (!name) return 'Не указан';
+    
+    // Приводим к нормальному формату: Иванов Иван Иванович
+    return name
+        .split(' ')
+        .map(part => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+        .join(' ');
+}
+
+// Валидация email
+function isValidEmail(email) {
+    if (!email) return false;
+    
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+}
+
+// Валидация телефона
+function isValidPhone(phone) {
+    if (!phone) return false;
+    
+    const cleaned = phone.replace(/\D/g, '');
+    return cleaned.length >= 10 && cleaned.length <= 15;
+}
+
+// Генерация случайного цвета на основе строки
+function stringToColor(str) {
+    if (!str) return '#6b7280';
+    
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    
+    const colors = [
+        '#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6',
+        '#06b6d4', '#84cc16', '#f97316', '#6366f1', '#ec4899',
+        '#14b8a6', '#f43f5e', '#8b5cf6', '#06b6d4', '#84cc16'
+    ];
+    
+    return colors[Math.abs(hash) % colors.length];
+}
+
+// Форматирование размера файла
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+// Форматирование рейтинга
+function formatRating(rating, max = 5) {
+    if (rating === null || rating === undefined || isNaN(rating)) return '-';
+    
+    const normalized = Math.max(0, Math.min(max, rating));
+    return `${normalized.toFixed(1)}/${max}`;
+}
+
+// Форматирование срока доставки
+function formatDeliveryTime(days) {
+    if (days === null || days === undefined || isNaN(days)) return '-';
+    
+    if (days === 0) return 'Сегодня';
+    if (days === 1) return 'Завтра';
+    if (days < 7) return `Через ${days} ${getRussianDays(days)}`;
+    if (days < 30) {
+        const weeks = Math.ceil(days / 7);
+        return `Через ${weeks} ${getRussianWeeks(weeks)}`;
+    }
+    
+    const months = Math.ceil(days / 30);
+    return `Через ${months} ${getRussianMonths(months)}`;
+}
+
+function getRussianDays(days) {
+    if (days === 1) return 'день';
+    if (days >= 2 && days <= 4) return 'дня';
+    return 'дней';
+}
+
+function getRussianWeeks(weeks) {
+    if (weeks === 1) return 'неделю';
+    if (weeks >= 2 && weeks <= 4) return 'недели';
+    return 'недель';
+}
+
+function getRussianMonths(months) {
+    if (months === 1) return 'месяц';
+    if (months >= 2 && months <= 4) return 'месяца';
+    return 'месяцев';
+}
+
+// Форматирование цены за единицу
+function formatUnitPrice(price, unit = 'шт') {
+    if (price === null || price === undefined || isNaN(price)) return '-';
+    
+    return `${formatCurrency(price)}/${unit}`;
+}
+
+// Форматирование диапазона дат
+function formatDateRange(startDate, endDate) {
+    if (!startDate || !endDate) return '-';
+    
+    try {
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        
+        if (isNaN(start.getTime()) || isNaN(end.getTime())) return '-';
+        
+        if (start.toDateString() === end.toDateString()) {
+            return formatDate(startDate);
+        }
+        
+        return `${formatDate(startDate)} - ${formatDate(endDate)}`;
+    } catch (error) {
+        console.error('Error formatting date range:', error);
+        return '-';
+    }
+}
+
+// Форматирование времени из минут
+function formatTimeFromMinutes(totalMinutes) {
+    if (totalMinutes === null || totalMinutes === undefined || isNaN(totalMinutes)) return '-';
+    
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    
+    if (hours > 0) {
+        return `${hours}:${minutes.toString().padStart(2, '0')}`;
+    }
+    return `${minutes} мин`;
+}
+
+// Форматирование номера документа
+function formatDocumentNumber(number, type = 'default') {
+    if (!number) return '-';
+    
+    const formats = {
+        'invoice': /^(\d{4})(\d{2})(\d{4})$/,
+        'order': /^(\w{2})(\d{6})$/,
+        'tracking': /^(\w{4})(\d{8})$/,
+        'default': /^(.{4})(.{4})(.{4})(.{4})$/
+    };
+    
+    const format = formats[type] || formats.default;
+    const match = number.replace(/\s/g, '').match(format);
+    
+    if (match) {
+        return match.slice(1).join(' ');
+    }
+    
+    return number;
+}
+
+// Экспорт функций для использования в других модулях
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = {
+        formatCurrency,
+        formatDate,
+        formatDateTime,
+        formatRelativeTime,
+        formatWeight,
+        formatPhone,
+        formatNumber,
+        formatPercent,
+        formatDuration,
+        formatDurationDetailed,
+        formatOrderStatus,
+        formatPlatform,
+        escapeHtml,
+        truncateText,
+        formatAddress,
+        formatCustomerName,
+        isValidEmail,
+        isValidPhone,
+        stringToColor,
+        formatFileSize,
+        formatRating,
+        formatDeliveryTime,
+        formatUnitPrice,
+        formatDateRange,
+        formatTimeFromMinutes,
+        formatDocumentNumber
+    };
 }
