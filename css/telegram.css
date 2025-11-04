@@ -282,3 +282,18 @@
 .tg-shadow-lg {
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
 }
+
+/* В telegram.css добавить */
+.tg-haptic-feedback:active {
+    background: var(--tg-theme-secondary-bg-color, #f0f0f0);
+}
+
+.tg-main-button-pulse {
+    animation: tgPulse 2s infinite;
+}
+
+@keyframes tgPulse {
+    0% { box-shadow: 0 0 0 0 rgba(var(--tg-theme-button-color-rgb), 0.4); }
+    70% { box-shadow: 0 0 0 10px rgba(var(--tg-theme-button-color-rgb), 0); }
+    100% { box-shadow: 0 0 0 0 rgba(var(--tg-theme-button-color-rgb), 0); }
+}
